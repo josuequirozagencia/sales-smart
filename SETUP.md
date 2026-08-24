@@ -10,9 +10,65 @@ Estado del setup local en Windows 10 Pro (i7-3770, 16 GB RAM).
 | nvm-windows | — | ✅ 1.2.2 |
 | Node | 20 (frontend) / 21.6.2 (backend) | ✅ 20.19.4 activo |
 | npm | — | ✅ 10.8.2 |
-| PostgreSQL | 13 | ⬜ pendiente |
-| Redis | 6 | ⬜ pendiente |
+| PostgreSQL | 13 | ✅ 13.23, servicio `postgresql-x64-13` |
+| Redis | 6 | ✅ Memurai 4.1.2 (protocolo Redis 7.2.5) |
 | Docker | opcional | ❌ **bloqueado** (ver abajo) |
+
+### Verificado funcionando
+
+- `npm install` backend: 1380 paquetes, exit 0
+- `npm run build` (tsc 4.9.5): **exit 0, cero errores de tipos**
+- `npm install` frontend: 3029 paquetes, exit 0
+- **317/317 migraciones aplicadas**, 64 tablas, sin errores
+- 5 seeds aplicados
+- Backend levantando en `http://localhost:8080`
+- `POST /auth/login` responde **HTTP 200** con JWT
+
+### Credenciales locales
+
+- **App:** `admin@multi100.com.br` / `adminpro` (del seed por defecto)
+- **PostgreSQL:** usuario `chatia`, base `chatia`. La contraseña está en
+  `backend/.env` (gitignoreado). Se generó aleatoria de 24 caracteres.
+
+## Servicios locales
+
+| Servicio | Puerto | Notas |
+|---|---|---|
+| Backend | 8080 | `node dist/server.js` |
+| Frontend | 3000 | `npm start` |
+| PostgreSQL 13 | 5432 | servicio automático |
+| Memurai (Redis) | 6379 | solo `127.0.0.1` |
+
+### Arrancar el frontend
+
+`react-scripts` 3.4.3 usa webpack 4 y necesita el flag de OpenSSL en Node 20:
+
+```bash
+cd frontend && NODE_OPTIONS=--openssl-legacy-provider npm start
+```
+
+## Diferencias con producción
+
+Ninguna es bloqueante, pero conviene tenerlas presentes:
+
+- **Collation:** la base local quedó en `Spanish_Ecuador.1252` (locale de Windows).
+  Producción corre en Linux con otra collation, así que el orden de `ORDER BY`
+  sobre texto puede diferir.
+- **Redis:** Memurai habla protocolo 7.2.5; producción usa Redis 6.
+- **Node:** local unifica en 20.19.4; producción usa 21.6.2 en backend.
+
+## Endurecimiento pendiente (opcional)
+
+PostgreSQL quedó con `listen_addresses = '*'` (escucha en todas las interfaces).
+El riesgo real es bajo porque `pg_hba.conf` solo acepta `127.0.0.1` y `::1`, y no
+se creó regla de firewall para el 5432. Para defensa en profundidad se puede poner
+`listen_addresses = 'localhost'` en `postgresql.conf` y reiniciar el servicio.
+
+## PostgreSQL 17 huérfano
+
+La máquina tenía un `C:\Program Files\PostgreSQL\17` previo **sin servicio
+registrado ni escuchando**. No se tocó. Si hacía falta para otro proyecto, hay que
+revisarlo aparte.
 
 ## ⚠️ Docker está bloqueado por hardware
 
