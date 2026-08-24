@@ -109,17 +109,24 @@ const detectFlowContinuation = (message: string, continueKeywords: string[]): bo
 };
 
 // Função para detectar se o objetivo foi completado (usando IA)
+// Funciona com qualquer provedor configurado: usa a sessão que estiver ativa
+// e o mesmo modelo definido em aiSettings, sem fixar nenhum modelo.
 const checkObjectiveCompletion = async (
   objective: string,
   conversation: Message[],
-  openai: SessionOpenAi
+  aiSettings: IOpenAi,
+  openai: SessionOpenAi | null,
+  gemini: SessionGemini | null
 ): Promise<boolean> => {
-  if (!objective || !openai) return false;
+  if (!objective || (!openai && !gemini)) return false;
 
   try {
-    // Preparar histórico da conversa para análise
-    const conversationText = conversation
-      .slice(-5) // Últimas 5 mensagens
+    // Preparar histórico da conversa para análise.
+    // Ordena por data antes de cortar: quem chama busca as mensagens em DESC,
+    // então um .slice(-5) direto pegaria as MAIS ANTIGAS e ainda invertidas.
+    const conversationText = [...conversation]
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+      .slice(-5) // 5 mensagens mais recentes, em ordem cronológica
       .map(msg => `${msg.fromMe ? 'Bot' : 'User'}: ${msg.body}`)
       .join('\n');
 
@@ -132,16 +139,29 @@ ${conversationText}
 Pergunta: O objetivo foi completado com sucesso? Responda apenas "SIM" ou "NÃO".
 `;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [{ role: "user", content: analysisPrompt }],
-      max_tokens: 10,
-      temperature: 0
-    });
+    let result = "";
 
-    const result = response.choices[0]?.message?.content?.trim().toUpperCase();
-    return result === "SIM";
-    
+    if (openai) {
+      const response = await openai.chat.completions.create({
+        model: aiSettings.model,
+        messages: [{ role: "user", content: analysisPrompt }],
+        max_tokens: 10,
+        temperature: 0
+      });
+      result = response.choices[0]?.message?.content || "";
+    } else if (gemini) {
+      const model = gemini.getGenerativeModel({
+        model: aiSettings.model,
+        generationConfig: { maxOutputTokens: 10, temperature: 0 }
+      });
+      const response = await model.generateContent(analysisPrompt);
+      result = response.response.text() || "";
+    }
+
+    // Tolerante a pontuação e texto extra ("Sim.", "SIM, o objetivo..."),
+    // já que nem todo provedor respeita a instrução de responder só uma palavra.
+    return /^\s*SIM\b/i.test(result);
+
   } catch (error) {
     logger.error("[AI SERVICE] Erro ao verificar completude do objetivo:", error);
     return false;
@@ -615,7 +635,7 @@ if (minutesElapsed >= aiSettings.completionTimeout) {
         logger.info(`[AI SERVICE] Resposta processada com sucesso para ticket ${ticket.id}`);
 
         // APÓS RESPOSTA: Verificar se deve continuar fluxo por objetivo completado
-        if (isTemporaryMode && aiSettings.autoCompleteOnObjective && aiSettings.objective && openai) {
+        if (isTemporaryMode && aiSettings.autoCompleteOnObjective && aiSettings.objective && (openai || gemini)) {
           const recentMessages = await Message.findAll({
             where: { ticketId: ticket.id },
             order: [["createdAt", "DESC"]],
@@ -625,7 +645,9 @@ if (minutesElapsed >= aiSettings.completionTimeout) {
           const objectiveCompleted = await checkObjectiveCompletion(
             aiSettings.objective,
             recentMessages,
-            openai
+            aiSettings,
+            openai,
+            gemini
           );
 
           if (objectiveCompleted) {
