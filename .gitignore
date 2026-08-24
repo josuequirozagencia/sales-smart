@@ -13,9 +13,11 @@ build/
 *.tsbuildinfo
 
 # Secretos y configuración local
+# (los .env.example / .env.exemple SÍ se versionan: son plantillas)
 .env
 .env.local
 .env.*.local
+.env.original
 .credentials
 *.pem
 *.key
