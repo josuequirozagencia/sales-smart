@@ -41,11 +41,32 @@ Estado del setup local en Windows 10 Pro (i7-3770, 16 GB RAM).
 
 ### Arrancar el frontend
 
-`react-scripts` 3.4.3 usa webpack 4 y necesita el flag de OpenSSL en Node 20:
+`react-scripts` 3.4.3 usa webpack 4 y necesita el flag de OpenSSL en Node 20.
+Además requiere `CI=true`: sin esa variable, react-scripts registra un handler que
+**mata el dev server en cuanto `stdin` se cierra**, así que muere al instante si se
+lanza en segundo plano.
 
 ```bash
-cd frontend && NODE_OPTIONS=--openssl-legacy-provider npm start
+cd frontend && CI=true NODE_OPTIONS=--openssl-legacy-provider npm start
 ```
+
+La primera compilación tarda **10–15 minutos** en este equipo (webpack 4 es
+monohilo; llega a ~1.8 GB de RAM). Las recompilaciones incrementales son rápidas.
+
+### ⚠️ Entrar siempre por `localhost`, nunca por `127.0.0.1`
+
+El backend permite un único origen CORS:
+
+```js
+const allowedOrigins = [process.env.FRONTEND_URL];
+```
+
+Con `FRONTEND_URL=http://localhost:3000`, abrir la app en `http://127.0.0.1:3000`
+hace que **todas** las llamadas al API fallen por CORS — para el navegador
+`127.0.0.1` y `localhost` son orígenes distintos. Los síntomas son un login que
+parece cargar pero no responde y errores `net::ERR_FAILED` en consola.
+
+**Usar siempre `http://localhost:3000`.**
 
 ## Diferencias con producción
 
