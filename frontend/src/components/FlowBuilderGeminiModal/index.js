@@ -42,14 +42,21 @@ import {
 } from "@material-ui/icons";
 import { InputAdornment } from "@material-ui/core";
 
-// Lista de modelos Gemini suportados
+// Lista de modelos Gemini suportados.
+// A lista anterior estava inteiramente morta: gemini-pro, gemini-1.5-pro e
+// gemini-1.5-flash foram aposentados, gemini-2.0-flash foi desligado pelo
+// Google e gemini-2.0-pro nunca existiu como ID estável.
 const geminiModels = [
-  "gemini-pro",
-  "gemini-1.5-pro", 
-  "gemini-1.5-flash",
-  "gemini-2.0-flash",
-  "gemini-2.0-pro"
+  "gemini-3.7-flash",
+  "gemini-3.6-flash",
+  "gemini-3.5-flash",
+  "gemini-3.5-flash-lite",
+  "gemini-2.5-pro",
+  "gemini-2.5-flash",
+  "gemini-2.5-flash-lite"
 ];
+
+const DEFAULT_GEMINI_MODEL = "gemini-3.7-flash";
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -192,7 +199,7 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
   const initialState = {
     name: "",
     prompt: "",
-    model: "gemini-1.5-flash",
+    model: DEFAULT_GEMINI_MODEL,
     maxTokens: 1000,
     temperature: 0.7,
     apiKey: "",
@@ -226,9 +233,11 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
       setIntegration({
         ...initialState,
         ...typebotIntegration,
-        model: geminiModels.includes(typebotIntegration.model)
-          ? typebotIntegration.model
-          : "gemini-1.5-flash",
+        // Mantém o modelo já salvo mesmo fora da lista, para não trocar em
+        // silêncio a configuração de fluxos em produção. Como toda a lista
+        // anterior foi aposentada, aqui isso vale para praticamente todos os
+        // nós existentes: eles aparecem marcados como descontinuados.
+        model: typebotIntegration.model || DEFAULT_GEMINI_MODEL,
         flowMode: typebotIntegration.flowMode || "permanent",
         continueKeywords: typebotIntegration.continueKeywords || ["continuar", "próximo", "avançar"],
         maxInteractions: typebotIntegration.maxInteractions || 5,
@@ -296,11 +305,13 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
 
   const getModelDisplayName = (model) => {
     const modelNames = {
-      "gemini-pro": "Gemini Pro",
-      "gemini-1.5-pro": "Gemini 1.5 Pro",
-      "gemini-1.5-flash": "Gemini 1.5 Flash",
-      "gemini-2.0-flash": "Gemini 2.0 Flash",
-      "gemini-2.0-pro": "Gemini 2.0 Pro"
+      "gemini-3.7-flash": "Gemini 3.7 Flash (recomendado)",
+      "gemini-3.6-flash": "Gemini 3.6 Flash",
+      "gemini-3.5-flash": "Gemini 3.5 Flash",
+      "gemini-3.5-flash-lite": "Gemini 3.5 Flash Lite (econômico)",
+      "gemini-2.5-pro": "Gemini 2.5 Pro",
+      "gemini-2.5-flash": "Gemini 2.5 Flash",
+      "gemini-2.5-flash-lite": "Gemini 2.5 Flash Lite (econômico)"
     };
     return modelNames[model] || model;
   };
@@ -388,9 +399,13 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
                         label="Modelo Gemini"
                         name="model"
                       >
-                        {geminiModels.map((model) => (
+                        {(geminiModels.includes(values.model) || !values.model
+                          ? geminiModels
+                          : [...geminiModels, values.model]
+                        ).map((model) => (
                           <MenuItem key={model} value={model}>
                             {getModelDisplayName(model)}
+                            {!geminiModels.includes(model) && " — descontinuado"}
                           </MenuItem>
                         ))}
                       </Field>

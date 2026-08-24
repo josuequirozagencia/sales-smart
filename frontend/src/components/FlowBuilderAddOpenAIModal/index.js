@@ -43,16 +43,18 @@ import {
 } from "@material-ui/icons";
 import { InputAdornment } from "@material-ui/core";
 
-// Lista de modelos OpenAI suportados
+// Lista de modelos OpenAI suportados.
+// Removidos gpt-3.5-turbo (e variantes), gpt-4 e gpt-4-turbo: a OpenAI
+// desliga todos em 23/10/2026. gpt-4o e gpt-4o-mini seguem disponíveis.
 const openAiModels = [
-  "gpt-3.5-turbo",
-  "gpt-3.5-turbo-1106", 
-  "gpt-3.5-turbo-16k",
-  "gpt-4",
-  "gpt-4-turbo",
+  "gpt-5.6-sol",
+  "gpt-5.6-terra",
+  "gpt-5.6-luna",
   "gpt-4o",
   "gpt-4o-mini"
 ];
+
+const DEFAULT_OPENAI_MODEL = "gpt-5.6-terra";
 
 // Lista de vozes disponíveis para OpenAI
 const availableVoices = [
@@ -226,7 +228,7 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
   const initialState = {
     name: "",
     prompt: "",
-    model: "gpt-4o",
+    model: DEFAULT_OPENAI_MODEL,
     voice: "texto",
     voiceKey: "",
     voiceRegion: "",
@@ -263,9 +265,11 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
       setIntegration({
         ...initialState,
         ...typebotIntegration,
-        model: openAiModels.includes(typebotIntegration.model)
-          ? typebotIntegration.model
-          : "gpt-4o",
+        // Mantém o modelo já salvo mesmo que não esteja mais na lista.
+        // Trocar em silêncio mudaria o comportamento de fluxos em produção
+        // sem que ninguém percebesse; o modelo antigo aparece no seletor
+        // (ver openAiModels + savedModel no render) para ser trocado de propósito.
+        model: typebotIntegration.model || DEFAULT_OPENAI_MODEL,
         flowMode: typebotIntegration.flowMode || "permanent",
         continueKeywords: typebotIntegration.continueKeywords || ["continuar", "próximo", "avançar"],
         maxInteractions: typebotIntegration.maxInteractions || 5,
@@ -332,13 +336,11 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
 
   const getModelDisplayName = (model) => {
     const modelNames = {
-      "gpt-3.5-turbo": "GPT 3.5 Turbo",
-      "gpt-3.5-turbo-1106": "GPT 3.5 Turbo (1106)",
-      "gpt-3.5-turbo-16k": "GPT 3.5 Turbo 16K",
-      "gpt-4": "GPT 4",
-      "gpt-4-turbo": "GPT 4 Turbo",
-      "gpt-4o": "GPT 4o",
-      "gpt-4o-mini": "GPT 4o Mini"
+      "gpt-5.6-sol": "GPT-5.6 Sol (máxima capacidade)",
+      "gpt-5.6-terra": "GPT-5.6 Terra (equilibrado)",
+      "gpt-5.6-luna": "GPT-5.6 Luna (econômico)",
+      "gpt-4o": "GPT-4o (geração anterior)",
+      "gpt-4o-mini": "GPT-4o Mini (geração anterior)"
     };
     return modelNames[model] || model;
   };
@@ -431,9 +433,13 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
                         label="Modelo OpenAI"
                         name="model"
                       >
-                        {openAiModels.map((model) => (
+                        {(openAiModels.includes(values.model) || !values.model
+                          ? openAiModels
+                          : [...openAiModels, values.model]
+                        ).map((model) => (
                           <MenuItem key={model} value={model}>
                             {getModelDisplayName(model)}
+                            {!openAiModels.includes(model) && " — descontinuado"}
                           </MenuItem>
                         ))}
                       </Field>
