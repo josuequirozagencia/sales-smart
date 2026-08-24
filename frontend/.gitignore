@@ -1,0 +1,41 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+# manter server.js versionado para subir com o código
+
+# testing
+/coverage
+/public/socket-admin
+# production
+/build
+
+/home/deploy/multi100/frontend/public/logo.png
+/home/deploy/multi100/frontend/public/favicon-32x32.png
+/home/deploy/multi100/frontend/public/favicon-16x16.png
+/home/deploy/multi100/frontend/public/favicon.ico
+
+
+# misc
+
+.DS_Store
+
+
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+# package-lock.json  <- versionado a proposito (reproducibilidad)
+yarn.lock
+
+.~*
+
+/backups/*
+backups/*

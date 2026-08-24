@@ -1,0 +1,28 @@
+# Normalizar a LF en el repositorio (el deploy corre en Linux)
+* text=auto eol=lf
+
+# Scripts que DEBEN tener LF o fallan en Linux ("bad interpreter")
+*.sh        text eol=lf
+Dockerfile* text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+
+# Archivos propios de Windows
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binarios: sin conversion
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.mp3 binary
+*.mp4 binary
+*.ogg binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.pdf binary
+*.zip binary
