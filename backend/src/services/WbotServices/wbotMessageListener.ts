@@ -3148,7 +3148,7 @@ const handleOpenAi = async (
     messagesOpenAi.push({ role: "user", content: bodyMessage! });
 
     const chat = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo-1106",
+      model: prompt.model || "gpt-5.6-luna",
       messages: messagesOpenAi,
       max_tokens: prompt.maxTokens,
       temperature: prompt.temperature
@@ -3219,7 +3219,7 @@ const handleOpenAi = async (
     }
     messagesOpenAi.push({ role: "user", content: transcription.text });
     const chat = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo-1106",
+      model: prompt.model || "gpt-5.6-luna",
       messages: messagesOpenAi,
       max_tokens: prompt.maxTokens,
       temperature: prompt.temperature

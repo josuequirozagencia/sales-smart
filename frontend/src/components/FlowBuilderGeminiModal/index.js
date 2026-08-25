@@ -42,21 +42,12 @@ import {
 } from "@material-ui/icons";
 import { InputAdornment } from "@material-ui/core";
 
-// Lista de modelos Gemini suportados.
-// A lista anterior estava inteiramente morta: gemini-pro, gemini-1.5-pro e
-// gemini-1.5-flash foram aposentados, gemini-2.0-flash foi desligado pelo
-// Google e gemini-2.0-pro nunca existiu como ID estável.
-const geminiModels = [
-  "gemini-3.7-flash",
-  "gemini-3.6-flash",
-  "gemini-3.5-flash",
-  "gemini-3.5-flash-lite",
-  "gemini-2.5-pro",
-  "gemini-2.5-flash",
-  "gemini-2.5-flash-lite"
-];
-
-const DEFAULT_GEMINI_MODEL = "gemini-3.7-flash";
+import {
+  GEMINI_MODELS,
+  DEFAULT_GEMINI_MODEL,
+  getModelDisplayName,
+  modelOptionsFor
+} from "../../constants/aiModels";
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -143,9 +134,10 @@ const GeminiSchema = Yup.object().shape({
   prompt: Yup.string()
     .min(50, "Muito curto!")
     .required("Descreva o treinamento para Inteligência Artificial"),
-  model: Yup.string()
-    .oneOf(geminiModels, "Modelo inválido")
-    .required("Informe o modelo"),
+  // Não se valida contra GEMINI_MODELS de propósito: como toda a lista
+  // anterior foi aposentada, praticamente todo nó existente tem um modelo
+  // fora da lista e travaria o formulário ao salvar.
+  model: Yup.string().required("Informe o modelo"),
   maxTokens: Yup.number()
     .min(10, "Mínimo 10 tokens")
     .max(8000, "Máximo 8000 tokens")
@@ -303,18 +295,6 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
     arrayHelpers.remove(index);
   };
 
-  const getModelDisplayName = (model) => {
-    const modelNames = {
-      "gemini-3.7-flash": "Gemini 3.7 Flash (recomendado)",
-      "gemini-3.6-flash": "Gemini 3.6 Flash",
-      "gemini-3.5-flash": "Gemini 3.5 Flash",
-      "gemini-3.5-flash-lite": "Gemini 3.5 Flash Lite (econômico)",
-      "gemini-2.5-pro": "Gemini 2.5 Pro",
-      "gemini-2.5-flash": "Gemini 2.5 Flash",
-      "gemini-2.5-flash-lite": "Gemini 2.5 Flash Lite (econômico)"
-    };
-    return modelNames[model] || model;
-  };
 
   return (
     <div className={classes.root}>
@@ -399,13 +379,10 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
                         label="Modelo Gemini"
                         name="model"
                       >
-                        {(geminiModels.includes(values.model) || !values.model
-                          ? geminiModels
-                          : [...geminiModels, values.model]
-                        ).map((model) => (
+                        {modelOptionsFor(GEMINI_MODELS, values.model).map((model) => (
                           <MenuItem key={model} value={model}>
                             {getModelDisplayName(model)}
-                            {!geminiModels.includes(model) && " — descontinuado"}
+                            {!GEMINI_MODELS.includes(model) && " — descontinuado"}
                           </MenuItem>
                         ))}
                       </Field>
