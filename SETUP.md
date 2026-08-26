@@ -130,6 +130,29 @@ servicio haya rechazado correctamente. Usar en su lugar:
 await expect(algunServicio(...)).rejects.toMatchObject({ message: "ERR_..." });
 ```
 
+## Dependencia vendorizada: `xlsx`
+
+SheetJS dejó de publicar `xlsx` en npm. La última versión que queda allí es la
+0.18.5, con dos fallos ya corregidos aguas arriba (contaminación de prototipo y
+ReDoS), ambos disparables al **parsear** una hoja de cálculo.
+
+Eso importa aquí porque el backend parsea archivos que suben los usuarios en
+`ImportContacts.ts` e `ImportContactsService.ts`. En un proceso Node
+multi-tenant, ese fallo es más grave que en el navegador.
+
+La copia oficial 0.20.3 vive en `backend/vendor/` y `frontend/vendor/`, y los
+`package.json` la referencian con `file:vendor/xlsx-0.20.3.tgz`.
+
+**Por qué copia local y no la URL del CDN:** el despliegue corre
+`docker compose build` en VPS de clientes, con el contexto limitado a `./backend`
+y `./frontend`. Apuntar la dependencia a `cdn.sheetjs.com` haría que una
+instalación fallara —con un error poco claro— si ese host no responde. La propia
+documentación de SheetJS recomienda vendorizar por este motivo.
+
+Para actualizar: descargar el `.tgz` nuevo del CDN, dejarlo en `vendor/`,
+actualizar la referencia en `package.json` y borrar el anterior. Hay un
+`vendor/README.md` en cada proyecto con el detalle.
+
 ## Diferencias con producción
 
 Ninguna es bloqueante, pero conviene tenerlas presentes:
