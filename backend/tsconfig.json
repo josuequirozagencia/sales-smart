@@ -11,5 +11,8 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "exclude": ["public"]
+  "exclude": [
+    "public",
+    "src/__tests__"
+  ]
 }

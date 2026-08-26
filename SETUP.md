@@ -68,6 +68,68 @@ parece cargar pero no responde y errores `net::ERR_FAILED` en consola.
 
 **Usar siempre `http://localhost:3000`.**
 
+## Pruebas automatizadas
+
+Jest ya venía configurado en el backend pero no había ninguna prueba escrita.
+Ahora hay una capa fina sobre lo que más duele si se rompe.
+
+Corren contra una base separada, `chatia_test`, definida en `backend/.env.test`
+(gitignoreado). `bootstrap.ts` la carga solo cuando `NODE_ENV=test`, así que
+**nunca tocan tus datos de desarrollo**.
+
+### Preparación (una sola vez)
+
+```bash
+cd backend && npm run test:setup
+```
+
+Aplica migraciones y seeds sobre `chatia_test`. No hace falta repetirlo salvo
+que añadas migraciones nuevas.
+
+### Ciclo normal
+
+```bash
+cd backend && npm test
+```
+
+Unos 13 segundos. Los scripts disponibles:
+
+| Script | Para qué |
+|---|---|
+| `npm test` | la suite completa |
+| `npm run test:watch` | reejecuta al guardar |
+| `npm run test:coverage` | con cobertura (mucho más lento) |
+| `npm run typecheck` | tipos, incluidas las pruebas |
+| `npm run test:setup` | preparar la base de pruebas |
+| `npm run test:reset` | recrear el esquema desde cero |
+
+### Decisiones que conviene conocer
+
+- **`pretest`/`posttest` eliminados.** Corrían las 317 migraciones antes de cada
+  ejecución y las revertían después: varios minutos por cada `npm test`. Ahora
+  la base se prepara una vez con `test:setup`.
+- **`isolatedModules: true`** en `jest.config.js`. Sin esto `ts-jest` verifica
+  tipos en cada ejecución y la suite pasaba de 13 s a más de 40 s, con solo
+  0,2 s de pruebas reales. La verificación sigue cubierta por `npm run build`
+  y `npm run typecheck`.
+- **Cobertura desactivada por defecto.** Instrumentar `src/services` entero
+  triplicaba el tiempo. Está en `npm run test:coverage`.
+- **`--runInBand`.** Las pruebas comparten base; en paralelo se pisarían.
+- **`src/__tests__` excluido de `tsconfig.json`**, para que `npm run build` no
+  las compile dentro de `dist/`. Los tipos se verifican con
+  `tsconfig.test.json`, que sí las incluye.
+
+### ⚠️ `.rejects.toThrow()` no funciona en este proyecto
+
+`AppError` (`src/errors/AppError.ts`) es una clase simple que **no extiende
+`Error`**, y el matcher `toThrow()` de Jest exige una instancia de `Error`. Una
+prueba que lo use falla con *"Received function did not throw"* aunque el
+servicio haya rechazado correctamente. Usar en su lugar:
+
+```js
+await expect(algunServicio(...)).rejects.toMatchObject({ message: "ERR_..." });
+```
+
 ## Diferencias con producción
 
 Ninguna es bloqueante, pero conviene tenerlas presentes:
