@@ -23,7 +23,9 @@ import { QueryTypes } from "sequelize";
 
 export interface ResponseTimeRow {
   userId: number | null;
-  userName: string;
+  // Nulo quando o ticket não teve atendente. O texto para esse caso fica no
+  // frontend, que é quem sabe o idioma do usuário.
+  userName: string | null;
   tickets: number;
   answeredTickets: number;
   avgFirstResponseSeconds: number | null;
@@ -105,7 +107,7 @@ const query = `
   )
   select
     u.id as "userId",
-    coalesce(u.name, 'Sem atendente') as "userName",
+    u.name as "userName",
     count(m."ticketId")::int as "tickets",
     count(m."firstResponse")::int as "answeredTickets",
     round(avg(m."firstResponse"))::int as "avgFirstResponseSeconds",

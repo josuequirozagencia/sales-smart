@@ -18,6 +18,7 @@ import MainHeader from "../../components/MainHeader";
 import MainHeaderButtonsWrapper from "../../components/MainHeaderButtonsWrapper";
 import Title from "../../components/Title";
 import TableRowSkeleton from "../../components/TableRowSkeleton";
+import { i18n } from "../../translate/i18n";
 import api from "../../services/api";
 import toastError from "../../errors/toastError";
 
@@ -85,7 +86,7 @@ const ResponseTime = () => {
 
   const loadReport = useCallback(async () => {
     if (initialDate > finalDate) {
-      toast.warn("A data inicial não pode ser posterior à final.");
+      toast.warn(i18n.t("responseTime.invalidRange"));
       return;
     }
 
@@ -108,11 +109,11 @@ const ResponseTime = () => {
   return (
     <MainContainer>
       <MainHeader>
-        <Title>Tempo de resposta</Title>
+        <Title>{i18n.t("responseTime.title")}</Title>
         <MainHeaderButtonsWrapper>
           <div className={classes.filters}>
             <TextField
-              label="De"
+              label={i18n.t("responseTime.from")}
               type="date"
               value={initialDate}
               onChange={e => setInitialDate(e.target.value)}
@@ -121,7 +122,7 @@ const ResponseTime = () => {
               size="small"
             />
             <TextField
-              label="Até"
+              label={i18n.t("responseTime.to")}
               type="date"
               value={finalDate}
               onChange={e => setFinalDate(e.target.value)}
@@ -135,7 +136,7 @@ const ResponseTime = () => {
               onClick={loadReport}
               disabled={loading}
             >
-              {loading ? <CircularProgress size={20} /> : "Gerar"}
+              {loading ? <CircularProgress size={20} /> : i18n.t("responseTime.generate")}
             </Button>
           </div>
         </MainHeaderButtonsWrapper>
@@ -143,24 +144,20 @@ const ResponseTime = () => {
 
       <Paper className={classes.mainPaper} variant="outlined">
         <Typography variant="body2" className={classes.hint}>
-          Mede do primeiro recado do cliente até a primeira resposta de um
-          atendente. Mensagens automáticas e notas internas não contam. A
-          mediana resiste melhor a um caso esquecido do que a média: se alguém
-          tem um ticket de três horas, a média dispara e a mediana continua
-          mostrando o comportamento habitual.
+          {i18n.t("responseTime.hint")}
         </Typography>
 
         <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell>Atendente</TableCell>
-              <TableCell align="center">Tickets</TableCell>
-              <TableCell align="center">Respondidos</TableCell>
-              <TableCell align="center">Média</TableCell>
-              <TableCell align="center">Mediana</TableCell>
-              <TableCell align="center">Pior caso</TableCell>
-              <TableCell align="center">Espera até abrir</TableCell>
-              <TableCell align="center">Duração</TableCell>
+              <TableCell>{i18n.t("responseTime.user")}</TableCell>
+              <TableCell align="center">{i18n.t("responseTime.tickets")}</TableCell>
+              <TableCell align="center">{i18n.t("responseTime.answered")}</TableCell>
+              <TableCell align="center">{i18n.t("responseTime.avg")}</TableCell>
+              <TableCell align="center">{i18n.t("responseTime.median")}</TableCell>
+              <TableCell align="center">{i18n.t("responseTime.worst")}</TableCell>
+              <TableCell align="center">{i18n.t("responseTime.wait")}</TableCell>
+              <TableCell align="center">{i18n.t("responseTime.duration")}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -169,7 +166,9 @@ const ResponseTime = () => {
             {!loading &&
               rows.map(row => (
                 <TableRow key={row.userId === null ? "sem-atendente" : row.userId}>
-                  <TableCell>{row.userName}</TableCell>
+                  <TableCell>
+                    {row.userName || i18n.t("responseTime.noUser")}
+                  </TableCell>
                   <TableCell align="center">{row.tickets}</TableCell>
                   <TableCell align="center">{row.answeredTickets}</TableCell>
                   <TableCell align="center">
@@ -192,7 +191,7 @@ const ResponseTime = () => {
 
             {!loading && totals && rows.length > 0 && (
               <TableRow>
-                <TableCell className={classes.totals}>Total</TableCell>
+                <TableCell className={classes.totals}>{i18n.t("responseTime.total")}</TableCell>
                 <TableCell align="center" className={classes.totals}>
                   {totals.tickets}
                 </TableCell>
@@ -213,13 +212,13 @@ const ResponseTime = () => {
 
         {!loading && report && rows.length === 0 && (
           <div className={classes.empty}>
-            Nenhum atendimento no período selecionado.
+            {i18n.t("responseTime.noData")}
           </div>
         )}
 
         {!loading && !report && (
           <div className={classes.empty}>
-            Escolha o período e clique em Gerar.
+            {i18n.t("responseTime.prompt")}
           </div>
         )}
       </Paper>

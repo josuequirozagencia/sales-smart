@@ -268,7 +268,7 @@ describe("ResponseTimeReportService", () => {
     const semAtendente = rows.find(r => r.userId === null);
 
     expect(semAtendente).toBeDefined();
-    expect(semAtendente.userName).toBe("Sem atendente");
+    expect(semAtendente.userName).toBeNull();
   });
 
   it("pondera a média geral pelo volume de cada atendente", async () => {

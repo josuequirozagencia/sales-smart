@@ -639,7 +639,7 @@ useEffect(() => {
                     <ListItemLink
                       small
                       to="/response-time"
-                      primary="Tempo de resposta"
+                      primary={i18n.t("responseTime.title")}
                       icon={<Description />}
                       tooltip={collapsed}
                     />
