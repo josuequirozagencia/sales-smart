@@ -65,7 +65,19 @@ const useAuth = () => {
       //
       // O _retry garante uma única tentativa por requisição, para não entrar
       // em laço quando a renovação também falha.
-      if ((status === 403 || status === 401) && !originalRequest._retry) {
+      // A própria chamada de renovação nunca pode ser renovada: se ela falha,
+      // tentar de novo dispara uma recursão infinita que martela o servidor
+      // com POST /auth/refresh_token. Quando é ela que falha, a sessão acabou
+      // e o caminho certo é cair para o bloco de logout mais abaixo.
+      const isRefreshCall = String(originalRequest?.url || "").includes(
+        "/auth/refresh_token"
+      );
+
+      if (
+        (status === 403 || status === 401) &&
+        !originalRequest._retry &&
+        !isRefreshCall
+      ) {
         originalRequest._retry = true;
 
         try {
