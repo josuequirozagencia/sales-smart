@@ -4,6 +4,10 @@ import "react-toastify/dist/ReactToastify.css";
 import { QueryClient, QueryClientProvider } from "react-query";
 import { ptBR } from "@material-ui/core/locale";
 import { createTheme, ThemeProvider } from "@material-ui/core/styles";
+import {
+  createTheme as createThemeV5,
+  ThemeProvider as ThemeProviderV5,
+} from "@mui/material/styles";
 import { useMediaQuery } from "@material-ui/core";
 import ColorModeContext from "./layout/themeContext";
 import { ActiveMenuProvider } from "./context/ActiveMenuContext";
@@ -65,10 +69,16 @@ const App = () => {
     [appLogoLight, appLogoDark, appLogoFavicon, appName, mode]
   );
 
-  const theme = useMemo(
+  // Opções do tema numa variável só, para alimentar as DUAS versões do MUI.
+  //
+  // O projeto usa @material-ui (v4) em 251 arquivos e @mui (v5) em 66, e os
+  // dois leem de contextos React diferentes. Como só existia o ThemeProvider
+  // da v4, os componentes da v5 caíam no tema padrão do MUI: cor, tipografia
+  // e espaçamentos do projeto simplesmente não chegavam neles. Era por isso
+  // que a interface parecia inconsistente de uma tela para outra.
+  const themeOptions = useMemo(
     () =>
-      createTheme(
-        {
+      ({
           // Scrollbar styles melhorados mas usando cores do tema
           scrollbarStyles: {
             "&::-webkit-scrollbar": {
@@ -354,9 +364,7 @@ const App = () => {
             }
             return appLogoLight;
           },
-        },
-        locale
-      ),
+        }),
     [
       appLogoLight,
       appLogoDark,
@@ -368,6 +376,32 @@ const App = () => {
       primaryColorLight, // Essas são as cores que vêm do tema dinâmico
     ]
   );
+
+  const theme = useMemo(
+    () => createTheme(themeOptions, locale),
+    [themeOptions, locale]
+  );
+
+  // Mesmo tema, traduzido para a v5. As chaves personalizadas
+  // (scrollbarStyles, palette.tabHeaderBackground, fancyBackground e afins)
+  // vêm junto por serem o mesmo objeto, então um componente que leia
+  // theme.palette.tabHeaderBackground funciona nas duas versões.
+  //
+  // Duas diferenças precisam de tradução:
+  //   palette.type -> palette.mode   (renomeado na v5)
+  //   overrides    -> components     (formato incompatível; fica só na v4,
+  //                                   que é quem tem 251 arquivos)
+  const themeV5 = useMemo(() => {
+    const { overrides, palette, ...rest } = themeOptions;
+
+    return createThemeV5({
+      ...rest,
+      palette: {
+        ...palette,
+        mode: palette.type,
+      },
+    });
+  }, [themeOptions]);
 
   useEffect(() => {
     window.localStorage.setItem("preferredTheme", mode);
@@ -508,12 +542,19 @@ const App = () => {
         }
       />
       <ColorModeContext.Provider value={{ colorMode }}>
+        {/*
+          Os dois ThemeProvider aninhados são propositais: cada versão do MUI
+          tem o seu contexto, e sem os dois metade da interface ignora o tema.
+          Sai quando a migração para a v5 estiver completa.
+        */}
         <ThemeProvider theme={theme}>
-          <QueryClientProvider client={queryClient}>
-            <ActiveMenuProvider>
-              <Routes />
-            </ActiveMenuProvider>
-          </QueryClientProvider>
+          <ThemeProviderV5 theme={themeV5}>
+            <QueryClientProvider client={queryClient}>
+              <ActiveMenuProvider>
+                <Routes />
+              </ActiveMenuProvider>
+            </QueryClientProvider>
+          </ThemeProviderV5>
         </ThemeProvider>
       </ColorModeContext.Provider>
     </>
