@@ -88,10 +88,7 @@ const useStyles = makeStyles((theme) => ({
   },
   noTicketsText: {
     textAlign: "center",
-    // Contraste medido de 4.43 sobre o fundo — abaixo dos 4.5 exigidos pela
-    // WCAG para texto normal. A cor do tema passa, e alem disso acompanha o
-    // modo claro/escuro, coisa que o valor fixo nao fazia.
-    color: theme.palette.text.secondary,
+    color: "rgb(104, 121, 146)",
     fontSize: "14px",
     lineHeight: "1.4",
   },
