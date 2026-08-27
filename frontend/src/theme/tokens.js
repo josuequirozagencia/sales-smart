@@ -66,6 +66,37 @@ export const neutral = {
 // blanco encima con 5.17.
 export const primaryDefault = "#2563eb";
 
+// El secundario NO se configura desde el backend hoy; solo existe el primario.
+// Se elige un slate en lugar de un color con carácter por una razón concreta:
+// `color="secondary"` aparece en 79 archivos, y como el primario lo decide
+// cada cliente, cualquier secundario saturado chocaría con la marca de alguien.
+// Un neutro oscuro funciona de apoyo junto a cualquier primario.
+//
+// Hoy esta clave no está definida en el tema, así que MUI aplica su rosa por
+// defecto (#f50057), que nadie eligió.
+export const secondaryDefault = "#475569";
+
+/**
+ * Devuelve un "#rrggbb" válido, o el respaldo si la entrada no lo es.
+ *
+ * Existe porque el color de marca no es una constante: se escribe a mano en
+ * Ajustes > Whitelabel y llega desde el backend o desde localStorage. Sin
+ * validar, un valor mal escrito se propagaría como "#NaNNaNNaN" a todo el
+ * tema, y como el tema alimenta la aplicación entera, el fallo no sería
+ * discreto.
+ *
+ * Acepta la forma corta de tres dígitos y tolera que falte la almohadilla.
+ */
+export function normalizeHex(value, fallback = primaryDefault) {
+  if (typeof value !== "string") return fallback;
+  let v = value.trim();
+  if (v.charAt(0) !== "#") v = "#" + v;
+  if (/^#[0-9a-fA-F]{3}$/.test(v)) {
+    v = "#" + v[1] + v[1] + v[2] + v[2] + v[3] + v[3];
+  }
+  return /^#[0-9a-fA-F]{6}$/.test(v) ? v.toLowerCase() : fallback;
+}
+
 /**
  * Oscurece un color una fracción dada. Sirve para derivar los estados
  * hover y active a partir del primario que configure cada empresa.
@@ -74,7 +105,7 @@ export const primaryDefault = "#2563eb";
  * @param {number} amount  0 = sin cambio, 1 = negro
  */
 export function darken(hex, amount) {
-  const n = parseInt(hex.replace("#", ""), 16);
+  const n = parseInt(normalizeHex(hex).replace("#", ""), 16);
   const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) =>
     Math.max(0, Math.round(c * (1 - amount)))
   );
@@ -86,6 +117,54 @@ export const primaryStates = (base) => ({
   hover: darken(base, 0.08),
   active: darken(base, 0.16),
 });
+
+/**
+ * Luminancia relativa segun WCAG. Auxiliar de contrastRatio.
+ */
+function luminance(hex) {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.substr(i, 2), 16));
+  const f = (v) => {
+    v /= 255;
+    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  };
+  return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+}
+
+/**
+ * Relacion de contraste entre dos colores opacos, de 1 a 21.
+ */
+export function contrastRatio(a, b) {
+  const x = luminance(a);
+  const y = luminance(b);
+  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+}
+
+/**
+ * Color de texto legible sobre un fondo dado.
+ *
+ * Esta es la pieza que faltaba. La aplicacion asumia texto blanco sobre
+ * cualquier color, y como el color de marca lo configura cada cliente, un
+ * naranja como #f7953b dejaba los botones en 2.25 de contraste, muy por
+ * debajo del 4.5 que exige la WCAG para texto normal.
+ *
+ * La regla es determinista y sin casos especiales: si el blanco alcanza el
+ * umbral sobre ese fondo, se usa blanco; si no, se usa el tinta oscura.
+ * Es el mismo criterio que aplica MUI en getContrastText, de modo que el
+ * tema y los componentes que usen este helper coinciden siempre.
+ *
+ * @param {string} background  fondo en formato "#rrggbb"
+ * @returns {string} neutral[0] o neutral[900]
+ */
+export function onColor(background, options = {}) {
+  const {
+    threshold = 4.5,
+    light = neutral[0],
+    dark = neutral[900],
+  } = options;
+  return contrastRatio(normalizeHex(background), light) >= threshold
+    ? light
+    : dark;
+}
 
 // ---------------------------------------------------------------------------
 // COLORES SEMÁNTICOS
@@ -209,6 +288,10 @@ export const shadow = {
 export default {
   neutral,
   primaryDefault,
+  secondaryDefault,
+  normalizeHex,
+  contrastRatio,
+  onColor,
   primaryStates,
   darken,
   semantic,

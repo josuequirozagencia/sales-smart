@@ -8,7 +8,7 @@ import {
   createTheme as createThemeV5,
   ThemeProvider as ThemeProviderV5,
 } from "@mui/material/styles";
-import { useMediaQuery } from "@material-ui/core";
+import { CssBaseline, useMediaQuery } from "@material-ui/core";
 import ColorModeContext from "./layout/themeContext";
 import { ActiveMenuProvider } from "./context/ActiveMenuContext";
 import Favicon from "react-favicon";
@@ -18,6 +18,7 @@ import defaultLogoLight from "./assets/logo.png";
 import defaultLogoDark from "./assets/logo-black.png";
 import defaultLogoFavicon from "./assets/favicon.ico";
 import useSettings from "./hooks/useSettings";
+import tokens, { onColor } from "./theme/tokens";
 
 import "./styles/animations.css";
 
@@ -77,8 +78,21 @@ const App = () => {
   // e espaçamentos do projeto simplesmente não chegavam neles. Era por isso
   // que a interface parecia inconsistente de uma tela para outra.
   const themeOptions = useMemo(
-    () =>
-      ({
+    () => {
+      // Superficies, texto y bordes del modo activo. Claro y oscuro no
+      // comparten valores: invertir el claro produce grises que se pierden
+      // sobre fondo oscuro, asi que cada modo tiene su propio juego.
+      const t = mode === "light" ? tokens.light : tokens.dark;
+
+      // El primario lo configura cada empresa desde Ajustes > Whitelabel, de
+      // modo que aqui puede llegar cualquier cosa. normalizeHex lo garantiza
+      // valido antes de derivar hover y active.
+      const brandPrimary = tokens.normalizeHex(
+        mode === "light" ? primaryColorLight : primaryColorDark
+      );
+      const brandSecondary = tokens.secondaryDefault;
+
+      return {
           // 19 componentes leem `theme.mode` para decidir cores, mas essa
           // chave nunca existiu no tema: no MUI v4 o correto é
           // `theme.palette.type`. Como `undefined === "light"` é sempre
@@ -146,6 +160,89 @@ const App = () => {
               // 1.64 com texto branco. Deixando o MUI decidir, ele troca para
               // texto escuro quando a cor pede.
             },
+            // --- Claves estandar de MUI, alimentadas desde los tokens -----
+            //
+            // Ninguna de estas estaba definida, asi que hasta ahora regian
+            // los valores por defecto de MUI. Definirlas es lo que hace que
+            // el sistema llegue a los componentes sin tocar ninguno:
+            // text.secondary lo leen 21 archivos, background.paper otros 21
+            // y divider 15.
+            //
+            // contrastText se calcula en vez de fijarse en blanco. Es la
+            // correccion del fallo central de la auditoria: el naranja
+            // #f7953b con texto blanco da 2.25 de contraste; con texto
+            // oscuro da 7.92.
+            secondary: {
+              main: brandSecondary,
+              contrastText: onColor(brandSecondary),
+            },
+            background: {
+              default: t.background,
+              paper: t.surface,
+            },
+            text: {
+              primary: t.textPrimary,
+              secondary: t.textSecondary,
+              disabled: t.textMuted,
+            },
+            divider: t.border,
+            success: {
+              main: tokens.semantic.success.fill,
+              contrastText: onColor(tokens.semantic.success.fill),
+            },
+            warning: {
+              main: tokens.semantic.warning.fill,
+              contrastText: onColor(tokens.semantic.warning.fill),
+            },
+            error: {
+              main: tokens.semantic.error.fill,
+              contrastText: onColor(tokens.semantic.error.fill),
+            },
+            info: {
+              main: tokens.semantic.info.fill,
+              contrastText: onColor(tokens.semantic.info.fill),
+            },
+
+            // --- Espacio propio del sistema visual ------------------------
+            //
+            // Lo que MUI no tiene donde guardar. Las fases siguientes leen de
+            // aqui; nada de lo de arriba ni de lo de abajo cambia por ello.
+            tokens: {
+              brand: {
+                primary: brandPrimary,
+                primaryHover: tokens.darken(brandPrimary, 0.08),
+                primaryActive: tokens.darken(brandPrimary, 0.16),
+                onPrimary: onColor(brandPrimary),
+                secondary: brandSecondary,
+                secondaryHover: tokens.darken(brandSecondary, 0.08),
+                onSecondary: onColor(brandSecondary),
+              },
+              surface: {
+                background: t.background,
+                surface: t.surface,
+                surfaceSecondary: t.surfaceSecondary,
+              },
+              text: {
+                primary: t.textPrimary,
+                secondary: t.textSecondary,
+                muted: t.textMuted,
+              },
+              border: {
+                border: t.border,
+                strong: t.borderStrong,
+              },
+              semantic: tokens.semantic,
+              external: tokens.brand,
+              space: tokens.space,
+              radius: tokens.radius,
+              shadow: tokens.shadow,
+              onColor,
+            },
+
+            // --- Claves personalizadas preexistentes ----------------------
+            // Se dejan intactas por compatibilidad: hay componentes leyendo
+            // tabHeaderBackground (6), optionsBackground (3), barraSuperior,
+            // fancyBackground y total (2 cada una) e inputBackground (1).
             textPrimary:
               mode === "light" ? primaryColorLight : primaryColorDark,
             borderPrimary:
@@ -385,7 +482,8 @@ const App = () => {
             }
             return appLogoLight;
           },
-        }),
+        };
+    },
     [
       appLogoLight,
       appLogoDark,
@@ -569,6 +667,12 @@ const App = () => {
           Sai quando a migração para a v5 estiver completa.
         */}
         <ThemeProvider theme={theme}>
+          {/*
+            Dentro do ThemeProvider de proposito: e daqui que o CssBaseline
+            tira a tipografia, o fundo e a cor de texto que aplica ao body.
+            Fora dele usava o tema por omissao do MUI.
+          */}
+          <CssBaseline />
           <ThemeProviderV5 theme={themeV5}>
             <QueryClientProvider client={queryClient}>
               <ActiveMenuProvider>
