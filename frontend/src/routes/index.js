@@ -51,6 +51,7 @@ const Chat = lazy(() => import("../pages/Chat"));
 const Prompts = lazy(() => import("../pages/Prompts"));
 const AllConnections = lazy(() => import("../pages/AllConnections/"));
 const Reports = lazy(() => import("../pages/Reports"));
+const ResponseTime = lazy(() => import("../pages/ResponseTime"));
 const RelatorioVendas = lazy(() => import("../pages/RelatorioVendas"));
 const Subscription = lazy(() => import("../pages/Subscription/"));
 const QueueIntegration = lazy(() => import("../pages/QueueIntegration"));
@@ -163,6 +164,12 @@ const Routes = () => {
                 />
                 <Route exact path="/queues" component={Queues} isPrivate />
                 <Route exact path="/reports" component={Reports} isPrivate />
+                <Route
+                  exact
+                  path="/response-time"
+                  component={ResponseTime}
+                  isPrivate
+                />
                 <Route
                   exact
                   path="/relatorio-vendas"

@@ -636,6 +636,13 @@ useEffect(() => {
                       icon={<Description />}
                       tooltip={collapsed}
                     />
+                    <ListItemLink
+                      small
+                      to="/response-time"
+                      primary="Tempo de resposta"
+                      icon={<Description />}
+                      tooltip={collapsed}
+                    />
                   </>
                 )}
               />
