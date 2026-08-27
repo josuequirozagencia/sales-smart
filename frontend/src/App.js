@@ -79,6 +79,16 @@ const App = () => {
   const themeOptions = useMemo(
     () =>
       ({
+          // 19 componentes leem `theme.mode` para decidir cores, mas essa
+          // chave nunca existiu no tema: no MUI v4 o correto é
+          // `theme.palette.type`. Como `undefined === "light"` é sempre
+          // falso, todos esses ternários caíam na opção de modo escuro
+          // mesmo com a interface em claro — daí textos cinza claro sobre
+          // fundo branco e a sensação de que nada se distingue.
+          //
+          // Expor `mode` aqui conserta os 19 de uma vez. O certo a longo
+          // prazo é migrá-los para `palette.mode`, que é o nome na v5.
+          mode,
           // Scrollbar styles melhorados mas usando cores do tema
           scrollbarStyles: {
             "&::-webkit-scrollbar": {

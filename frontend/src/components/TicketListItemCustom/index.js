@@ -130,8 +130,10 @@ const useStyles = makeStyles((theme) => ({
     textAlign: "right",
     position: "relative",
     top: -30,
-    color: "green",
-    fontWeight: "bold",
+    // Mesmo verde do badge de não lidas. Antes era o verde do CSS (#008000),
+    // diferente do green[500] do badge logo ao lado.
+    color: green[600],
+    fontWeight: 600,
     marginRight: "1px",
   },
 
@@ -142,17 +144,26 @@ const useStyles = makeStyles((theme) => ({
     marginLeft: "auto",
   },
 
+  // Lido e não lido diferiam só pelo negrito, e com a mesma cor — que ainda
+  // por cima era sempre cinza claro por causa do theme.mode inexistente.
+  // Numa lista longa, negrito sozinho não separa nada.
+  //
+  // Agora a hierarquia é a mesma que WhatsApp e Gmail usam: o que já foi
+  // lido recua para a cor secundária, e o não lido fica na cor principal,
+  // em negrito. A diferença de peso soma-se à de contraste.
   contactLastMessage: {
     paddingRight: "0%",
     marginLeft: "5px",
-    color: theme.mode === "light" ? "black" : grey[400],
+    color: theme.palette.text.secondary,
   },
 
   contactLastMessageUnread: {
     paddingRight: 20,
-    fontWeight: "bold",
-    color: theme.mode === "light" ? "black" : grey[400],
-    width: "50%",
+    fontWeight: 600,
+    color: theme.palette.text.primary,
+    // A largura fixa de 50% cortava a pré-visualização num ponto diferente
+    // da versão lida, fazendo a lista "saltar" ao marcar como lida.
+    marginLeft: "5px",
   },
 
   badgeStyle: {
