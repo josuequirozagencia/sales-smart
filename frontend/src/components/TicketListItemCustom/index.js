@@ -88,7 +88,10 @@ const useStyles = makeStyles((theme) => ({
   },
   noTicketsText: {
     textAlign: "center",
-    color: "rgb(104, 121, 146)",
+    // Contraste medido de 4.43 sobre o fundo — abaixo dos 4.5 exigidos pela
+    // WCAG para texto normal. A cor do tema passa, e alem disso acompanha o
+    // modo claro/escuro, coisa que o valor fixo nao fazia.
+    color: theme.palette.text.secondary,
     fontSize: "14px",
     lineHeight: "1.4",
   },
@@ -96,10 +99,18 @@ const useStyles = makeStyles((theme) => ({
     background: "green",
     color: "#FFF",
     marginRight: 1,
-    padding: 1,
+    // 0.6em herdava do body2 (14px), dando 8.4px reais — metade do texto
+    // normal. Numa lista onde se passa o dia, era ilegivel. 0.6875rem = 11px,
+    // agora em rem para respeitar o tamanho de letra escolhido pelo utilizador.
+    //
+    // O padding e o rem alargam a insignia ~30%. Medido antes de mudar: as tres
+    // insignias ocupavam 104px de 435px disponiveis no item, portanto ha folga
+    // de sobra e nao ha risco de transbordar.
+    padding: "2px 6px",
     fontWeight: "bold",
-    borderRadius: 3,
-    fontSize: "0.6em",
+    borderRadius: 4,
+    fontSize: "0.6875rem",
+    letterSpacing: "0.02em",
   },
   noTicketsTitle: {
     textAlign: "center",
@@ -132,7 +143,10 @@ const useStyles = makeStyles((theme) => ({
     top: -30,
     // Mesmo verde do badge de não lidas. Antes era o verde do CSS (#008000),
     // diferente do green[500] do badge logo ao lado.
-    color: green[600],
+    // green[600] dava contraste 3.30 sobre o fundo claro, abaixo dos 4.5.
+    // green[800] sobe para 5.13. No modo escuro o problema e o inverso — um
+    // verde escuro desaparece — dai o green[400].
+    color: theme.mode === "light" ? green[800] : green[400],
     fontWeight: 600,
     marginRight: "1px",
   },
