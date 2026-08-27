@@ -115,6 +115,12 @@ const UserSchema = Yup.object().shape({
   password: Yup.string().min(5, "Too Short!").max(50, "Too Long!"),
   email: Yup.string().email("Invalid email").required("Required"),
   allHistoric: Yup.string().nullable(),
+  // Peso na distribuição de leads: 0 tira a pessoa da rotação, 100 é o normal.
+  distributionWeight: Yup.number()
+    .min(0, "O peso não pode ser negativo")
+    .max(1000, "Peso máximo: 1000")
+    .integer("Use um número inteiro")
+    .nullable(),
 });
 
 const formatDateForInput = (date) => {
@@ -143,6 +149,7 @@ const UserModal = ({ open, onClose, userId }) => {
     endWork: "23:59",
     farewellMessage: "",
     allTicket: "enable",
+    distributionWeight: 100,
     allowGroup: false,
     defaultTheme: "light",
     defaultMenu: "open",
@@ -564,6 +571,32 @@ const handleSaveUser = async (values) => {
                         </Grid>
                       )}
                     />
+
+                    <Grid container spacing={1}>
+                      <Grid item xs={12} md={6} xl={6}>
+                        <Field
+                          as={TextField}
+                          label="Peso na distribuição de leads"
+                          type="number"
+                          name="distributionWeight"
+                          inputProps={{ min: 0, max: 1000, step: 10 }}
+                          helperText={
+                            touched.distributionWeight &&
+                            errors.distributionWeight
+                              ? errors.distributionWeight
+                              : "100 = normal · 50 = metade dos leads · 0 = não recebe"
+                          }
+                          error={
+                            touched.distributionWeight &&
+                            Boolean(errors.distributionWeight)
+                          }
+                          variant="outlined"
+                          margin="dense"
+                          fullWidth
+                          className={classes.textField}
+                        />
+                      </Grid>
+                    </Grid>
 
                     <Grid container spacing={1}>
                       <Grid item xs={12} md={6} xl={6}>

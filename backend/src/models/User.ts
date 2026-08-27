@@ -77,6 +77,12 @@ class User extends Model<User> {
   @Column
   online: boolean;
 
+  // Peso na distribuição de leads: 100 é o normal, 50 recebe metade dos
+  // turnos, 0 tira da distribuição sem remover das filas.
+  @Default(100)
+  @Column
+  distributionWeight: number;
+
   @Column
   lastSeen: Date;
 

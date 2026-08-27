@@ -18,6 +18,7 @@ interface Request {
   endWork?: string;
   whatsappId?: number;
   allTicket?: string;
+  distributionWeight?: number;
   defaultTheme?: string;
   defaultMenu?: string;
   allowGroup?: boolean;
@@ -54,6 +55,7 @@ const CreateUserService = async ({
   endWork,
   whatsappId,
   allTicket,
+  distributionWeight,
   defaultTheme,
   defaultMenu,
   allowGroup,
@@ -155,6 +157,7 @@ const CreateUserService = async ({
       endWork,
       whatsappId: whatsappId || null,
       allTicket,
+      distributionWeight,
       defaultTheme,
       defaultMenu,
       allowGroup,

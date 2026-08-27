@@ -44,6 +44,7 @@ import TicketTag from "./models/TicketTag";
 import Tag from "./models/Tag";
 import { delay } from "@whiskeysockets/baileys";
 import Plan from "./models/Plan";
+import { pickWeighted } from "./helpers/WeightedRoundRobin";
 import QueueState from "./models/QueueStates";
 import { getWbot } from "./libs/wbot";
 import { initializeBirthdayJobs, startBirthdayJob } from "./jobs/BirthdayJob";
@@ -1537,20 +1538,33 @@ async function handleRandomUser() {
                     lastUserIndex: -1
                   }));
 
-                // Find next available online user
-                let nextIndex = (queueState.lastUserIndex + 1) % users.length;
-                const startIndex = nextIndex;
+                // Só entram na rotação quem está online e com peso acima de
+                // zero. Peso 0 é como se desativa quem está de licença sem
+                // tirá-la da fila; offline já era filtrado antes.
+                const candidates = users
+                  .filter(u => u.online)
+                  .map(u => ({
+                    id: u.id,
+                    // Registros anteriores à migração podem vir sem peso.
+                    weight:
+                      u.distributionWeight === null ||
+                      u.distributionWeight === undefined
+                        ? 100
+                        : u.distributionWeight
+                  }));
 
-                do {
-                  if (users[nextIndex].online) {
-                    // Update the last used index
-                    await queueState.update({ lastUserIndex: nextIndex });
-                    return users[nextIndex].id;
-                  }
-                  nextIndex = (nextIndex + 1) % users.length;
-                } while (nextIndex !== startIndex);
+                const { selectedId, credits } = pickWeighted(
+                  candidates,
+                  queueState.weightState || {}
+                );
 
-                return 0; // Return 0 if no online users found
+                if (selectedId === null) {
+                  return 0; // ninguém online e elegível
+                }
+
+                await queueState.update({ weightState: credits });
+
+                return selectedId;
               } else {
                 // Original random selection logic
                 const randomIndex = Math.floor(Math.random() * userIds.length);
