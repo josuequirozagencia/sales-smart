@@ -881,6 +881,13 @@ const messages = {
           removeImage: "Excluir Imagen",
         },
         form: {
+          allowSeeMessagesInPendingTickets: "Ver mensajes de tickets pendientes",
+          allowConnections: "Permitir acciones en las conexiones",
+          allowRealTime: "Ver panel de atenciones",
+          showContacts: "Ver contactos",
+          showCampaign: "Ver campañas",
+          showFlow: "Ver flujos",
+          finalizationWithSaleValue: "Finalización con valor de venta",
           distributionWeight: "Peso en la distribución de leads",
           distributionWeightHelp: "100 = normal · 50 = la mitad de los leads · 0 = no recibe",
           distributionWeightMin: "El peso no puede ser negativo",
@@ -913,7 +920,7 @@ const messages = {
         },
         tabs: {
           general: "General",
-          permissions: "Permissos",
+          permissions: "Permisos",
         },
         buttons: {
           okAdd: "Agregar",

@@ -832,6 +832,9 @@ const messages = {
           removeImage: "Delete Image",
         },
         form: {
+          allowSeeMessagesInPendingTickets: "See messages in pending tickets",
+          showFlow: "View flows",
+          finalizationWithSaleValue: "Close with sale value",
           distributionWeight: "Lead distribution weight",
           distributionWeightHelp: "100 = normal · 50 = half the leads · 0 = receives none",
           distributionWeightMin: "Weight cannot be negative",

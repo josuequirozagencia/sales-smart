@@ -851,6 +851,7 @@ const messages = {
           removeImage: "Excluir imagem",
         },
         form: {
+          finalizationWithSaleValue: "Finalização com Valor de Venda",
           distributionWeight: "Peso na distribuição de leads",
           distributionWeightHelp: "100 = normal · 50 = metade dos leads · 0 = não recebe",
           distributionWeightMin: "O peso não pode ser negativo",

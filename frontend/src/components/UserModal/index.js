@@ -1141,12 +1141,12 @@ const handleSaveUser = async (values) => {
                               >
                                 <>
                                   <InputLabel>
-                                    Finalização com Valor de Venda
+                                    {i18n.t("userModal.form.finalizationWithSaleValue")}
                                   </InputLabel>
 
                                   <Field
                                     as={Select}
-                                    label="Finalização com Valor de Venda"
+                                    label={i18n.t("userModal.form.finalizationWithSaleValue")}
                                     name="finalizacaoComValorVendaAtiva"
                                     type="finalizacaoComValorVendaAtiva"
                                     required
