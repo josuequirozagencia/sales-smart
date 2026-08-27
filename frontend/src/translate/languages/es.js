@@ -821,6 +821,7 @@ const messages = {
         },
       },
       chat2: {
+        clickToDownload: "Pulse para descargar",
         today: "HOY",
         location: "Ubicación",
         contact: "Contacto",

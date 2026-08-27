@@ -791,6 +791,7 @@ const messages = {
         },
       },
       chat2: {
+        clickToDownload: "Clique para baixar",
         today: "HOJE",
         location: "Localização",
         contact: "Contato",

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { i18n } from "../../translate/i18n";
 import { 
   Paper, 
   Typography, 
@@ -319,7 +320,7 @@ const PdfPreview = ({
         
         <div className={classes.statusIndicator}>
           <Typography variant="caption" color="textSecondary">
-            📎 Clique para baixar
+            📎 {i18n.t("chat2.clickToDownload")}
           </Typography>
         </div>
       </div>

@@ -773,6 +773,7 @@ const messages = {
         },
       },
       chat2: {
+        clickToDownload: "Click to download",
         today: "TODAY",
         location: "Location",
         contact: "Contact",

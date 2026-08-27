@@ -50,22 +50,39 @@ const useAuth = () => {
         localStorage.setItem("redirectAfterLogin", window.location.pathname);
       }
       
-      if (error?.response?.status === 403 && !originalRequest._retry) {
+      const status = error?.response?.status;
+
+      // 403 e 401 são tratados igual, com uma tentativa de renovação.
+      //
+      // O backend usa os dois: token vencido devolve 403, e falta do header
+      // Authorization devolve 401 (ERR_SESSION_EXPIRED). Antes só o 403
+      // renovava; o 401 apagava o token e zerava
+      // api.defaults.headers.Authorization. Bastava uma requisição sair sem
+      // header — o que acontecia na corrida da carga da página — para a sessão
+      // entrar num beco sem saída: todas as seguintes também iam sem header e
+      // levavam 401, sem nunca tentar renovar. A tela seguia aberta e nada
+      // funcionava.
+      //
+      // O _retry garante uma única tentativa por requisição, para não entrar
+      // em laço quando a renovação também falha.
+      if ((status === 403 || status === 401) && !originalRequest._retry) {
         originalRequest._retry = true;
 
         try {
           const { data } = await api.post("/auth/refresh_token");
-          if (data) {
+          if (data?.token) {
             localStorage.setItem("token", JSON.stringify(data.token));
             api.defaults.headers.Authorization = `Bearer ${data.token}`;
+            originalRequest.headers.Authorization = `Bearer ${data.token}`;
+            return api(originalRequest);
           }
-          return api(originalRequest);
         } catch (refreshError) {
           console.error("Token refresh failed:", refreshError);
         }
       }
-      
-      if (error?.response?.status === 401 && window.location.pathname !== "/login") {
+
+      // Chegou aqui: a renovação não resolveu, então a sessão acabou mesmo.
+      if (status === 401 && window.location.pathname !== "/login") {
         localStorage.removeItem("token");
         api.defaults.headers.Authorization = undefined;
         setIsAuth(false);
