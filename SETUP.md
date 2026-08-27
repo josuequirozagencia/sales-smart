@@ -74,6 +74,35 @@ cd frontend && npm run build
 Unos **3 minutos**. Genera 12 MB con CSS minificado, 73 archivos gzip y los
 `console.*` eliminados.
 
+### ⚠️ `BACKEND_URL` lleva el puerto y `PROXY_PORT` va vacío
+
+Varios modelos construyen las URLs de archivos así:
+
+```js
+`${BACKEND_URL}${PROXY_PORT ? `:${PROXY_PORT}` : ""}/public/...`
+```
+
+Si `BACKEND_URL` ya incluye el puerto **y** `PROXY_PORT` está definido, sale
+`http://localhost:8080:8080/...`, que no es una URL válida. En el navegador eso
+aparece como `Failed to construct 'URL': Invalid URL` al abrir una conversación
+con imágenes o audios, y no se ve ningún archivo.
+
+Pero quitar el puerto de `BACKEND_URL` tampoco vale, porque **el proyecto no es
+coherente consigo mismo**: `Message`, `Contact`, `Announcement` y `ChatMessage`
+añaden `PROXY_PORT`, mientras que `QuickMessage` y `sendFacebookMessageMedia`
+no lo hacen. Sin puerto en `BACKEND_URL`, esos dos últimos quedarían rotos.
+
+La combinación que funciona para ambos grupos en local:
+
+```
+BACKEND_URL=http://localhost:8080
+PROXY_PORT=
+```
+
+`PROXY_PORT` solo se usa para construir URLs, nunca para escoger el puerto de
+escucha — ese es `PORT`. En producción no se da el problema: el instalador
+genera `BACKEND_URL=https://dominio` sin puerto y sin `PROXY_PORT`.
+
 ### ⚠️ Entrar siempre por `localhost`, nunca por `127.0.0.1`
 
 El backend permite un único origen CORS:
