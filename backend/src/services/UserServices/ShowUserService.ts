@@ -26,6 +26,7 @@ const ShowUserService = async (
       "startWork",
       "endWork",
       "allTicket",
+      "distributionWeight",
       "companyId",
       "tokenVersion",
       "defaultTheme",
