@@ -12,6 +12,14 @@ i18n.use(LanguageDetector).init({
 	fallbackLng: savedLang || "pt", // Usa o idioma salvo como fallback
 	ns: ["translations"],
 	resources: messages,
+	// O navegador informa variantes regionais: 'es-EC', 'pt-BR', 'en-US'. As
+	// chaves dos recursos em translate/languages são só o idioma ('es', 'pt',
+	// 'en'), então sem isto o i18next procura 'es-EC', não encontra e cai no
+	// fallbackLng — a interface aparecia em português para quem tem o
+	// navegador em espanhol. `languageOnly` reduz a variante ao idioma base.
+	load: 'languageOnly',
+	supportedLngs: ['pt', 'en', 'es', 'ar', 'tr'],
+	nonExplicitSupportedLngs: true,
 	detection: {
 		order: ['localStorage', 'navigator'], // Prioriza localStorage
 		caches: ['localStorage'],

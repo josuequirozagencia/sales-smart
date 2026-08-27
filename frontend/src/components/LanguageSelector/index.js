@@ -174,7 +174,7 @@ const LanguageSelector = ({ variant = 'default' }) => {
           }
         } else {
           // Fallback final
-          setAvailableLanguages(['pt', 'en']);
+          setAvailableLanguages(['es', 'pt', 'en']);
           const fallbackLang = localStorage.getItem('i18nextLng') || 'pt';
           setCurrentLanguage(fallbackLang);
           i18n.changeLanguage(fallbackLang);
@@ -184,7 +184,7 @@ const LanguageSelector = ({ variant = 'default' }) => {
       } catch (error) {
         console.error('Erro ao buscar configurações de idiomas:', error);
         console.log('🔍 LanguageSelector - Usando idiomas padrão devido a erro');
-        setAvailableLanguages(['pt', 'en']);
+        setAvailableLanguages(['es', 'pt', 'en']);
         const fallbackLang = localStorage.getItem('i18nextLng') || 'pt';
         setCurrentLanguage(fallbackLang);
         i18n.changeLanguage(fallbackLang);
