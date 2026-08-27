@@ -61,4 +61,10 @@ statisticsRoutes.get(
 //   DashController.getDashTicketsQueue
 // );
 
+statisticsRoutes.get(
+  "/response-time",
+  isAuth,
+  StatisticsController.ResponseTime
+);
+
 export default statisticsRoutes;

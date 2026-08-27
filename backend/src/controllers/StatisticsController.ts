@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import TicketsQueuesService from "../services/Statistics/TicketsQueuesService";
 import ContactsReportService from "../services/Statistics/ContactsReportService";
 import AppError from "../errors/AppError";
+import ResponseTimeReportService from "../services/ReportService/ResponseTimeReportService";
 
 type IndexQuery = {
   dateStart: string;
@@ -66,4 +67,32 @@ export const ContactsReport = async (
   });
 
   return res.status(200).json(tickets);
+};
+
+type ResponseTimeQuery = {
+  initialDate: string;
+  finalDate: string;
+};
+
+// Tempo de resposta por atendente. Complementa o dashboard, que só traz a
+// média de espera da empresa inteira e mede até a abertura do ticket, não
+// até a primeira resposta de gente.
+export const ResponseTime = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { companyId } = req.user;
+  const { initialDate, finalDate } = req.query as ResponseTimeQuery;
+
+  if (!initialDate || !finalDate) {
+    throw new AppError("ERR_INVALID_DATE_RANGE");
+  }
+
+  const report = await ResponseTimeReportService({
+    companyId,
+    initialDate,
+    finalDate
+  });
+
+  return res.json(report);
 };
