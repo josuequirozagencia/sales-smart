@@ -41,17 +41,38 @@ Estado del setup local en Windows 10 Pro (i7-3770, 16 GB RAM).
 
 ### Arrancar el frontend
 
-`react-scripts` 3.4.3 usa webpack 4 y necesita el flag de OpenSSL en Node 20.
-Además requiere `CI=true`: sin esa variable, react-scripts registra un handler que
-**mata el dev server en cuanto `stdin` se cierra**, así que muere al instante si se
-lanza en segundo plano.
-
 ```bash
-cd frontend && CI=true NODE_OPTIONS=--openssl-legacy-provider npm start
+cd frontend && CI=true npm start
 ```
 
-La primera compilación tarda **10–15 minutos** en este equipo (webpack 4 es
-monohilo; llega a ~1.8 GB de RAM). Las recompilaciones incrementales son rápidas.
+Sirve en **~20 segundos**. Requiere `CI=true`: sin esa variable, react-scripts
+registra un handler que **mata el dev server en cuanto `stdin` se cierra**, así
+que muere al instante si se lanza en segundo plano.
+
+Ya **no** hace falta `--openssl-legacy-provider`: eso era un parche para
+webpack 4 en Node moderno.
+
+### Herramienta de build
+
+El frontend usa **CRA 5.0.1 con webpack 5**, configurado mediante
+**CRACO** (`craco.config.js`). Antes usaba `react-app-rewired` con
+`config-overrides.js`, que se quedó en la versión 2.2.1, hecha para CRA 4.
+
+Dos cosas que conviene saber al tocar `craco.config.js`:
+
+- **El ajuste de `splitChunks` y del minimizador es solo de producción.** CRA
+  desactiva el code splitting en desarrollo a propósito. Aplicarlo también en
+  dev hacía que el servidor abriera el puerto y **no sirviera nunca la página**.
+- **El analizador de bundle está bajo demanda:** `ANALYZE=true npm start` genera
+  `bundle-report.html`. Antes corría en cada compilación produciendo un
+  `stats.json` de 177 MB que ni siquiera se usaba.
+
+```bash
+cd frontend && npm run build
+```
+
+Unos **3 minutos**. Genera 12 MB con CSS minificado, 73 archivos gzip y los
+`console.*` eliminados.
 
 ### ⚠️ Entrar siempre por `localhost`, nunca por `127.0.0.1`
 

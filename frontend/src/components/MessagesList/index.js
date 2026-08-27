@@ -49,6 +49,7 @@ import { useParams, useHistory } from 'react-router-dom';
 import { downloadResource } from "../../utils";
 import Template from "./templates";
 import { usePdfViewer } from "../../hooks/usePdfViewer";
+import { basename } from "../../utils/basename";
 
 // Hook customizado para memoizar formatação de datas
 const useFormattedDate = (dateString, formatString = "HH:mm") => {
@@ -947,7 +948,6 @@ const MessagesList = ({
     }
   };
 
-  const path = require('path');
 
   const renderQuotedMessage = (message) => {
 
@@ -1195,7 +1195,7 @@ const MessagesList = ({
                   {message.quotedMsg && renderQuotedMessage(message)}
                   {
                     message.mediaType !== "adMetaPreview" && (
-                      (message.mediaUrl !== null && (message.mediaType === "image" || message.mediaType === "video") && path.basename(message.mediaUrl).trim() !== message.body.trim()) ||
+                      (message.mediaUrl !== null && (message.mediaType === "image" || message.mediaType === "video") && basename(message.mediaUrl).trim() !== message.body.trim()) ||
                       message.mediaType !== "audio" &&
                       message.mediaType !== "image" &&
                       message.mediaType !== "video" &&
@@ -1293,7 +1293,7 @@ const MessagesList = ({
                   {message.quotedMsg && renderQuotedMessage(message)}
 
                   {
-                    ((message.mediaType === "image" || message.mediaType === "video") && path.basename(message.mediaUrl) === message.body) ||
+                    ((message.mediaType === "image" || message.mediaType === "video") && basename(message.mediaUrl) === message.body) ||
                     (message.mediaType !== "audio" && message.mediaType != "reactionMessage" && message.mediaType != "locationMessage" && message.mediaType !== "contactMessage" && message.mediaType !== "template") && (
                       <>
                         {xmlRegex.test(message.body) && (

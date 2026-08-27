@@ -43,7 +43,7 @@ import {
 } from "@material-ui/core";
 import ConfirmationModal from "../ConfirmationModal";
 
-const path = require("path");
+import { basename } from "../../utils/basename";
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -218,7 +218,7 @@ const handleSaveQuickeMessage = async (values) => {
     mediaPath: attachment
       ? String(attachment.name).replace(/ /g, "_")
       : values.mediaPath
-      ? path.basename(values.mediaPath).replace(/ /g, "_")
+      ? basename(values.mediaPath).replace(/ /g, "_")
       : null,
     isOficial: quickemessageId ? values.isOficial : false,
   };
