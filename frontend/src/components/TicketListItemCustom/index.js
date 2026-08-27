@@ -534,11 +534,19 @@ const TicketListItemCustom = ({ setTabOpen, ticket }) => {
     }
 
     if (ticket.lastMessage.includes("data:image/png;base64")) {
-      return <MarkdownWrapper>Localização</MarkdownWrapper>;
+      return <MarkdownWrapper>{i18n.t("chat2.location")}</MarkdownWrapper>;
     }
 
     if (ticket.lastMessage.includes("BEGIN:VCARD")) {
-      return <MarkdownWrapper>Contato</MarkdownWrapper>;
+      return <MarkdownWrapper>{i18n.t("chat2.contact")}</MarkdownWrapper>;
+    }
+
+    // O backend grava a palavra "Áudio" no corpo da mensagem quando chega um
+    // áudio (wbotMessageListener), então o texto vem do banco já em português
+    // e traduzi-lo lá só afetaria mensagens novas — além de gravar um idioma
+    // dentro dos dados. Traduzir na exibição cobre também o histórico.
+    if (ticket.lastMessage.trim() === "Áudio") {
+      return <MarkdownWrapper>{i18n.t("chat2.audio")}</MarkdownWrapper>;
     }
 
     return (

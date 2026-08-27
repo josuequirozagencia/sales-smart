@@ -660,7 +660,7 @@ function ChatMessages({
           <div className={classes.dailyTimestampText}>
             {today ===
             format(parseISO(messagesList[index].createdAt), "dd/MM/yyyy")
-              ? "HOJE"
+              ? i18n.t("chat2.today")
               : format(parseISO(messagesList[index].createdAt), "dd/MM/yyyy")}
           </div>
         </span>
@@ -678,7 +678,7 @@ function ChatMessages({
             <div className={classes.dailyTimestampText}>
               {today ===
               format(parseISO(messagesList[index].createdAt), "dd/MM/yyyy")
-                ? "HOJE"
+                ? i18n.t("chat2.today")
                 : format(parseISO(messagesList[index].createdAt), "dd/MM/yyyy")}
             </div>
           </span>

@@ -772,6 +772,17 @@ const messages = {
           flowbuilder: "Flowbuilder",
         },
       },
+      chat2: {
+        today: "TODAY",
+        location: "Location",
+        contact: "Contact",
+        audio: "Audio",
+        transcribe: "Transcribe",
+        transcribing: "Transcribing...",
+        waitingTicket: "Ticket waiting:",
+        waitingTicketHelp: "Only internal notes are allowed right now.",
+        internalPlaceholder: "Internal note (ticket awaiting acceptance)...",
+      },
       flows: {
         phrasePlaceholder: "Type the phrase or keyword",
         phraseRequired: "Phrase is required",

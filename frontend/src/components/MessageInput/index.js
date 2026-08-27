@@ -1751,7 +1751,7 @@ const MessageInput = ({
       <Box className={classes.pendingAlert}>
         <Info style={{ fontSize: 20 }} />
         <span>
-          <strong>Ticket Aguardando:</strong> Apenas mensagens internas são permitidas neste momento.
+          <strong>{i18n.t("chat2.waitingTicket")}</strong> {i18n.t("chat2.waitingTicketHelp")}
         </span>
       </Box>
     );
@@ -2161,7 +2161,7 @@ const MessageInput = ({
                       className={isTicketPending() ? classes.messageInputPending : classes.messageInputPrivate}
                       placeholder={
                         isTicketPending()
-                          ? "Mensagem interna (ticket aguardando aceite)..."
+                          ? i18n.t("chat2.internalPlaceholder")
                           : ticketStatus === "open" || ticketStatus === "group"
                             ? i18n.t("messagesInput.placeholderPrivateMessage")
                             : i18n.t("messagesInput.placeholderClosed")

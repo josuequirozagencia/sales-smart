@@ -820,6 +820,17 @@ const messages = {
           flowbuilder: "Flowbuilder",
         },
       },
+      chat2: {
+        today: "HOY",
+        location: "Ubicación",
+        contact: "Contacto",
+        audio: "Audio",
+        transcribe: "Transcribir",
+        transcribing: "Transcribiendo...",
+        waitingTicket: "Ticket en espera:",
+        waitingTicketHelp: "Por ahora solo se permiten notas internas.",
+        internalPlaceholder: "Nota interna (el ticket espera aceptación)...",
+      },
       flows: {
         phrasePlaceholder: "Escriba la frase o palabra clave",
         phraseRequired: "La frase es obligatoria",

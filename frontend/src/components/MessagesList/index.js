@@ -862,7 +862,7 @@ const MessagesList = ({
           key={`timestamp-${message.id}`}
         >
           <div className={classes.dailyTimestampText}>
-            {today === format(parseISO(messagesList[index].createdAt), "dd/MM/yyyy") ? "HOJE" : format(parseISO(messagesList[index].createdAt), "dd/MM/yyyy")}
+            {today === format(parseISO(messagesList[index].createdAt), "dd/MM/yyyy") ? i18n.t("chat2.today") : format(parseISO(messagesList[index].createdAt), "dd/MM/yyyy")}
           </div>
         </span>
       );
@@ -878,7 +878,7 @@ const MessagesList = ({
               key={`timestamp-${message.id}`}
             >
               <div className={classes.dailyTimestampText}>
-                {today === format(parseISO(messagesList[index].createdAt), "dd/MM/yyyy") ? "HOJE" : format(parseISO(messagesList[index].createdAt), "dd/MM/yyyy")}
+                {today === format(parseISO(messagesList[index].createdAt), "dd/MM/yyyy") ? i18n.t("chat2.today") : format(parseISO(messagesList[index].createdAt), "dd/MM/yyyy")}
               </div>
             </span>
           );
