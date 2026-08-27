@@ -115,15 +115,26 @@ const App = () => {
 
           palette: {
             type: mode,
+            // Limite para escolher entre texto claro e escuro sobre uma cor.
+            // O padrão do MUI é 3, que só atende ao WCAG AA em texto grande;
+            // 4.5 é o exigido para texto normal.
+            contrastThreshold: 4.5,
             primary: {
               main: mode === "light" ? primaryColorLight : primaryColorDark, // Usa cores dinâmicas
-              light: mode === "light"
-                ? `${primaryColorLight}80`
-                : `${primaryColorDark}80`,
-              dark: mode === "light"
-                ? `${primaryColorLight}CC`
-                : `${primaryColorDark}CC`,
-              contrastText: "#ffffff",
+              // light, dark e contrastText saem do main, calculados pelo MUI.
+              //
+              // Antes eram `${cor}80` e `${cor}CC`, ou seja, a MESMA cor com
+              // opacidade — não um tom mais claro e outro mais escuro. Duas
+              // consequências: primary.light ficava translúcido (texto branco
+              // em cima dava contraste 2.52, abaixo do mínimo de 4.5) e
+              // primary.dark não escurecia nada, então o hover dos botões
+              // quase não mudava.
+              //
+              // O contrastText também era fixo em branco. Como a cor da marca
+              // se configura em Ajustes > Whitelabel, uma cor clara deixava os
+              // botões ilegíveis: verde #4CAF50 dá 2.78 e amarelo #F4C430 dá
+              // 1.64 com texto branco. Deixando o MUI decidir, ele troca para
+              // texto escuro quando a cor pede.
             },
             textPrimary:
               mode === "light" ? primaryColorLight : primaryColorDark,
