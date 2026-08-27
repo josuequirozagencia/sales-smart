@@ -432,7 +432,7 @@ const CampaignModalPhrase = ({ open, onClose, FlowCampaignId, onSave }) => {
               {i18n.t("campaignsPhrase.phraseTriggerName")}
             </Typography>
             <TextField
-              label="Nome da campanha"
+              label={i18n.t("flows.campaignName")}
               name="name"
               variant="outlined"
               error={dataItemError.name}
@@ -464,7 +464,7 @@ const CampaignModalPhrase = ({ open, onClose, FlowCampaignId, onSave }) => {
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  label="Selecione um fluxo"
+                  label={i18n.t("flows.selectFlow")}
                   variant="outlined"
                   error={dataItemError.flowId}
                   helperText={dataItemError.flowId ? "Fluxo é obrigatório" : ""}
@@ -485,7 +485,7 @@ const CampaignModalPhrase = ({ open, onClose, FlowCampaignId, onSave }) => {
                 multiple
                 value={selectedWhatsapps}
                 onChange={handleWhatsappChange}
-                label="Conexões WhatsApp"
+                label={i18n.t("flows.whatsappConnections")}
                 disabled={loading}
                 renderValue={(selected) => (
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
@@ -551,7 +551,7 @@ const CampaignModalPhrase = ({ open, onClose, FlowCampaignId, onSave }) => {
           <Stack gap={2}>
             <Box display="flex" alignItems="center" gap={1}>
               <Typography variant="subtitle1" fontWeight={500}>
-                Frases/Palavras que disparam o fluxo
+                {i18n.t("flows.triggerPhrases")}
               </Typography>
               <IconButton size="small">
                 <HelpIcon fontSize="small" />
@@ -560,8 +560,8 @@ const CampaignModalPhrase = ({ open, onClose, FlowCampaignId, onSave }) => {
             
             <Alert severity="info" sx={{ mb: 2 }}>
               <Typography variant="body2">
-                <strong>Correspondência Exata:</strong> A mensagem deve ser idêntica à frase configurada.<br/>
-                <strong>Correspondência Parcial:</strong> A frase pode estar contida em qualquer parte da mensagem.
+                {i18n.t("flows.exactMatch")}<br/>
+                {i18n.t("flows.partialMatch")}
               </Typography>
             </Alert>
 
@@ -569,7 +569,7 @@ const CampaignModalPhrase = ({ open, onClose, FlowCampaignId, onSave }) => {
               <Box key={index} className={classes.phraseContainer}>
                 <Stack direction="row" gap={2} alignItems="flex-start">
                   <TextField
-                    label={`Frase ${index + 1}`}
+                    label={`${i18n.t("flows.phrase")} ${index + 1}`}
                     value={phrase.text}
                     onChange={(e) => {
                       updatePhrase(index, 'text', e.target.value);
@@ -579,11 +579,11 @@ const CampaignModalPhrase = ({ open, onClose, FlowCampaignId, onSave }) => {
                     }}
                     variant="outlined"
                     fullWidth
-                    placeholder="Digite a frase ou palavra-chave"
+                    placeholder={i18n.t("flows.phrasePlaceholder")}
                     error={dataItemError.phrases && !phrase.text.trim()}
                     helperText={
                       dataItemError.phrases && !phrase.text.trim() 
-                        ? "Frase é obrigatória" 
+                        ? i18n.t("flows.phraseRequired") 
                         : ""
                     }
                     disabled={loading}
@@ -594,11 +594,11 @@ const CampaignModalPhrase = ({ open, onClose, FlowCampaignId, onSave }) => {
                     <Select
                       value={phrase.type}
                       onChange={(e) => updatePhrase(index, 'type', e.target.value)}
-                      label="Tipo"
+                      label={i18n.t("flows.type")}
                       disabled={loading}
                     >
-                      <MenuItem value="exact">Exata</MenuItem>
-                      <MenuItem value="partial">Parcial</MenuItem>
+                      <MenuItem value="exact">{i18n.t("flows.exact")}</MenuItem>
+                      <MenuItem value="partial">{i18n.t("flows.partial")}</MenuItem>
                     </Select>
                   </FormControl>
                   
@@ -623,7 +623,7 @@ const CampaignModalPhrase = ({ open, onClose, FlowCampaignId, onSave }) => {
               className={classes.addButton}
               disabled={loading}
             >
-              Adicionar Frase
+              {i18n.t("flows.addPhrase")}
             </Button>
           </Stack>
 

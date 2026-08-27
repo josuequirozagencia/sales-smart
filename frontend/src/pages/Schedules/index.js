@@ -27,7 +27,13 @@ import moment from "moment";
 import { AuthContext } from "../../context/Auth/AuthContext";
 import usePlans from "../../hooks/usePlans";
 import { Calendar, momentLocalizer } from "react-big-calendar";
+// Os nomes dos dias e meses do calendário vêm do locale do moment, não do
+// objeto `messages` que já era traduzido. Como só o pt-br era importado — e
+// importar um locale do moment já o deixa ativo —, a grade aparecia com
+// "segunda-feira" mesmo com a interface em espanhol. Importar os três e
+// escolher pelo idioma do i18n resolve; o inglês vem embutido no moment.
 import "moment/locale/pt-br";
+import "moment/locale/es";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import SearchIcon from "@material-ui/icons/Search";
 import DeleteOutlineIcon from "@material-ui/icons/DeleteOutline";
@@ -47,6 +53,16 @@ const eventTitleStyle = {
   whiteSpace: "nowrap", // Evite a quebra de linha do texto
   textOverflow: "ellipsis", // Exiba "..." se o texto for muito longo
 };
+
+// i18n.language pode vir como "es-EC" ou "pt-BR"; o moment usa "es" e "pt-br".
+const momentLocaleFor = language => {
+  const base = String(language || "").toLowerCase().split("-")[0];
+  if (base === "pt") return "pt-br";
+  if (base === "en") return "en";
+  return "es";
+};
+
+moment.locale(momentLocaleFor(i18n.language));
 
 const localizer = momentLocalizer(moment);
 var defaultMessages = {

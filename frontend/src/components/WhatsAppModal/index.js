@@ -670,7 +670,7 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
                     value={"nps"}
                   />
                   {user.showFlow === "enabled" && (
-                    <Tab label="Fluxo Padrão" value={"flowbuilder"} />
+                    <Tab label={i18n.t("flows.flowDefaultTab")} value={"flowbuilder"} />
                   )}
                   {schedulesEnabled && (
                     <Tab
@@ -1983,12 +1983,8 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
                       name={"flowbuilder"}
                     >
                       <DialogContent>
-                        <h3>Fluxo de boas vindas</h3>
-                        <p>
-                          Este fluxo é disparado apenas para novos contatos,
-                          pessoas que voce não possui em sua lista de contatos e
-                          que mandaram uma mensagem
-                        </p>
+                        <h3>{i18n.t("flows.welcomeFlow")}</h3>
+                        <p>{i18n.t("flows.welcomeFlowHelp")}</p>
                         <FormControl
                           variant="outlined"
                           margin="dense"
@@ -2014,12 +2010,8 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
                         </FormControl>
                       </DialogContent>
                       <DialogContent>
-                        <h3>Fluxo de resposta padrão</h3>
-                        <p>
-                          Resposta Padrão é enviada com qualquer caractere
-                          diferente de uma palavra chave. ATENÇÃO! Será
-                          disparada se o atendimento ja estiver fechado.
-                        </p>
+                        <h3>{i18n.t("flows.defaultReplyFlow")}</h3>
+                        <p>{i18n.t("flows.defaultReplyFlowHelp")}</p>
                         <FormControl
                           variant="outlined"
                           margin="dense"
