@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useContext, useEffect, useMemo, useCallback, useRef } from "react";
 import clsx from "clsx";
 import {
   makeStyles,
@@ -492,6 +492,11 @@ const LoggedInLayout = ({ children, themeToggle }) => {
   const { handleLogout, loading, user, socket } = useContext(AuthContext);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerVariant, setDrawerVariant] = useState("permanent");
+  // Recuerda de que lado del umbral estabamos, para cerrar la barra solo al
+  // cruzarlo y no en cada evento de resize.
+  const eraMovilRef = useRef(
+    typeof window !== "undefined" ? window.innerWidth < 600 : false
+  );
 
   const [showOptions, setShowOptions] = useState(false);
   const [showAnnouncementsModal, setShowAnnouncementsModal] = useState(false);
@@ -568,12 +573,33 @@ const [updateInProgress, setUpdateInProgress] = useState(false);
   }, [user.defaultMenu, document.body.offsetWidth]);
 
   useEffect(() => {
-    if (document.body.offsetWidth < 600) {
-      setDrawerVariant("temporary");
-    } else {
-      setDrawerVariant("permanent");
-    }
-  }, [drawerOpen]);
+    // Antes esto leia document.body.offsetWidth y dependia de [drawerOpen],
+    // asi que la variante se decidia una sola vez y no volvia a evaluarse.
+    // Al girar una tablet o redimensionar la ventana, la barra se quedaba en
+    // el modo equivocado: en 320px seguia siendo permanente y ocupaba 240px,
+    // tres cuartas partes de la pantalla.
+    //
+    // Se escucha el resize de forma explicita en lugar de apoyarse en el
+    // useMediaQuery del archivo. Comprobado en el navegador: matchMedia
+    // devuelve el valor correcto al redimensionar, pero el hook de MUI v4 no
+    // propago el cambio a React y la barra se quedaba en el modo anterior.
+    const evaluar = () => {
+      const esMovil = window.innerWidth < 600;
+      setDrawerVariant(esMovil ? "temporary" : "permanent");
+
+      // Solo al CRUZAR el umbral hacia movil, no en cada evento: en un
+      // telefono el teclado virtual dispara resize, y cerrar aqui sin
+      // condicion cerraria el menu que el usuario acaba de abrir.
+      if (esMovil && !eraMovilRef.current) {
+        setDrawerOpen(false);
+      }
+      eraMovilRef.current = esMovil;
+    };
+
+    evaluar();
+    window.addEventListener("resize", evaluar);
+    return () => window.removeEventListener("resize", evaluar);
+  }, []);
 
   useEffect(() => {
   const companyId = user?.companyId;
@@ -743,6 +769,9 @@ useEffect(() => {
           ),
         }}
         open={drawerOpen}
+        // Sin onClose, un Drawer temporal de MUI no se cierra al pulsar el
+        // fondo ni con Escape: quedaba tapando la pantalla sin salida.
+        onClose={() => setDrawerOpen(false)}
       >
         <div className={classes.toolbarIcon}>
           <img
@@ -757,7 +786,14 @@ useEffect(() => {
             }}
             alt="logo"
           />
-          <IconButton onClick={() => setDrawerOpen(!drawerOpen)}>
+          <IconButton
+            onClick={() => setDrawerOpen(!drawerOpen)}
+            aria-label={drawerOpen ? "Cerrar menu" : "Abrir menu"}
+            // Heredaba el gris por defecto del MUI, que sobre el violeta
+            // oscuro de la barra quedaba practicamente invisible: el boton
+            // estaba ahi pero no se veia.
+            style={{ color: theme.palette.tokens.sidebar.textActive }}
+          >
             <ChevronLeftIcon />
           </IconButton>
         </div>
@@ -780,7 +816,13 @@ useEffect(() => {
             aria-label="open drawer"
             style={{ color: "white" }}
             onClick={() => setDrawerOpen(!drawerOpen)}
-            className={clsx(drawerOpen && classes.menuButtonHidden)}
+            // Solo se oculta en escritorio, donde la barra queda desplegada
+            // y tiene su propio boton de cerrar a la vista. En movil debe
+            // seguir accesible: era el caso en que el usuario se quedaba sin
+            // forma de abrir el menu.
+            className={clsx(
+              drawerOpen && greaterThenSm && classes.menuButtonHidden
+            )}
           >
             <MenuIcon />
           </IconButton>
