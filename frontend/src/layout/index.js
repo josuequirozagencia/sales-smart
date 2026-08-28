@@ -107,6 +107,34 @@ const useStyles = makeStyles((theme) => ({
   // aclararla los dejaria invisibles. Asi el blanco sigue siendo correcto.
   toolbar: {
     paddingRight: 24,
+    // A 320px los siete botones de accion median 48px cada uno: 336px de
+    // controles en una pantalla de 320. El contenido se salia 186px.
+    //
+    // No se oculta ninguna accion. Se recorta el relleno de los botones y se
+    // retira el saludo, que es decorativo y no una funcion.
+    [theme.breakpoints.down("xs")]: {
+      paddingRight: 4,
+      paddingLeft: 4,
+      "& .MuiIconButton-root": {
+        padding: 6,
+      },
+      // El selector de idioma se queda solo con la bandera. Ocupaba 120px mas
+      // 32 de margen: casi la mitad de una pantalla de 320. El control sigue
+      // ahi y sigue desplegando, unicamente pierde la palabra "Español", que
+      // la bandera ya comunica.
+      "& .MuiFormControl-root": {
+        margin: "0 2px",
+        minWidth: 0,
+      },
+      "& .MuiSelect-root .MuiTypography-root": {
+        display: "none",
+      },
+      // El avatar y su envoltorio, ajustados al mismo criterio.
+      "& .MuiAvatar-root": {
+        width: 28,
+        height: 28,
+      },
+    },
     background: theme.palette.tokens.sidebar.background,
     color: theme.palette.tokens.sidebar.textActive,
     boxShadow: "none",
@@ -159,6 +187,17 @@ const useStyles = makeStyles((theme) => ({
     color: "white",
     fontWeight: 600,
     letterSpacing: "0.025em",
+    // Se recorta antes de empujar a los botones fuera de la pantalla.
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    minWidth: 0,
+    // Por debajo de 600px desaparece. Es un saludo —"Hola Admin, bienvenido
+    // a Empresa 1"—, no un control: no se pierde ninguna funcion, y el
+    // espacio que libera es lo que permite que quepan todas las acciones.
+    [theme.breakpoints.down("xs")]: {
+      display: "none",
+    },
   },
 
   drawerPaper: {
@@ -228,10 +267,17 @@ const useStyles = makeStyles((theme) => ({
     overflow: "auto",
     // El contenido tenia padding 0 y margen 0: todo pegado al borde de la
     // pantalla. Es lo que hacia que la interfaz se viera comprimida.
-    padding: theme.palette.tokens.space.lg,
+    //
+    // Escala por tamano: en movil el espacio es caro y un padding de
+    // escritorio se come el ancho util; en escritorio hace falta para que el
+    // contenido no toque el borde.
+    padding: theme.palette.tokens.space.xl, // 24px en escritorio
     backgroundColor: theme.palette.tokens.surface.background,
-    [theme.breakpoints.down("sm")]: {
-      padding: theme.palette.tokens.space.sm,
+    [theme.breakpoints.down("md")]: {
+      padding: theme.palette.tokens.space.lg, // 16px en tablet
+    },
+    [theme.breakpoints.down("xs")]: {
+      padding: theme.palette.tokens.space.md, // 12px en movil
     },
   },
 
