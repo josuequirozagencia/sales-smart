@@ -29,7 +29,9 @@ const App = () => {
   const appColorLocalStorage =
     localStorage.getItem("primaryColorLight") ||
     localStorage.getItem("primaryColorDark") ||
-    "#065183";
+    // Violeta de la marca. Es solo el valor mientras el backend responde;
+    // si la empresa tiene color configurado, ese gana.
+    tokens.brandScale[600];
   const appNameLocalStorage = localStorage.getItem("appName") || "";
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
   const preferredTheme = window.localStorage.getItem("preferredTheme");
@@ -221,7 +223,12 @@ const App = () => {
                 background: t.background,
                 surface: t.surface,
                 surfaceSecondary: t.surfaceSecondary,
+                elevated: t.surfaceElevated,
               },
+              // La navegacion se trata como pieza oscura y separada del
+              // contenido, igual en los dos modos.
+              sidebar: tokens.sidebar[mode === "light" ? "light" : "dark"],
+              brandScale: tokens.brandScale,
               text: {
                 primary: t.textPrimary,
                 secondary: t.textSecondary,
@@ -270,29 +277,54 @@ const App = () => {
               'Arial',
               'sans-serif',
             ].join(','),
+            // Tamanos explicitos. Los de serie del MUI v4 son enormes —h1
+            // son 96px— porque estan pensados para paginas, no para una
+            // herramienta densa que se usa ocho horas al dia.
+            //
+            // body2 se deja intacto a proposito: el CssBaseline lo aplica al
+            // body, asi que es la base de la aplicacion y tocarlo encogeria
+            // el texto de las 397 pantallas de golpe.
             h1: {
+              fontSize: '1.75rem', // 28px
               fontWeight: 700,
+              lineHeight: 1.25,
               letterSpacing: '-0.025em',
             },
             h2: {
+              fontSize: '1.375rem', // 22px
               fontWeight: 700,
-              letterSpacing: '-0.025em',
+              lineHeight: 1.3,
+              letterSpacing: '-0.02em',
             },
             h3: {
+              fontSize: '1.125rem', // 18px
               fontWeight: 600,
-              letterSpacing: '-0.025em',
+              lineHeight: 1.4,
+              letterSpacing: '-0.015em',
             },
             h4: {
+              fontSize: '1rem', // 16px
               fontWeight: 600,
-              letterSpacing: '-0.025em',
+              lineHeight: 1.45,
+              letterSpacing: '-0.01em',
             },
             h5: {
+              fontSize: '0.9375rem', // 15px
               fontWeight: 600,
-              letterSpacing: '-0.025em',
+              lineHeight: 1.45,
             },
             h6: {
+              fontSize: '0.875rem', // 14px
               fontWeight: 600,
-              letterSpacing: '-0.025em',
+              lineHeight: 1.45,
+            },
+            body1: {
+              fontSize: '0.9375rem', // 15px
+              lineHeight: 1.55,
+            },
+            caption: {
+              fontSize: '0.75rem', // 12px
+              lineHeight: 1.45,
             },
             button: {
               fontWeight: 600,
@@ -311,21 +343,64 @@ const App = () => {
                 borderRadius: 8,
                 textTransform: 'none',
                 fontWeight: 600,
-                letterSpacing: '0.025em',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                '&:hover': {
-                  transform: 'translateY(-1px)',
-                },
-                '&:active': {
-                  transform: 'translateY(0)',
-                }
+                letterSpacing: '0.01em',
+                // 180ms. Los 300ms anteriores se notan como lentitud en una
+                // herramienta que se usa a diario.
+                transition: 'background-color 180ms ease, box-shadow 180ms ease, border-color 180ms ease',
+                minHeight: 36,
+                paddingLeft: 16,
+                paddingRight: 16,
+                // Se retira el translateY del hover: el boton saltaba un
+                // pixel al pasar por encima, que es un efecto de plantilla y
+                // ademas descuadra las filas de botones.
               },
               contained: {
-                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                boxShadow: tokens.shadow.sm,
                 '&:hover': {
-                  boxShadow: '0 4px 8px rgba(0, 0, 0, 0.15)',
-                }
-              }
+                  boxShadow: tokens.shadow.md,
+                },
+              },
+              outlined: {
+                borderColor: t.border,
+              },
+            },
+
+            // Campos de formulario. Sin esto quedan con el aspecto de serie
+            // del MUI v4, que es lo que mas delata la edad de la interfaz.
+            MuiOutlinedInput: {
+              root: {
+                borderRadius: tokens.radius.md,
+                backgroundColor: t.surface,
+                transition: 'border-color 180ms ease, box-shadow 180ms ease',
+                '& fieldset': {
+                  borderColor: t.border,
+                },
+                '&:hover fieldset': {
+                  borderColor: t.borderStrong,
+                },
+                '&.Mui-focused fieldset': {
+                  borderWidth: 1,
+                },
+                // Halo de foco. Ademas de estetico es de accesibilidad: deja
+                // claro donde esta el cursor al navegar con el teclado.
+                '&.Mui-focused': {
+                  boxShadow: `0 0 0 3px ${brandPrimary}22`,
+                },
+              },
+              input: {
+                paddingTop: 10,
+                paddingBottom: 10,
+              },
+            },
+
+            // Insignias y etiquetas.
+            MuiChip: {
+              root: {
+                borderRadius: tokens.radius.sm,
+                fontWeight: 500,
+                fontSize: '0.75rem',
+                height: 24,
+              },
             },
 
             MuiContainer: {
@@ -366,14 +441,17 @@ const App = () => {
               rounded: {
                 borderRadius: 12,
               },
+              // Sombras con tinte azulado en vez de negro puro. El negro
+              // sobre un fondo claro produce un halo gris sucio; es el rasgo
+              // que mas delataba la edad de la interfaz.
               elevation1: {
-                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+                boxShadow: tokens.shadow.sm,
               },
               elevation2: {
-                boxShadow: '0 2px 6px rgba(0, 0, 0, 0.1)',
+                boxShadow: tokens.shadow.md,
               },
               elevation3: {
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                boxShadow: tokens.shadow.lg,
               }
             },
 
@@ -529,14 +607,22 @@ const App = () => {
   useEffect(() => {
     getPublicSetting("primaryColorLight")
       .then((color) => {
-        setPrimaryColorLight(color || "#0000FF");
+        // El respaldo era "#0000FF", azul puro: el azul de enlace sin
+        // estilar de los noventa, y nadie lo habia elegido. Se sustituye por
+        // el violeta de la marca. Sigue ganando lo que configure la empresa.
+        setPrimaryColorLight(color || tokens.brandScale[600]);
       })
       .catch((error) => {
         console.log("Error reading setting", error);
       });
     getPublicSetting("primaryColorDark")
       .then((color) => {
-        setPrimaryColorDark(color || "#39ACE7");
+        // En oscuro hace falta un tono mas claro que en claro, para que se
+        // despegue del fondo. Pero no demasiado: el nivel 300 se veia bien
+        // sobre el fondo y en cambio dejaba el texto blanco de los botones en
+        // 2.86 de contraste. El 500 es el unico que cumple las dos cosas,
+        // 5.85 con blanco encima y 3.05 contra el fondo.
+        setPrimaryColorDark(color || tokens.brandScale[500]);
       })
       .catch((error) => {
         console.log("Error reading setting", error);

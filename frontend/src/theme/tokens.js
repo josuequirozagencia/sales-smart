@@ -76,6 +76,25 @@ export const primaryDefault = "#2563eb";
 // defecto (#f50057), que nadie eligió.
 export const secondaryDefault = "#475569";
 
+// ---------------------------------------------------------------------------
+// ESCALA DE MARCA
+// ---------------------------------------------------------------------------
+// Derivada del logo de GROWTH muestreando sus píxeles: tono 266°, saturación
+// 86%. No es un violeta elegido a ojo, es el de la marca.
+//
+// Se conserva la escala entera aunque el tema use solo dos niveles, porque
+// las fases siguientes —panel, gráficos, estados— necesitarán los tonos
+// intermedios, y conviene que salgan de este tono y no de otro violeta.
+export const brandScale = {
+  50: "#f7f2fd",
+  100: "#e3d3f8",
+  300: "#b084eb",
+  500: "#803adf",
+  600: "#6720c5", // primario interactivo — blanco encima da 8.11
+  700: "#50199a",
+  900: "#200a3d" // superficies oscuras, el color del logo
+};
+
 /**
  * Devuelve un "#rrggbb" válido, o el respaldo si la entrada no lo es.
  *
@@ -192,6 +211,10 @@ export const light = {
   background: neutral[50],
   surface: neutral[0],
   surfaceSecondary: neutral[100],
+  // Tercer nivel de superficie. La referencia apila fondo, tarjeta y tarjeta
+  // destacada; con solo dos niveles no hay forma de decir que algo está por
+  // encima de otra cosa sin recurrir a una sombra pesada.
+  surfaceElevated: neutral[0],
   border: neutral[200],
   borderStrong: neutral[300],
   textPrimary: neutral[900], // 17.85 sobre surface
@@ -202,12 +225,44 @@ export const light = {
 export const dark = {
   background: neutral[900],
   surface: neutral[800],
+  // En oscuro la elevación no se expresa con sombra —sobre fondo oscuro casi
+  // no se percibe— sino aclarando la superficie. Por eso el nivel elevado es
+  // más claro que el normal, al revés que en modo claro.
+  surfaceElevated: "#243044",
   surfaceSecondary: neutral[700],
   border: neutral[700],
   borderStrong: neutral[600],
   textPrimary: neutral[50],
   textSecondary: neutral[300],
   textMuted: neutral[400],
+};
+
+// ---------------------------------------------------------------------------
+// BARRA LATERAL
+// ---------------------------------------------------------------------------
+// La referencia trata la navegación como una pieza oscura y separada, no como
+// una franja del mismo color que el contenido.
+//
+// Se mantiene oscura en los dos modos a propósito: es lo que le da estructura
+// al producto, y alternarla haría que la aplicación pareciera dos productos
+// distintos según la hora del día.
+export const sidebar = {
+  light: {
+    background: "#1a1130",
+    surface: "#241a3d",
+    border: "rgba(255, 255, 255, 0.08)",
+    text: "#cfc7e0",
+    textActive: "#ffffff",
+    textMuted: "#8f86a3"
+  },
+  dark: {
+    background: "#150e26",
+    surface: "#1f1636",
+    border: "rgba(255, 255, 255, 0.06)",
+    text: "#c4bcd6",
+    textActive: "#ffffff",
+    textMuted: "#857c99"
+  }
 };
 
 // ---------------------------------------------------------------------------
@@ -289,6 +344,8 @@ export default {
   neutral,
   primaryDefault,
   secondaryDefault,
+  brandScale,
+  sidebar,
   normalizeHex,
   contrastRatio,
   onColor,

@@ -87,21 +87,31 @@ const useStyles = makeStyles((theme) => ({
   },
 
   chip: {
-    background: "red",
-    color: "white",
+    // Era literalmente background: "red".
+    background: theme.palette.tokens.semantic.error.fill,
+    color: theme.palette.tokens.onColor(
+      theme.palette.tokens.semantic.error.fill
+    ),
   },
 
   avatar: {
     width: "100%",
   },
 
+  // Cabecera y barra lateral forman una sola pieza oscura alrededor del
+  // contenido claro. Antes la cabecera era un bloque del color de marca a
+  // plena saturacion, que es lo que daba el aspecto de plantilla antigua.
+  //
+  // Se eligio cromo oscuro y no cabecera clara por una razon concreta: hay
+  // varios "color: white" escritos en linea en el JSX de esta barra, y
+  // aclararla los dejaria invisibles. Asi el blanco sigue siendo correcto.
   toolbar: {
     paddingRight: 24,
-    color: theme.palette.dark.main,
-    // Usa a cor primária do tema para o fundo do AppBar
-    background: theme.palette.primary.main, // Mudança principal aqui
-    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)", // Sombra sutil
-    transition: "all 0.3s ease",
+    background: theme.palette.tokens.sidebar.background,
+    color: theme.palette.tokens.sidebar.textActive,
+    boxShadow: "none",
+    borderBottom: `1px solid ${theme.palette.tokens.sidebar.border}`,
+    transition: "background-color 180ms ease",
   },
 
   toolbarIcon: {
@@ -113,9 +123,10 @@ const useStyles = makeStyles((theme) => ({
     [theme.breakpoints.down("sm")]: {
       height: "48px",
     },
-    // ALTERAÇÃO: Fundo adaptativo baseado no tema
-    backgroundColor: theme.mode === "light" ? "#ffffff" : theme.palette.background.paper,
-    borderBottom: `1px solid ${theme.palette.divider}`, // Linha sutil para separação
+    // Continua el bloque oscuro: si esta zona fuera clara, el logo quedaria
+    // en una isla blanca entre la cabecera y la navegacion.
+    backgroundColor: theme.palette.tokens.sidebar.background,
+    borderBottom: `1px solid ${theme.palette.tokens.sidebar.border}`,
   },
 
   appBar: {
@@ -160,12 +171,39 @@ const useStyles = makeStyles((theme) => ({
     }),
     overflowX: "hidden",
     overflowY: "hidden",
-    // Melhorias sutis no drawer
-    borderRight: `1px solid ${theme.mode === "light" ? "#e0e0e0" : "#424242"}`,
-    boxShadow:
-      theme.mode === "light"
-        ? "2px 0 8px rgba(0, 0, 0, 0.1)"
-        : "2px 0 8px rgba(0, 0, 0, 0.3)",
+    // Fondo propio en vez de heredar el del Paper. Sin esto la navegacion
+    // era del mismo color que el contenido y no se distinguia como pieza.
+    backgroundColor: theme.palette.tokens.sidebar.background,
+    color: theme.palette.tokens.sidebar.text,
+    // Los colores fijos "#e0e0e0" y "#424242" salen del sistema de tokens.
+    borderRight: `1px solid ${theme.palette.tokens.sidebar.border}`,
+    // Sin sombra: el contraste de color ya separa las dos zonas, y una
+    // sombra encima solo ensucia el borde.
+    boxShadow: "none",
+
+    // Encabezados de seccion de la navegacion.
+    //
+    // Heredaban text.secondary del tema, que esta calculado para fondos
+    // claros: sobre este violeta daban 2.38 de contraste. Con el tono
+    // atenuado del propio sidebar suben a 5.23.
+    //
+    // El tratamiento en versalitas es el que usan las referencias para
+    // separar grupos sin que el rotulo compita con los elementos.
+    "& .MuiListSubheader-root": {
+      backgroundColor: "transparent",
+      color: theme.palette.tokens.sidebar.textMuted,
+      fontSize: "0.6875rem",
+      fontWeight: 600,
+      letterSpacing: "0.08em",
+      textTransform: "uppercase",
+      lineHeight: "32px",
+    },
+
+    // Los separadores heredaban el divisor claro del tema y quedaban como
+    // una linea blanca sobre el fondo oscuro.
+    "& .MuiDivider-root": {
+      backgroundColor: theme.palette.tokens.sidebar.border,
+    },
   },
 
   drawerPaperClose: {
@@ -188,8 +226,13 @@ const useStyles = makeStyles((theme) => ({
   content: {
     flex: 1,
     overflow: "auto",
-    padding: 0,
-    margin: 0,
+    // El contenido tenia padding 0 y margen 0: todo pegado al borde de la
+    // pantalla. Es lo que hacia que la interfaz se viera comprimida.
+    padding: theme.palette.tokens.space.lg,
+    backgroundColor: theme.palette.tokens.surface.background,
+    [theme.breakpoints.down("sm")]: {
+      padding: theme.palette.tokens.space.sm,
+    },
   },
 
   container: {

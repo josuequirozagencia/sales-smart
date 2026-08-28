@@ -64,31 +64,38 @@ import { Campaign, ShapeLine, Webhook } from "@mui/icons-material";
 import useCompanySettings from "../hooks/useSettings/companySettings";
 
 const useStyles = makeStyles((theme) => ({
+  // La navegacion vive sobre el bloque oscuro, asi que sus colores salen de
+  // los tokens del sidebar y no del modo claro/oscuro general. Antes el texto
+  // era "#666" en modo claro: sobre fondo oscuro habria quedado ilegible.
   listItem: {
     height: "44px",
     width: "auto",
-    // Remove margin personalizada para manter alinhamento original
+    borderRadius: theme.palette.tokens.radius.md,
+    marginBottom: 2,
+    "&:hover": {
+      // Velo blanco muy tenue en vez de un cambio de color: funciona igual
+      // sobre cualquier tono oscuro y no compite con el estado activo.
+      backgroundColor: "rgba(255, 255, 255, 0.06)",
+    },
     "&:hover $iconHoverActive": {
-      backgroundColor: theme.palette.primary.main, // Usa cor do tema
-      color: "#fff",
-      transform: "scale(1.05)",
+      backgroundColor: "rgba(255, 255, 255, 0.10)",
+      color: theme.palette.tokens.sidebar.textActive,
     },
     "&:hover $listItemText": {
-      color: theme.palette.primary.main, // Usa cor do tema
-      fontWeight: 600,
+      color: theme.palette.tokens.sidebar.textActive,
     },
-    // Transição suave
-    transition: "all 0.3s ease",
+    transition: "background-color 180ms ease",
   },
 
   listItemText: {
     fontSize: "14px",
-    color: theme.mode === "light" ? "#666" : "#FFF",
-    transition: "color 0.3s ease", // Só transição de cor
+    color: theme.palette.tokens.sidebar.text,
+    transition: "color 180ms ease",
     fontWeight: 500,
     "& .MuiTypography-root": {
       fontFamily: "'Inter', 'Roboto', sans-serif",
-    }
+      fontSize: "0.875rem",
+    },
   },
 
   avatarActive: {
@@ -106,23 +113,22 @@ const useStyles = makeStyles((theme) => ({
     borderRadius: "50%", // Mantém circular original
     height: 36, // Mantém tamanho original
     width: 36,  // Mantém tamanho original
-    backgroundColor:
-      theme.mode === "light"
-        ? "rgba(120,120,120,0.1)"
-        : "rgba(120,120,120,0.5)",
-    color: theme.mode === "light" ? "#666" : "#FFF",
-    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)", // Transição mais suave
+    // Mismo criterio: tonos sobre oscuro, no sobre el modo de la aplicacion.
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    color: theme.palette.tokens.sidebar.text,
+    transition: "background-color 180ms ease, color 180ms ease",
     "&:hover, &.active": {
-      backgroundColor: theme.palette.primary.main, // Usa cor do tema
-      color: "#fff",
-      boxShadow: `0 4px 12px ${theme.palette.primary.main}30`, // Sombra dinâmica
+      backgroundColor: theme.palette.primary.main,
+      color: theme.palette.tokens.brand.onPrimary,
+      // Se retira la sombra de color: sobre fondo oscuro no se percibe y solo
+      // emborrona el circulo.
     },
     "& .MuiSvgIcon-root": {
       fontSize: "1.4rem", // Mantém tamanho original
       transition: "transform 0.3s ease",
     },
     "&:hover .MuiSvgIcon-root": {
-      transform: "scale(1.1)", // Pequena animação no hover
+      transform: "none", // sin zoom: en una lista de 21 elementos, distrae
     }
   },
 
