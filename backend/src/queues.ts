@@ -34,7 +34,8 @@ import momentTz from "moment-timezone";
 import {
   isWithinWorkingHours,
   isRotationDue,
-  hasReachedRotationLimit
+  hasReachedRotationLimit,
+  businessTimezone
 } from "./helpers/RotationPolicy";
 import {
   logRouterAssignment,
@@ -1554,11 +1555,13 @@ async function handleRandomUser() {
                 // Só entram na rotação quem está online e com peso acima de
                 // zero. Peso 0 é como se desativa quem está de licença sem
                 // tirá-la da fila; offline já era filtrado antes.
-                // Minutos desde medianoche en la zona horaria del sistema.
-                // Se usa America/Sao_Paulo porque es la convencion que ya
-                // sigue el resto del backend (modelo User, BirthdayService y
-                // la propia configuracion de Sequelize).
-                const ahora = momentTz().tz("America/Sao_Paulo");
+                // Minutos desde medianoche en la zona horaria del negocio.
+                //
+                // No se usa la del sistema ni la de Sao Paulo escrita a mano
+                // en el resto del backend: para Ecuador esa constante
+                // adelanta la jornada 120 minutos y dejaria a las asesoras
+                // sin leads desde las 16:00 hora local.
+                const ahora = momentTz().tz(businessTimezone());
                 const minutosAhora = ahora.hours() * 60 + ahora.minutes();
 
                 // Entran en la rotacion quien esta en linea, con peso por
@@ -1780,24 +1783,72 @@ async function handleRandomUser() {
                     continue;
                   }
 
-                  // Relectura justo antes de escribir. Entre el inicio de
-                  // estas comprobaciones y este punto hay varias consultas,
-                  // y en ese hueco el ticket puede haber cambiado de dueno,
-                  // haberse abierto o haberse cerrado.
-                  const actual = await Ticket.findByPk(ticket.id);
-                  if (
-                    !actual ||
-                    actual.userId !== userId ||
-                    actual.status !== "pending"
-                  ) {
+                  // Ultima comprobacion de respuesta, ya con el siguiente
+                  // asesor elegido. Entre la comprobacion anterior y este
+                  // punto hay varias consultas a la base, y en ese hueco el
+                  // asesor puede haber contestado. No se rota un ticket que
+                  // ya fue atendido.
+                  const respondidoAlFinal = await hasHumanReplySince(
+                    ticket.id,
+                    estado.lastAssignedAt
+                  );
+                  if (respondidoAlFinal) continue;
+
+                  // Reserva atomica de la rotacion.
+                  //
+                  // La condicion viaja dentro del propio UPDATE, de modo que
+                  // Postgres la resuelve en una sola operacion: de dos
+                  // procesos que lleguen a la vez, solo uno obtiene filas
+                  // afectadas y el otro ve cero y se retira. Una relectura
+                  // previa seguida de un update no da esa garantia, porque
+                  // entre leer y escribir cabe el otro proceso.
+                  //
+                  // Hace falta porque el cron no impide que una pasada
+                  // empiece antes de que acabe la anterior: si una vuelta
+                  // tarda mas de los dos minutos del intervalo, dos pasadas
+                  // miran los mismos tickets.
+                  //
+                  // silent evita tocar updatedAt: esto no es actividad del
+                  // cliente y no debe alterar lo que mire esa columna.
+                  const [reservado] = await Ticket.update(
+                    { userId: nextUserId },
+                    {
+                      where: { id: ticket.id, userId, status: "pending" },
+                      silent: true
+                    }
+                  );
+
+                  if (reservado === 0) {
+                    // Otro proceso se lo llevo, o el ticket dejo de estar
+                    // pendiente mientras se comprobaba.
                     continue;
                   }
 
+                  // La escritura ya la hizo la reserva. Se sigue llamando a
+                  // UpdateTicketService para conservar el resto de su
+                  // comportamiento; al encontrar el ticket ya asignado no
+                  // vuelve a registrar traslados, que es justo lo deseado:
+                  // la rotacion automatica lleva su propio registro.
                   await UpdateTicketService({
                     ticketData: { status: "pending", userId: nextUserId },
                     ticketId: ticket.id,
                     companyId: ticket.companyId
                   });
+
+                  // UpdateTicketService solo emite cuando detecta un cambio
+                  // de usuario, y aqui ya habia cambiado por la reserva. Se
+                  // emite explicitamente para que las listas de los dos
+                  // asesores se refresquen.
+                  const ticketRotado = await ShowTicketService(
+                    ticket.id,
+                    ticket.companyId
+                  );
+                  getIO()
+                    .of(String(ticket.companyId))
+                    .emit(`company-${ticket.companyId}-ticket`, {
+                      action: "update",
+                      ticket: ticketRotado
+                    });
 
                   // Reinicia el reloj para el nuevo asesor y suma una
                   // rotacion. Ademas hace la operacion idempotente: otra

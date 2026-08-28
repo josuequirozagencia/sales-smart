@@ -345,3 +345,110 @@ describe("escalamiento", () => {
     await expect(isEscalated(otro.id, COMPANY_ID)).resolves.toBe(false);
   });
 });
+
+describe("reserva atomica frente a dos procesos", () => {
+  it("de dos intentos simultaneos solo uno se lleva el ticket", async () => {
+    // Esta es la proteccion real contra la doble rotacion, y se ejercita tal
+    // cual la usa queues.ts: la condicion viaja dentro del UPDATE, asi que
+    // Postgres la resuelve en una sola operacion.
+    //
+    // El escenario es el del cron solapandose consigo mismo: dos pasadas
+    // miran el mismo ticket de Ana y cada una elige un destino distinto.
+    const ana = await makeUser("ana-carrera");
+    const bruno = await makeUser("bruno-carrera");
+    const carla = await makeUser("carla-carrera");
+    const ticket = await makeTicket(ana);
+
+    const intentar = (destino: number) =>
+      Ticket.update(
+        { userId: destino },
+        {
+          where: { id: ticket.id, userId: ana.id, status: "pending" },
+          silent: true
+        }
+      );
+
+    const [uno, dos] = await Promise.all([
+      intentar(bruno.id),
+      intentar(carla.id)
+    ]);
+
+    const ganadores = [uno[0], dos[0]].filter(n => n === 1).length;
+    const perdedores = [uno[0], dos[0]].filter(n => n === 0).length;
+
+    expect(ganadores).toBe(1);
+    expect(perdedores).toBe(1);
+
+    // Y el ticket acabo en uno de los dos, nunca en un estado intermedio.
+    await ticket.reload();
+    expect([bruno.id, carla.id]).toContain(ticket.userId);
+  });
+
+  it("un segundo intento sobre un ticket ya rotado no afecta filas", async () => {
+    // El caso "proceso A mueve a B, proceso B mueve a C" que hay que evitar:
+    // cuando el segundo llega, la condicion ya no se cumple.
+    const ana = await makeUser("ana-tarde");
+    const bruno = await makeUser("bruno-tarde");
+    const carla = await makeUser("carla-tarde");
+    const ticket = await makeTicket(ana);
+
+    const primero = await Ticket.update(
+      { userId: bruno.id },
+      { where: { id: ticket.id, userId: ana.id, status: "pending" }, silent: true }
+    );
+    expect(primero[0]).toBe(1);
+
+    // El segundo proceso todavia cree que el ticket es de Ana.
+    const segundo = await Ticket.update(
+      { userId: carla.id },
+      { where: { id: ticket.id, userId: ana.id, status: "pending" }, silent: true }
+    );
+    expect(segundo[0]).toBe(0);
+
+    await ticket.reload();
+    expect(ticket.userId).toBe(bruno.id);
+  });
+
+  it("no rota un ticket que dejo de estar pendiente", async () => {
+    // El asesor abrio la conversacion entre la comprobacion y la escritura.
+    const ana = await makeUser("ana-abierto");
+    const bruno = await makeUser("bruno-abierto");
+    const ticket = await makeTicket(ana);
+
+    await ticket.update({ status: "open" });
+
+    const intento = await Ticket.update(
+      { userId: bruno.id },
+      { where: { id: ticket.id, userId: ana.id, status: "pending" }, silent: true }
+    );
+
+    expect(intento[0]).toBe(0);
+    await ticket.reload();
+    expect(ticket.userId).toBe(ana.id);
+  });
+});
+
+describe("tickets anteriores al cambio", () => {
+  it("sin registro de asignacion no hay reloj, asi que no rota", async () => {
+    // Un ticket asignado antes de instalar esta funcion. La primera pasada
+    // del cron le crea la referencia en vez de rotarlo de golpe.
+    const ana = await makeUser("ana-antiguo");
+    const ticket = await makeTicket(ana);
+
+    const antes = await getRotationState(ticket.id);
+    expect(antes.assignments).toBe(0);
+    expect(antes.lastAssignedAt).toBeNull();
+
+    // Eso es lo que hace queues.ts en esa situacion.
+    await logRouterAssignment(ticket.id, ana.id, queueId);
+
+    const despues = await getRotationState(ticket.id);
+    expect(despues.assignments).toBe(1);
+    expect(despues.lastAssignedUserId).toBe(ana.id);
+    expect(despues.lastAssignedAt).toBeInstanceOf(Date);
+
+    // Y el reloj arranca ahora, no en la fecha de creacion del ticket.
+    const edad = Date.now() - (despues.lastAssignedAt as Date).getTime();
+    expect(edad).toBeLessThan(60 * 1000);
+  });
+});

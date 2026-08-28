@@ -1,7 +1,9 @@
+import momentTz from "moment-timezone";
 import {
   isWithinWorkingHours,
   isRotationDue,
   hasReachedRotationLimit,
+  businessTimezone,
   MAX_AUTO_ROTATIONS
 } from "../../helpers/RotationPolicy";
 
@@ -21,7 +23,9 @@ describe("isWithinWorkingHours", () => {
   it("acepta dentro del turno y rechaza fuera", () => {
     expect(isWithinWorkingHours("09:00", "18:00", alas("12:00"))).toBe(true);
     expect(isWithinWorkingHours("09:00", "18:00", alas("09:00"))).toBe(true);
-    expect(isWithinWorkingHours("09:00", "18:00", alas("18:00"))).toBe(true);
+    expect(isWithinWorkingHours("09:00", "18:00", alas("17:59"))).toBe(true);
+    // Limite superior exclusivo: a las 18:00 ya terminó.
+    expect(isWithinWorkingHours("09:00", "18:00", alas("18:00"))).toBe(false);
 
     // El caso del enunciado: son las 19:00 y su turno acabó a las 18:00.
     expect(isWithinWorkingHours("09:00", "18:00", alas("19:00"))).toBe(false);
@@ -33,7 +37,8 @@ describe("isWithinWorkingHours", () => {
     // centro: a las 23:00 está trabajando y a las 12:00 no.
     expect(isWithinWorkingHours("22:00", "06:00", alas("23:00"))).toBe(true);
     expect(isWithinWorkingHours("22:00", "06:00", alas("02:00"))).toBe(true);
-    expect(isWithinWorkingHours("22:00", "06:00", alas("06:00"))).toBe(true);
+    expect(isWithinWorkingHours("22:00", "06:00", alas("05:59"))).toBe(true);
+    expect(isWithinWorkingHours("22:00", "06:00", alas("06:00"))).toBe(false);
     expect(isWithinWorkingHours("22:00", "06:00", alas("12:00"))).toBe(false);
     expect(isWithinWorkingHours("22:00", "06:00", alas("21:59"))).toBe(false);
   });
@@ -68,9 +73,69 @@ describe("isWithinWorkingHours", () => {
     // Los cuatro usuarios de la instalación tienen 00:00-23:59.
     expect(isWithinWorkingHours("00:00", "23:59", alas("12:00"))).toBe(true);
     expect(isWithinWorkingHours("00:00", "23:59", alas("00:00"))).toBe(true);
+    // Efecto del limite exclusivo: el ultimo minuto del dia queda fuera.
+    expect(isWithinWorkingHours("00:00", "23:59", alas("23:59"))).toBe(false);
 
     expect(isWithinWorkingHours("9:00", "18:00", alas("12:00"))).toBe(true);
     expect(isWithinWorkingHours("9:00", "18:00", alas("19:00"))).toBe(false);
+  });
+});
+
+describe("businessTimezone", () => {
+  const original = process.env.BUSINESS_TIMEZONE;
+  afterEach(() => {
+    if (original === undefined) delete process.env.BUSINESS_TIMEZONE;
+    else process.env.BUSINESS_TIMEZONE = original;
+  });
+
+  it("mantiene Sao Paulo si nadie configura nada", () => {
+    delete process.env.BUSINESS_TIMEZONE;
+    expect(businessTimezone()).toBe("America/Sao_Paulo");
+  });
+
+  it("respeta la zona configurada", () => {
+    process.env.BUSINESS_TIMEZONE = "America/Guayaquil";
+    expect(businessTimezone()).toBe("America/Guayaquil");
+  });
+
+  it("Sao Paulo desplaza la jornada de Ecuador 120 minutos", () => {
+    // El motivo por el que existe esta variable. Con la constante heredada,
+    // una asesora de 09:00 a 18:00 en Ecuador se quedaria sin leads a las
+    // 16:00 hora local, dos horas antes de terminar su turno.
+    const instante = new Date("2026-08-27T21:30:00.000Z"); // 16:30 en Ecuador
+
+    const enEcuador = momentTz(instante).tz("America/Guayaquil");
+    const enSaoPaulo = momentTz(instante).tz("America/Sao_Paulo");
+
+    const minutosEcuador = enEcuador.hours() * 60 + enEcuador.minutes();
+    const minutosSaoPaulo = enSaoPaulo.hours() * 60 + enSaoPaulo.minutes();
+
+    expect(minutosSaoPaulo - minutosEcuador).toBe(120);
+
+    // Con la zona correcta esta trabajando; con la heredada, no.
+    expect(isWithinWorkingHours("09:00", "18:00", minutosEcuador)).toBe(true);
+    expect(isWithinWorkingHours("09:00", "18:00", minutosSaoPaulo)).toBe(false);
+  });
+});
+
+describe("turno 22:00-06:00, comprobacion punto por punto", () => {
+  const alas = (hhmm: string): number => {
+    const [h, m] = hhmm.split(":").map(Number);
+    return h * 60 + m;
+  };
+
+  it("23:00 disponible", () => {
+    expect(isWithinWorkingHours("22:00", "06:00", alas("23:00"))).toBe(true);
+  });
+  it("02:00 disponible", () => {
+    expect(isWithinWorkingHours("22:00", "06:00", alas("02:00"))).toBe(true);
+  });
+  it("05:59 disponible", () => {
+    expect(isWithinWorkingHours("22:00", "06:00", alas("05:59"))).toBe(true);
+  });
+  it("06:00 NO disponible: el limite superior es exclusivo", () => {
+    expect(isWithinWorkingHours("22:00", "06:00", alas("06:00"))).toBe(false);
+    expect(isWithinWorkingHours("22:00", "06:00", alas("06:01"))).toBe(false);
   });
 });
 

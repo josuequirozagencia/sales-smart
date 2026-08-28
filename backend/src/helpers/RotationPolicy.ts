@@ -46,6 +46,26 @@ export const ESCALATION_TAG_NAME = "Sin respuesta";
 export const ESCALATION_TAG_COLOR = "#b91c1c";
 
 /**
+ * Zona horaria con la que se interpretan los horarios laborales.
+ *
+ * El resto del backend tiene "America/Sao_Paulo" escrito a mano en 30
+ * sitios, herencia de que el producto es brasileno. Para un negocio en
+ * Ecuador eso desplaza la jornada 120 minutos: una asesora con turno
+ * 09:00-18:00 dejaria de recibir leads a las 16:00 hora local, dos horas
+ * antes de terminar.
+ *
+ * Se lee de la variable de entorno para no tener que decidir por todo el
+ * mundo, y se mantiene Sao Paulo como respaldo para no cambiarle el
+ * comportamiento a una instalacion que ya funcionaba.
+ *
+ * Es una solucion por instalacion, no por empresa. Sirve mientras cada
+ * despliegue atienda un solo pais; el dia que una misma instancia tenga
+ * empresas en husos distintos hara falta guardarlo por empresa.
+ */
+export const businessTimezone = (): string =>
+  process.env.BUSINESS_TIMEZONE || "America/Sao_Paulo";
+
+/**
  * Convierte "HH:mm" a minutos desde medianoche.
  * Devuelve null si el valor no es una hora válida.
  */
@@ -72,6 +92,7 @@ const toMinutes = (value?: string | null): number | null => {
  *
  *   sin datos o datos inválidos -> disponible
  *   inicio igual a fin          -> disponible las 24 horas
+ *   límite inferior inclusivo, superior exclusivo
  *   horario que cruza medianoche (22:00-06:00) -> disponible si es
  *                                  posterior al inicio O anterior al fin
  *
@@ -95,13 +116,19 @@ export const isWithinWorkingHours = (
   // 00:00-00:00 y 09:00-09:00 se leen igual: sin restricción.
   if (start === end) return true;
 
-  // Turno de noche: la ventana cruza la medianoche, así que el interior del
-  // intervalo son los extremos y no el centro.
+  // El límite inferior es inclusivo y el superior exclusivo: a las 09:00 ya
+  // trabaja, a las 18:00 ya no. Es la lectura natural de "de nueve a seis" y
+  // evita que dos turnos consecutivos se solapen un minuto.
+  //
+  // Consecuencia a tener en cuenta con los datos actuales: un usuario con
+  // 00:00-23:59 queda no disponible durante el último minuto del día.
   if (start > end) {
-    return nowMinutes >= start || nowMinutes <= end;
+    // Turno de noche: la ventana cruza la medianoche, así que el interior
+    // del intervalo son los extremos y no el centro.
+    return nowMinutes >= start || nowMinutes < end;
   }
 
-  return nowMinutes >= start && nowMinutes <= end;
+  return nowMinutes >= start && nowMinutes < end;
 };
 
 /**
@@ -143,6 +170,7 @@ export const hasReachedRotationLimit = (assignments: number): boolean =>
 
 export default {
   MAX_AUTO_ROTATIONS,
+  businessTimezone,
   ROUTER_ASSIGN_LOG,
   ESCALATION_TAG_NAME,
   ESCALATION_TAG_COLOR,
