@@ -30,6 +30,19 @@ import UserQueue from "./models/UserQueue";
 import ShowTicketService from "./services/TicketServices/ShowTicketService";
 import SendWhatsAppMessage from "./services/WbotServices/SendWhatsAppMessage";
 import UpdateTicketService from "./services/TicketServices/UpdateTicketService";
+import momentTz from "moment-timezone";
+import {
+  isWithinWorkingHours,
+  isRotationDue,
+  hasReachedRotationLimit
+} from "./helpers/RotationPolicy";
+import {
+  logRouterAssignment,
+  getRotationState,
+  hasHumanReplySince,
+  markEscalated,
+  isEscalated
+} from "./services/TicketServices/TicketRotationService";
 import { addSeconds, differenceInSeconds } from "date-fns";
 const CronJob = require("cron").CronJob;
 import CompaniesSettings from "./models/CompaniesSettings";
@@ -1541,8 +1554,25 @@ async function handleRandomUser() {
                 // Só entram na rotação quem está online e com peso acima de
                 // zero. Peso 0 é como se desativa quem está de licença sem
                 // tirá-la da fila; offline já era filtrado antes.
+                // Minutos desde medianoche en la zona horaria del sistema.
+                // Se usa America/Sao_Paulo porque es la convencion que ya
+                // sigue el resto del backend (modelo User, BirthdayService y
+                // la propia configuracion de Sequelize).
+                const ahora = momentTz().tz("America/Sao_Paulo");
+                const minutosAhora = ahora.hours() * 60 + ahora.minutes();
+
+                // Entran en la rotacion quien esta en linea, con peso por
+                // encima de cero y dentro de su horario laboral.
+                //
+                // El filtro de horario se aplica aqui y no solo en la
+                // rotacion, para que valga igual en la primera asignacion:
+                // no tendria sentido repartir a alguien fuera de turno y
+                // rotar despues por su falta de respuesta.
                 const candidates = users
                   .filter(u => u.online)
+                  .filter(u =>
+                    isWithinWorkingHours(u.startWork, u.endWork, minutosAhora)
+                  )
                   .map(u => ({
                     id: u.id,
                     // Registros anteriores à migração podem vir sem peso.
@@ -1654,49 +1684,134 @@ async function handleRandomUser() {
                       companyId: ticket.companyId
                     });
 
+                    // Arranca el reloj de la rotacion. UpdateTicketService no
+                    // registra nada en la primera asignacion, porque las
+                    // cuatro ramas que escriben "transfered" exigen que el
+                    // ticket ya tuviera dueno.
+                    await logRouterAssignment(
+                      ticket.id,
+                      nextUserId,
+                      queueId
+                    );
+
                     logger.info(
                       `Ticket ID ${ticket.id} atualizado para UserId ${nextUserId} - ${ticket.updatedAt}`
                     );
                   }
-                } else if (
-                  userIds.includes(userId) &&
-                  tempoPassadoB > updatedAtV
-                ) {
-                  const availableUserIds = userIds.filter(id => id !== userId);
+                } else if (userIds.includes(userId)) {
+                  // ----------------------------------------------------
+                  // Rotacion por falta de respuesta humana.
+                  //
+                  // La condicion anterior comparaba contra
+                  // ticket.updatedAt, que mide "cuando cambio el registro
+                  // por ultima vez", no "cuando respondio el asesor". Como
+                  // cada mensaje entrante hace ticket.update({lastMessage}),
+                  // un lead ignorado que insiste reiniciaba su propio
+                  // contador de espera: el caso exacto que esta funcion
+                  // deberia cazar era el caso en que fallaba.
+                  //
+                  // Ahora el reloj arranca en el registro routerAssign, que
+                  // solo escribe el enrutador al asignar.
+                  // ----------------------------------------------------
+                  const estado = await getRotationState(ticket.id);
 
-                  if (availableUserIds.length > 0) {
-                    const nextUserId = await getNextUser(
-                      availableUserIds,
-                      ticket.companyId,
-                      queueId
-                    );
-
-                    if (
-                      nextUserId !== undefined &&
-                      (await findUserById(nextUserId, ticket.companyId)) > 0
-                    ) {
-                      if (sendGreetingMessageOneQueues) {
-                        const ticketToSend = await ShowTicketService(
-                          ticket.id,
-                          ticket.companyId
-                        );
-                        await SendWhatsAppMessage({
-                          body: "*Assistente Virtual*:\nAguarde enquanto localizamos um atendente... Você será atendido em breve!",
-                          ticket: ticketToSend
-                        });
-                      }
-
-                      await UpdateTicketService({
-                        ticketData: { status: "pending", userId: nextUserId },
-                        ticketId: ticket.id,
-                        companyId: ticket.companyId
-                      });
-
-                      logger.info(
-                        `Ticket ID ${ticket.id} atualizado para UserId ${nextUserId} - ${ticket.updatedAt}`
-                      );
-                    }
+                  // Ticket asignado antes de que existiera esta funcion: no
+                  // tiene reloj. Se registra ahora y empieza a contar desde
+                  // aqui, en lugar de rotarlo de golpe.
+                  if (!estado.lastAssignedAt) {
+                    await logRouterAssignment(ticket.id, userId, queueId);
+                    continue;
                   }
+
+                  // Todavia dentro del plazo configurado en la cola.
+                  if (
+                    !isRotationDue(
+                      estado.lastAssignedAt,
+                      tempoRoteador,
+                      new Date()
+                    )
+                  ) {
+                    continue;
+                  }
+
+                  // Hubo atencion real: ni bot, ni nota interna, ni mensaje
+                  // del propio cliente.
+                  const respondido = await hasHumanReplySince(
+                    ticket.id,
+                    estado.lastAssignedAt
+                  );
+                  if (respondido) continue;
+
+                  // Un ticket ya escalado espera al supervisor y no vuelve
+                  // a entrar en la rotacion automatica.
+                  const yaEscalado = await isEscalated(
+                    ticket.id,
+                    ticket.companyId
+                  );
+                  if (yaEscalado) continue;
+
+                  // Agotadas las rotaciones: se marca con la etiqueta y se
+                  // queda con el ultimo asesor, para que conserve dueno.
+                  if (hasReachedRotationLimit(estado.assignments)) {
+                    await markEscalated(ticket.id, ticket.companyId);
+                    logger.info(
+                      `Ticket ID ${ticket.id} escalado tras ${estado.assignments -
+                        1} rotaciones sin respuesta`
+                    );
+                    continue;
+                  }
+
+                  const availableUserIds = userIds.filter(id => id !== userId);
+                  if (availableUserIds.length === 0) continue;
+
+                  // Misma distribucion ponderada de siempre: getNextUser ya
+                  // respeta los pesos, salta a quien tenga peso 0 y ahora
+                  // tambien filtra por horario laboral.
+                  const nextUserId = await getNextUser(
+                    availableUserIds,
+                    ticket.companyId,
+                    queueId
+                  );
+
+                  if (
+                    nextUserId === undefined ||
+                    !((await findUserById(nextUserId, ticket.companyId)) > 0)
+                  ) {
+                    continue;
+                  }
+
+                  // Relectura justo antes de escribir. Entre el inicio de
+                  // estas comprobaciones y este punto hay varias consultas,
+                  // y en ese hueco el ticket puede haber cambiado de dueno,
+                  // haberse abierto o haberse cerrado.
+                  const actual = await Ticket.findByPk(ticket.id);
+                  if (
+                    !actual ||
+                    actual.userId !== userId ||
+                    actual.status !== "pending"
+                  ) {
+                    continue;
+                  }
+
+                  await UpdateTicketService({
+                    ticketData: { status: "pending", userId: nextUserId },
+                    ticketId: ticket.id,
+                    companyId: ticket.companyId
+                  });
+
+                  // Reinicia el reloj para el nuevo asesor y suma una
+                  // rotacion. Ademas hace la operacion idempotente: otra
+                  // pasada del cron veria esta marca como reciente y no
+                  // volveria a rotar el mismo ticket.
+                  await logRouterAssignment(ticket.id, nextUserId, queueId);
+
+                  // Deliberadamente sin mensaje al cliente. El aviso de
+                  // espera se envia solo en la primera asignacion: repetirlo
+                  // en cada salto le esta anunciando que nadie le atiende.
+
+                  logger.info(
+                    `Ticket ID ${ticket.id} rotado de UserId ${userId} a ${nextUserId} (rotacion ${estado.assignments})`
+                  );
                 }
               }
             }
