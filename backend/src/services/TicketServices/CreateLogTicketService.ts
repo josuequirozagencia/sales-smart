@@ -22,7 +22,13 @@ type logType =
   | "retriesLimitQueue"
   | "retriesLimitUserDefine"
   | "redirect"
-  | "autoReturnQueue";
+  | "autoReturnQueue"
+  // Escrito por el enrutador automatico cada vez que asigna un ticket,
+  // incluida la primera vez. Es la unica fuente del momento de asignacion y,
+  // contando registros, del numero de rotaciones. No vale reutilizar
+  // "transfered": ese lo escribe tambien un traslado manual, y esos no deben
+  // gastar el limite de rotaciones automaticas.
+  | "routerAssign";
 
 interface Request {
   type: logType;
