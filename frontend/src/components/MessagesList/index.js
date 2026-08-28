@@ -139,14 +139,25 @@ const useStyles = makeStyles((theme) => ({
     marginTop: 12,
   },
 
+  // Burbuja del cliente.
+  //
+  // Se conserva el codigo de color —claro el cliente, verde el asesor—
+  // porque es lo que permite saber quien habla sin leer, y cambiarlo
+  // obligaria a reaprender la pantalla. Lo que se moderniza es la
+  // geometria: radio, relleno, separacion y sombra.
   messageLeft: {
     marginRight: 20,
-    marginTop: 2,
-    minWidth: 100,
-    maxWidth: 600,
+    marginTop: 8,
+    // Se retira el minWidth de 100px: obligaba a que un "Ok" o un "Si"
+    // ocuparan una caja de 100 pixeles, y en una conversacion con respuestas
+    // cortas la columna quedaba llena de burbujas vacias.
+    maxWidth: "min(600px, 82%)",
     height: "auto",
     display: "block",
     position: "relative",
+    // Una URL larga o una palabra sin espacios desbordaba la burbuja. Con
+    // esto se parte donde haga falta en lugar de empujar el ancho.
+    overflowWrap: "anywhere",
     "&:hover #messageActionsButton": {
       display: "flex",
       position: "absolute",
@@ -156,17 +167,21 @@ const useStyles = makeStyles((theme) => ({
 
     whiteSpace: "pre-wrap",
     backgroundColor: theme.mode === 'light' ? "#ffffff" : "#202c33",
-    color: theme.mode === 'light' ? "#303030" : "#ffffff",
+    color: theme.mode === 'light' ? theme.palette.tokens.text.primary : "#ffffff",
     alignSelf: "flex-start",
-    borderTopLeftRadius: 0,
-    borderTopRightRadius: 8,
-    borderBottomLeftRadius: 8,
-    borderBottomRightRadius: 8,
-    paddingLeft: 5,
-    paddingRight: 5,
-    paddingTop: 5,
-    paddingBottom: 0,
-    boxShadow: theme.mode === 'light' ? "0 1px 1px #b3b3b3" : "0 1px 1px #000000"
+    // Radio de 14px con la esquina de origen a 4: mantiene la punta que
+    // indica quien habla, pero sin el angulo recto, que es lo que daba
+    // aspecto antiguo.
+    borderTopLeftRadius: 4,
+    borderTopRightRadius: 14,
+    borderBottomLeftRadius: 14,
+    borderBottomRightRadius: 14,
+    padding: "8px 10px 6px",
+    // La sombra era "0 1px 1px #b3b3b3": gris solido y practicamente sin
+    // difuminado, el rasgo que mas delataba la edad de la interfaz.
+    boxShadow: theme.mode === 'light'
+      ? theme.palette.tokens.shadow.sm
+      : "0 1px 2px rgba(0, 0, 0, 0.4)",
   },
 
   quotedContainerLeft: {
@@ -193,33 +208,39 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: "#388aff",
   },
 
+  // Burbuja del asesor. Mismo tratamiento, con la punta en el otro lado.
   messageRight: {
     marginLeft: 20,
-    marginTop: 2,
-    minWidth: 100,
-    maxWidth: 600,
+    marginTop: 8,
+    // Se retira el minWidth de 100px: obligaba a que un "Ok" o un "Si"
+    // ocuparan una caja de 100 pixeles, y en una conversacion con respuestas
+    // cortas la columna quedaba llena de burbujas vacias.
+    maxWidth: "min(600px, 82%)",
     height: "auto",
     display: "block",
     position: "relative",
+    // Una URL larga o una palabra sin espacios desbordaba la burbuja. Con
+    // esto se parte donde haga falta en lugar de empujar el ancho.
+    overflowWrap: "anywhere",
     "&:hover #messageActionsButton": {
       display: "flex",
       position: "absolute",
       top: 0,
       right: 0,
     },
+
     whiteSpace: "pre-wrap",
     backgroundColor: theme.mode === 'light' ? "#dcf8c6" : "#005c4b",
-    color: theme.mode === 'light' ? "#303030" : "#ffffff",
+    color: theme.mode === 'light' ? theme.palette.tokens.text.primary : "#ffffff",
     alignSelf: "flex-end",
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
-    borderBottomLeftRadius: 8,
-    borderBottomRightRadius: 0,
-    paddingLeft: 5,
-    paddingRight: 5,
-    paddingTop: 5,
-    paddingBottom: 0,
-    boxShadow: theme.mode === 'light' ? "0 1px 1px #b3b3b3" : "0 1px 1px #000000"
+    borderTopLeftRadius: 14,
+    borderTopRightRadius: 14,
+    borderBottomLeftRadius: 14,
+    borderBottomRightRadius: 4,
+    padding: "8px 10px 6px",
+    boxShadow: theme.mode === 'light'
+      ? theme.palette.tokens.shadow.sm
+      : "0 1px 2px rgba(0, 0, 0, 0.4)",
   },
 
   messageRightPrivate: {
