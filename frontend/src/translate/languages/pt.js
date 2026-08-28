@@ -1079,6 +1079,14 @@ const messages = {
           open: { title: "Abertas" },
           closed: { title: "Resolvidos" },
           search: { title: "Busca" },
+          // Rotulos de la barra inferior de la variante movil de Tickets.
+          // Estaban escritos a mano en portugues dentro del JSX, sin pasar
+          // por el sistema de traducciones.
+          mobile: {
+            conversation: "Ticket",
+            list: "Atendimentos",
+            selectTicket: "Selecionar Ticket",
+          },
         },
         search: {
           placeholder: "Buscar atendimento e mensagens",

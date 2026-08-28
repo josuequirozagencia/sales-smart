@@ -53,6 +53,44 @@ import {
 const useStyles = makeStyles((theme) => ({
   ticket: {
     position: "relative",
+    transition: "background-color 180ms ease",
+
+    // Hover. Un velo tenue en vez de un cambio de color: funciona igual en
+    // claro y en oscuro, y no compite con el estado seleccionado.
+    "&:hover": {
+      backgroundColor:
+        theme.mode === "light"
+          ? "rgba(15, 23, 42, 0.035)"
+          : "rgba(255, 255, 255, 0.045)",
+    },
+
+    // Seleccionado. Antes se distinguia solo por el gris de serie del MUI,
+    // que sobre una lista larga no se localiza de un vistazo.
+    //
+    // Ahora lleva superficie tintada de marca mas una barra lateral: dos
+    // senales en vez de una, y la barra sigue siendo visible aunque el
+    // cliente configure un primario de bajo contraste.
+    "&.Mui-selected": {
+      backgroundColor:
+        theme.mode === "light"
+          ? `${theme.palette.primary.main}14`
+          : `${theme.palette.primary.main}26`,
+      "&:hover": {
+        backgroundColor:
+          theme.mode === "light"
+            ? `${theme.palette.primary.main}1f`
+            : `${theme.palette.primary.main}33`,
+      },
+      "&::before": {
+        content: '""',
+        position: "absolute",
+        left: 0,
+        top: 0,
+        bottom: 0,
+        width: 3,
+        backgroundColor: theme.palette.primary.main,
+      },
+    },
   },
 
   pendingTicket: {
@@ -677,14 +715,26 @@ const TicketListItemCustom = ({ setTabOpen, ticket }) => {
                   {ticket?.whatsapp ? (
                     <Badge
                       className={classes.connectionTag}
-                      style={{
-                        backgroundColor:
+                      style={(() => {
+                        // El fondo lo decide el color guardado de la conexion,
+                        // que se escribe a mano en la ficha. El texto era blanco
+                        // fijo, asi que una conexion de color claro daba
+                        // combinaciones ilegibles: la de esta instalacion,
+                        // #26E697, quedaba en 1.63 de contraste.
+                        //
+                        // onColor elige blanco o tinta oscura segun el fondo, con
+                        // el mismo criterio que aplica MUI en contrastText.
+                        const fondo =
                           ticket.channel === "whatsapp"
                             ? ticket.whatsapp?.color || "#25D366"
                             : ticket.channel === "facebook"
                             ? "#4267B2"
-                            : "#E1306C",
-                      }}
+                            : "#E1306C";
+                        return {
+                          backgroundColor: fondo,
+                          color: theme.palette.tokens.onColor(fondo),
+                        };
+                      })()}
                     >
                       {ticket.whatsapp?.name.toUpperCase()}
                     </Badge>
@@ -693,9 +743,14 @@ const TicketListItemCustom = ({ setTabOpen, ticket }) => {
                   )}
                   {
                     <Badge
-                      style={{
-                        backgroundColor: ticket.queue?.color || "#7c7c7c",
-                      }}
+                      style={(() => {
+                        // Mismo caso: el color de la cola se elige en Colas.
+                        const fondo = ticket.queue?.color || "#7c7c7c";
+                        return {
+                          backgroundColor: fondo,
+                          color: theme.palette.tokens.onColor(fondo),
+                        };
+                      })()}
                       className={classes.connectionTag}
                     >
                       {ticket.queueId
@@ -707,7 +762,12 @@ const TicketListItemCustom = ({ setTabOpen, ticket }) => {
                   }
                   {ticket?.user && (
                     <Badge
-                      style={{ backgroundColor: "#000000" }}
+                      style={{
+                        backgroundColor: theme.palette.tokens.text.primary,
+                        color: theme.palette.tokens.onColor(
+                          theme.palette.tokens.text.primary
+                        ),
+                      }}
                       className={classes.connectionTag}
                     >
                       {ticket.user?.name.toUpperCase()}

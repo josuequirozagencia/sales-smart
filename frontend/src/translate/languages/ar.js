@@ -906,6 +906,14 @@ const messages = {
           open: { title: "مفتوحة" },
           closed: { title: "محلولة" },
           search: { title: "البحث" },
+          // Rotulos de la barra inferior de la variante movil de Tickets.
+          // Estaban escritos a mano en portugues dentro del JSX, sin pasar
+          // por el sistema de traducciones.
+          mobile: {
+            conversation: "تذكرة",
+            list: "المحادثات",
+            selectTicket: "اختر تذكرة",
+          },
         },
         search: {
           placeholder: "البحث في المحادثات والرسائل",
