@@ -138,6 +138,20 @@ const useStyles = makeStyles((theme) => ({
     display: "flex",
     padding: "7px",
     alignItems: "center",
+
+    // En movil los tres botones de accion —emoji, adjuntar y enviar— se
+    // llevaban 144px de los 375 de pantalla, dejando 188 para escribir: la
+    // mitad del ancho para tres iconos.
+    //
+    // No se quita ninguno. Se recorta su relleno, que es lo que sobra, y el
+    // area de escritura recupera unos 24px sin que los botones bajen de un
+    // tamano comodo para el dedo.
+    [theme.breakpoints.down("xs")]: {
+      padding: "4px",
+      "& .MuiIconButton-root": {
+        padding: 8,
+      },
+    },
   },
   messageInputWrapper: {
     padding: 6,
