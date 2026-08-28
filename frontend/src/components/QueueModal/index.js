@@ -578,9 +578,13 @@ const QueueModal = ({ open, onClose, queueId, onEdit }) => {
                       <MenuItem value="5">5 {i18n.t("queueModal.form.minutes.plural")}</MenuItem>
                       <MenuItem value="10">10 {i18n.t("queueModal.form.minutes.plural")}</MenuItem>
                       <MenuItem value="15">15 {i18n.t("queueModal.form.minutes.plural")}</MenuItem>
+                      <MenuItem value="20">20 {i18n.t("queueModal.form.minutes.plural")}</MenuItem>
+                      <MenuItem value="25">25 {i18n.t("queueModal.form.minutes.plural")}</MenuItem>
                       <MenuItem value="30">30 {i18n.t("queueModal.form.minutes.plural")}</MenuItem>
+                      <MenuItem value="40">40 {i18n.t("queueModal.form.minutes.plural")}</MenuItem>
                       <MenuItem value="45">45 {i18n.t("queueModal.form.minutes.plural")}</MenuItem>
                       <MenuItem value="60">60 {i18n.t("queueModal.form.minutes.plural")}</MenuItem>
+                      <MenuItem value="90">90 {i18n.t("queueModal.form.minutes.plural")}</MenuItem>
                     </Field>
                     &nbsp;
                     <Field
