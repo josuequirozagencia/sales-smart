@@ -154,14 +154,33 @@ const useStyles = makeStyles((theme) => ({
     },
   },
   messageInputWrapper: {
-    padding: 6,
+    padding: "4px 6px",
     marginRight: 7,
     background: theme.palette.background.paper,
     display: "flex",
+    alignItems: "center",
     borderRadius: 20,
     flex: 1,
-    position: "relative", // ✅ Essencial para o position absolute funcionar
-    zIndex: 1, // ✅ Z-index base
+    position: "relative",
+    zIndex: 1,
+
+    // El campo no tenia ningun borde ni indicacion de foco: al escribir no
+    // habia forma de saber que estaba activo, y con el teclado era imposible
+    // localizar donde estaba el cursor.
+    border: `1px solid ${theme.palette.divider}`,
+    transition: "border-color 180ms ease, box-shadow 180ms ease",
+
+    "&:hover": {
+      borderColor: theme.palette.tokens.border.strong,
+    },
+
+    // focus-within porque quien recibe el foco es el textarea de dentro, no
+    // este contenedor. Halo tenue del color de marca en lugar del contorno
+    // grueso del navegador.
+    "&:focus-within": {
+      borderColor: theme.palette.primary.main,
+      boxShadow: `0 0 0 3px ${theme.palette.primary.main}22`,
+    },
   },
 
   messageInputWrapperPrivate: {
@@ -205,7 +224,13 @@ const useStyles = makeStyles((theme) => ({
     fontWeight: 500,
   },
   sendMessageIcons: {
-    color: grey[700],
+    // Era grey[700] fijo: sobre el fondo oscuro apenas se distinguia de la
+    // superficie. El token de texto atenuado se adapta a los dos modos.
+    color: theme.palette.tokens.text.muted,
+    transition: "color 180ms ease",
+    "&:hover": {
+      color: theme.palette.tokens.text.primary,
+    },
   },
   ForwardMessageIcons: {
     color: grey[700],
