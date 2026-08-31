@@ -71,6 +71,12 @@ const useStyles = makeStyles(theme => ({
 	drawer: {
 		width: drawerWidth,
 		flexShrink: 0,
+		// 320px fijos ocupan el 85% de un telefono de 375 y no caben en uno
+		// de 320. Se limita al ancho disponible dejando un margen para que se
+		// vea que hay contenido detras y quede sitio para cerrarlo.
+		[theme.breakpoints.down("xs")]: {
+			width: "min(320px, calc(100vw - 48px))",
+		},
 	},
 	tabChip: {
 		minHeight: 16,
@@ -82,13 +88,19 @@ const useStyles = makeStyles(theme => ({
 	},
 	drawerPaper: {
 		width: drawerWidth,
+		[theme.breakpoints.down("xs")]: {
+			width: "min(320px, calc(100vw - 48px))",
+		},
 		display: "flex",
 		flexDirection: "column",
-		borderTop: "1px solid rgba(0, 0, 0, 0.12)",
-		borderRight: "1px solid rgba(0, 0, 0, 0.12)",
-		borderBottom: "1px solid rgba(0, 0, 0, 0.12)",
-		borderTopRightRadius: 4,
-		borderBottomRightRadius: 4,
+		// Los bordes eran negro al 12% escrito a mano, que sobre fondo oscuro
+		// se ve como una linea sucia. El divisor del tema ya se adapta.
+		borderTop: `1px solid ${theme.palette.divider}`,
+		borderRight: `1px solid ${theme.palette.divider}`,
+		borderBottom: `1px solid ${theme.palette.divider}`,
+		// 4px es casi un angulo recto; 12 es el paso de tarjetas del sistema.
+		borderTopRightRadius: theme.palette.tokens.radius.lg,
+		borderBottomRightRadius: theme.palette.tokens.radius.lg,
 		height: "100%",
 		overflow: "hidden", // Importante para evitar overflow no drawer principal
 	},

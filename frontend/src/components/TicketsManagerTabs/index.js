@@ -104,8 +104,14 @@ const useStyles = makeStyles((theme) => ({
     },
 
     "&:hover": {
-      backgroundColor: "rgba(0, 0, 0, 0.1)",
+      // Un negro al 10% sobre fondo oscuro no se percibe. Se invierte el
+      // velo segun el modo, igual que en la lista y en la barra lateral.
+      backgroundColor:
+        theme.mode === "light"
+          ? "rgba(15, 23, 42, 0.06)"
+          : "rgba(255, 255, 255, 0.08)",
     },
+    transition: "background-color 180ms ease",
   },
 
   tabPanelItem: {
@@ -127,8 +133,16 @@ const useStyles = makeStyles((theme) => ({
     whiteSpace: "nowrap",
     borderRadius: "12px",
     padding: "0 8px",
+    // El texto era blanco fijo sobre el color primario, que cada empresa
+    // configura. Con una marca clara la cifra quedaba ilegible. onColor la
+    // decide segun el fondo.
     backgroundColor: theme.mode === "light" ? theme.palette.primary.main : "#FFF",
-    color: theme.mode === "light" ? "#FFF" : theme.palette.primary.main,
+    color:
+      theme.mode === "light"
+        ? theme.palette.tokens.onColor(theme.palette.primary.main)
+        : theme.palette.primary.main,
+    fontSize: "0.6875rem",
+    fontWeight: 600,
   },
   ticketOptionsBox: {
     display: "flex",
@@ -163,7 +177,9 @@ const useStyles = makeStyles((theme) => ({
   },
 
   searchIcon: {
-    color: "grey",
+    // Era la palabra clave "grey" de CSS, que no distingue modo claro de
+    // oscuro y ademas es mas oscura que el gris del sistema.
+    color: theme.palette.tokens.text.muted,
     marginLeft: 6,
     marginRight: 6,
     alignSelf: "center",
@@ -181,8 +197,13 @@ const useStyles = makeStyles((theme) => ({
 
   customBadge: {
     right: "-10px",
-    backgroundColor: "#f44336",
-    color: "#fff",
+    // Era "#f44336" escrito a mano. Es el rojo semantico del sistema.
+    backgroundColor: theme.palette.tokens.semantic.error.fill,
+    color: theme.palette.tokens.onColor(
+      theme.palette.tokens.semantic.error.fill
+    ),
+    fontSize: "0.6875rem",
+    fontWeight: 600,
   },
 
   show: {
