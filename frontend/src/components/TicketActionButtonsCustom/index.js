@@ -61,22 +61,44 @@ const useStyles = makeStyles((theme) => ({
     flex: "none",
     alignSelf: "center",
     marginLeft: "auto",
-    // flexBasis: "50%",
     display: "flex",
+    alignItems: "center",
+    // Se separa con gap en lugar de dar margen a cada hijo. El margen de
+    // theme.spacing(1) se aplicaba a los cuatro lados de cada boton, asi que
+    // entre dos botones habia 16px y ademas empujaba arriba y abajo.
+    gap: theme.palette.tokens.space.sm,
     "& > *": {
-      margin: theme.spacing(1),
+      margin: 0,
+    },
+    // En movil el espacio es caro y estas acciones compiten con el nombre del
+    // contacto en la misma barra.
+    [theme.breakpoints.down("xs")]: {
+      gap: theme.palette.tokens.space.xs,
+      marginRight: 0,
     },
   },
   bottomButtonVisibilityIcon: {
-    padding: 1,
+    // Era padding: 1. Con un icono de 24px el area pulsable quedaba en 26px,
+    // por debajo de lo comodo para el dedo.
+    padding: 6,
     color: theme.mode === "light" ? theme.palette.primary.main : "#FFF",
+    transition: "background-color 180ms ease",
   },
   botoes: {
     display: "flex",
-    padding: "15px",
+    // 15px no estaba en ninguna escala; 12 es el paso md del sistema.
+    padding: theme.palette.tokens.space.md,
     justifyContent: "flex-end",
+    alignItems: "center",
+    gap: theme.palette.tokens.space.sm,
     maxWidth: "100%",
-    // alignItems: "center"
+    // Con varias acciones y poco ancho, que bajen de linea en vez de
+    // desbordar o comprimirse hasta ser inservibles.
+    flexWrap: "wrap",
+    [theme.breakpoints.down("xs")]: {
+      padding: theme.palette.tokens.space.sm,
+      gap: theme.palette.tokens.space.xs,
+    },
   },
 }));
 
