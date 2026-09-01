@@ -628,8 +628,19 @@ const Dashboard = () => {
               </Typography>
               <Grid2 container alignItems="center" spacing={2}>
                 <Grid2 xs={12} sm={2}>
-                  <Paper className={classes.infoCard} style={{ textAlign: 'center', padding: '8px', backgroundColor: '#FFE3B3' }}>
-                    <Typography variant="h6" style={{ color: '#F79009' }}>
+                  <Paper className={classes.infoCard} style={{
+                    textAlign: 'center',
+                    padding: '8px',
+                    // Era '#FFE3B3' con texto '#F79009' encima: naranja medio
+                    // sobre naranja claro, 1.89 de contraste. Los tokens
+                    // semanticos ya distinguen el fondo suave del tono
+                    // legible como texto, que es justo este caso.
+                    backgroundColor: theme.palette.tokens.semantic.warning.soft,
+                  }}>
+                    <Typography
+                      variant="h6"
+                      style={{ color: theme.palette.tokens.semantic.warning.text }}
+                    >
                       {Number(counters.percRating / 100).toLocaleString(undefined, { style: 'percent' }) || "0%"}
                     </Typography>
                   </Paper>

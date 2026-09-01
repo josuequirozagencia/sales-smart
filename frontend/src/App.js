@@ -635,6 +635,32 @@ const App = () => {
         ...palette,
         mode: palette.type,
       },
+      // El tema v5 no heredaba los overrides: la v4 los declara en
+      // "overrides" y la v5 en "components", y esa clave se descarta al
+      // traducir. Por eso los botones y textos que vienen de @mui/material
+      // seguian usando el primario como color de texto sobre fondo oscuro,
+      // donde da 3.05.
+      //
+      // Se repite aqui la misma correccion, en el formato de la v5.
+      components: {
+        MuiTypography: {
+          styleOverrides: {
+            colorPrimary: {
+              color: palette.tokens.brand.onSurface,
+            },
+          },
+        },
+        MuiButton: {
+          styleOverrides: {
+            textPrimary: {
+              color: palette.tokens.brand.onSurface,
+            },
+            outlinedPrimary: {
+              color: palette.tokens.brand.onSurface,
+            },
+          },
+        },
+      },
     });
   }, [themeOptions]);
 

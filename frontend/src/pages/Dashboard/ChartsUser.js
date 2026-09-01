@@ -161,7 +161,18 @@ export const ChatsUser = memo(() => {
                 </Grid>
                 <Grid item>
                     <Button 
-                        style={{ backgroundColor: theme.palette.primary.main, top: '10px' }} 
+                        style={{
+                            // El fondo se ponia aqui en linea pero sin fijar
+                            // el color del texto, asi que el boton se quedaba
+                            // con el texto oscuro que trae .MuiButton-contained
+                            // para su gris por defecto: texto casi negro sobre
+                            // violeta, 2.47 de contraste.
+                            backgroundColor: theme.palette.primary.main,
+                            color: theme.palette.tokens.onColor(
+                                theme.palette.primary.main
+                            ),
+                            top: '10px'
+                        }} 
                         onClick={handleGetTicketsInformation} 
                         variant='contained'
                     >
