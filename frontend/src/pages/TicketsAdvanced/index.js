@@ -19,9 +19,14 @@ import { QueueSelectedProvider } from "../../context/QueuesSelected/QueuesSelect
 
 const useStyles = makeStyles(theme => ({
     header: {
+        // La barra de pestanas se apoyaba en el fondo del Paper y no se
+        // distinguia del contenido. Un borde inferior la separa sin recurrir
+        // a una sombra, que sobre movil solo ensucia.
+        borderBottom: `1px solid ${theme.palette.divider}`,
     },
     content: {
-        overflow: "auto"
+        overflow: "auto",
+        backgroundColor: theme.palette.tokens.surface.background,
     },
     placeholderContainer: {
         display: "flex",
@@ -29,10 +34,18 @@ const useStyles = makeStyles(theme => ({
         alignItems: "center",
         justifyContent: "center",
         height: "100%",
-        // backgroundColor: "#eee"
-        background: theme.palette.tabHeaderBackground,
+        gap: theme.palette.tokens.space.lg,
+        padding: theme.palette.tokens.space.xl,
+        textAlign: "center",
+        background: theme.palette.tokens.surface.background,
     },
     placeholderItem: {
+        // El mensaje de "ningun ticket seleccionado" no tenia tratamiento:
+        // heredaba el tamano y el color del contenedor.
+        color: theme.palette.tokens.text.secondary,
+        fontSize: "0.9375rem",
+        lineHeight: 1.5,
+        maxWidth: "32ch",
     }
 }));
 

@@ -23,7 +23,13 @@ const maxTicketsManagerWidth = 700;
 const useStyles = makeStyles((theme) => ({
 	chatContainer: {
 		flex: 1,
-		padding: "2px",
+		// Eran 2px: la lista y la conversacion quedaban pegadas al borde de
+		// la pantalla y entre si. Se pasa a la escala del sistema, con un
+		// paso reducido en anchos intermedios donde el espacio es mas caro.
+		padding: theme.palette.tokens.space.lg,
+		[theme.breakpoints.down("md")]: {
+			padding: theme.palette.tokens.space.sm,
+		},
 		height: `calc(100% - 48px)`,
 		overflowY: "hidden",
 	},
@@ -54,18 +60,28 @@ const useStyles = makeStyles((theme) => ({
 		height: "100%",
 		textAlign: "center",
 	},
+	// Separador arrastrable entre la lista y la conversacion.
+	//
+	// Tenia "#ddd" y "#f4f7f9" escritos a mano: en modo oscuro quedaba como
+	// una barra clara atravesando la pantalla. Ahora sale de los tokens y se
+	// tine con el color de marca al pasar por encima, para que se entienda
+	// que es arrastrable.
 	dragger: {
 		width: "5px",
 		cursor: "ew-resize",
 		padding: "4px 0 0",
-		borderTop: "1px solid #ddd",
+		borderTop: `1px solid ${theme.palette.divider}`,
 		position: "absolute",
 		top: 0,
 		right: 0,
 		bottom: 0,
 		zIndex: 100,
-		backgroundColor: "#f4f7f9",
+		backgroundColor: theme.palette.tokens.surface.surfaceSecondary,
 		userSelect: "none",
+		transition: "background-color 180ms ease",
+		"&:hover": {
+			backgroundColor: theme.palette.primary.main,
+		},
 	},
 	logo: {
 		logo: theme.logo,
