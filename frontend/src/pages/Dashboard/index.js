@@ -66,10 +66,16 @@ const useStyles = makeStyles((theme) => ({
     letterSpacing: "0.5px",
     lineHeight: 2.5,
     textTransform: "uppercase",
-    fontFamily: "'Plus Jakarta Sans', sans-serif'",
+    // El valor era "'Plus Jakarta Sans', sans-serif'" con un apostrofo
+    // sobrante al final, lo que invalida la declaracion entera: el navegador
+    // la descartaba y caia en la tipografia heredada.
+    fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
   },
   h4: {
-    fontFamily: "'Plus Jakarta Sans', sans-serif'",
+    // El valor era "'Plus Jakarta Sans', sans-serif'" con un apostrofo
+    // sobrante al final, lo que invalida la declaracion entera: el navegador
+    // la descartaba y caia en la tipografia heredada.
+    fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
     fontWeight: 500,
     fontSize: "2rem",
     lineHeight: 1,
@@ -100,7 +106,12 @@ const useStyles = makeStyles((theme) => ({
       marginLeft: theme.spacing(0.3),
     },
     "&:hover": {
-      backgroundColor: "rgba(6, 81, 131, 0.3)",
+      // Era "rgba(6, 81, 131, 0.3)", el azul por defecto anterior escrito a
+      // mano: no seguia al color de marca ni funcionaba en modo oscuro.
+      backgroundColor:
+        theme.mode === "light"
+          ? `${theme.palette.primary.main}14`
+          : `${theme.palette.primary.main}26`,
     },
     "&$selected": {
       color: theme.palette.primary.contrastText,
@@ -113,7 +124,7 @@ const useStyles = makeStyles((theme) => ({
     height: 6,
     bottom: 0,
     color:
-      theme.palette.mode === "light"
+      theme.mode === "light"
         ? theme.palette.primary.main
         : theme.palette.primary.contrastText,
   },
@@ -123,14 +134,19 @@ const useStyles = makeStyles((theme) => ({
   },
   nps: {
     paddingTop: theme.spacing(1),
-    paddingBottom: theme.padding,
+    // Era theme.padding, que no existe en el tema: el valor llegaba como
+    // undefined y la propiedad se descartaba.
+    paddingBottom: theme.spacing(1),
   },
   fixedHeightPaper: {
-    padding: theme.spacing(2),
+    padding: theme.palette.tokens.space.xl,
     display: "flex",
     flexDirection: "column",
     height: 240,
     overflowY: "auto",
+    borderRadius: theme.palette.tokens.radius.lg,
+    border: `1px solid ${theme.palette.divider}`,
+    boxShadow: theme.palette.tokens.shadow.sm,
     ...theme.scrollbarStyles,
   },
   cardAvatar: {
@@ -164,17 +180,24 @@ const useStyles = makeStyles((theme) => ({
     border: "none",
   },
   customFixedHeightPaperLg: {
-    padding: theme.spacing(2),
+    padding: theme.palette.tokens.space.xl,
     display: "flex",
     overflow: "auto",
     flexDirection: "column",
     height: "100%",
+    borderRadius: theme.palette.tokens.radius.lg,
+    border: `1px solid ${theme.palette.divider}`,
+    boxShadow: theme.palette.tokens.shadow.sm,
   },
   sectionTitle: {
-    fontSize: "1.5rem",
-    fontWeight: 700,
-    color: theme.palette.primary.main,
-    marginBottom: theme.spacing(2),
+    // Era 1.5rem en el color de marca. Un titulo de seccion no deberia
+    // competir en peso visual con los datos que encabeza; se baja a la
+    // escala del sistema y al color de texto principal.
+    fontSize: "1.125rem",
+    fontWeight: 600,
+    letterSpacing: "-0.015em",
+    color: theme.palette.tokens.text.primary,
+    marginBottom: theme.palette.tokens.space.lg,
   },
   mainPaper: {
     flex: 1,
@@ -184,11 +207,22 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: "transparent !important",
     borderRadius: "10px",
   },
+  // Tarjetas del panel.
+  //
+  // Se les da el mismo lenguaje que al resto: borde sutil, sombra suave con
+  // tinte azulado en vez de la de serie del MUI, y radio del sistema. El
+  // borde importa mas de lo que parece: en modo oscuro la sombra apenas se
+  // percibe, y sin borde las tarjetas se funden con el fondo.
   paper: {
-    padding: theme.spacing(2),
-    borderRadius: 12,
-    backgroundColor: theme.palette.background.paper,
-    boxShadow: theme.shadows[1],
+    padding: theme.palette.tokens.space.xl,
+    borderRadius: theme.palette.tokens.radius.lg,
+    backgroundColor: theme.palette.tokens.surface.surface,
+    border: `1px solid ${theme.palette.divider}`,
+    boxShadow: theme.palette.tokens.shadow.sm,
+    transition: "box-shadow 180ms ease",
+    "&:hover": {
+      boxShadow: theme.palette.tokens.shadow.md,
+    },
   },
   barContainer: {
     display: "flex",
@@ -205,7 +239,7 @@ const useStyles = makeStyles((theme) => ({
     minWidth: 50,
     textAlign: "right",
     fontWeight: 500,
-    color: theme.palette.mode === "light" ? theme.palette.text.secondary : theme.palette.text.primary,
+    color: theme.mode === "light" ? theme.palette.text.secondary : theme.palette.text.primary,
   },
   infoCard: {
     padding: theme.spacing(2),
