@@ -215,6 +215,12 @@ const App = () => {
                 primaryHover: tokens.darken(brandPrimary, 0.08),
                 primaryActive: tokens.darken(brandPrimary, 0.16),
                 onPrimary: onColor(brandPrimary),
+                // El color de marca en un tono legible COMO TEXTO sobre la
+                // superficie del modo activo. El primario a secas no sirve
+                // para eso: el tono que lleva texto blanco encima es
+                // demasiado oscuro para leerse sobre fondo oscuro.
+                onSurface:
+                  mode === "light" ? brandPrimary : tokens.brandScale[300],
                 secondary: brandSecondary,
                 secondaryHover: tokens.darken(brandSecondary, 0.08),
                 onSecondary: onColor(brandSecondary),
@@ -363,6 +369,16 @@ const App = () => {
               outlined: {
                 borderColor: t.border,
               },
+              // Mismo caso que MuiTypography: aqui el primario es texto, no
+              // relleno.
+              textPrimary: {
+                color:
+                  mode === "light" ? brandPrimary : tokens.brandScale[300],
+              },
+              outlinedPrimary: {
+                color:
+                  mode === "light" ? brandPrimary : tokens.brandScale[300],
+              },
             },
 
             // Campos de formulario. Sin esto quedan con el aspecto de serie
@@ -390,6 +406,28 @@ const App = () => {
               input: {
                 paddingTop: 10,
                 paddingBottom: 10,
+              },
+            },
+
+            // El primario como COLOR DE TEXTO sobre superficie oscura.
+            //
+            // Un solo tono no puede servir para las dos cosas: el que lleva
+            // texto blanco encima con contraste suficiente (#803adf, 5.85) es
+            // demasiado oscuro para leerse sobre el fondo oscuro, donde se
+            // queda en 2.5. Aparecio en el panel en tres sitios y es el mismo
+            // problema que ya resolvimos para los semanticos separando fill y
+            // text.
+            //
+            // Se corrige aqui, en los dos sitios donde MUI aplica el primario
+            // como texto, en vez de perseguir cada componente: en claro no
+            // cambia nada, y en oscuro sube al nivel 300 de la marca, que da
+            // 6.25 sobre el fondo.
+            MuiTypography: {
+              colorPrimary: {
+                color:
+                  mode === "light"
+                    ? brandPrimary
+                    : tokens.brandScale[300],
               },
             },
 

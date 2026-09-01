@@ -158,7 +158,7 @@ const useStyles = makeStyles((theme) => ({
   },
   cardTitle: {
     fontSize: "18px",
-    color: theme.palette.primary.main,
+    color: theme.palette.tokens.brand.onSurface,
   },
   cardSubtitle: {
     color: theme.palette.text.secondary,
@@ -251,7 +251,7 @@ const useStyles = makeStyles((theme) => ({
   },
   infoIcon: {
     fontSize: "2rem",
-    color: theme.palette.primary.main,
+    color: theme.palette.tokens.brand.onSurface,
     marginBottom: theme.spacing(1),
   },
 }));
@@ -593,7 +593,7 @@ const Dashboard = () => {
             
             {/* Indicadores Gerais */}
             <Grid2 xs={12} style={{ marginTop: '20px', paddingLeft: '4px' }}>
-              <Typography variant="h5" style={{ marginBottom: '10px', color: theme.palette.primary.main }}>
+              <Typography variant="h5" style={{ marginBottom: '10px', color: theme.palette.tokens.brand.onSurface }}>
                 {i18n.t("dashboard.sections.indicators")}
               </Typography>
             </Grid2>
@@ -603,7 +603,7 @@ const Dashboard = () => {
 
             {/* Pesquisa de Satisfação (NPS) */}
             <Grid2 xs={12} style={{ marginTop: '40px', paddingLeft: '4px' }}>
-              <Typography variant="h5" style={{ marginBottom: '10px', color: theme.palette.primary.main }}>
+              <Typography variant="h5" style={{ marginBottom: '10px', color: theme.palette.tokens.brand.onSurface }}>
                 {i18n.t("dashboard.sections.satisfactionSurvey")}
               </Typography>
             </Grid2>
@@ -613,7 +613,7 @@ const Dashboard = () => {
 
             {/* Informações de Atendimento */}
             <Grid2 xs={12} style={{ marginTop: '40px', paddingLeft: '4px' }}>
-              <Typography variant="h5" style={{ marginBottom: '10px', color: theme.palette.primary.main }}>
+              <Typography variant="h5" style={{ marginBottom: '10px', color: theme.palette.tokens.brand.onSurface }}>
                 {i18n.t("dashboard.sections.attendances")}
               </Typography>
             </Grid2>
@@ -623,7 +623,7 @@ const Dashboard = () => {
 
             {/* Índice de Avaliação */}
             <Grid2 xs={12} style={{ marginTop: '40px', paddingLeft: '4px', paddingRight: '4px' }}>
-              <Typography variant="h6" style={{ marginBottom: '15px', color: theme.palette.primary.main }}>
+              <Typography variant="h6" style={{ marginBottom: '15px', color: theme.palette.tokens.brand.onSurface }}>
                 {i18n.t("dashboard.sections.ratingIndex")}
               </Typography>
               <Grid2 container alignItems="center" spacing={2}>
@@ -647,7 +647,7 @@ const Dashboard = () => {
 
             {/* Tabela de Atendentes */}
             <Grid2 xs={12} style={{ marginTop: '40px', paddingLeft: '4px' }}>
-              <Typography variant="h5" style={{ marginBottom: '10px', color: theme.palette.primary.main }}>
+              <Typography variant="h5" style={{ marginBottom: '10px', color: theme.palette.tokens.brand.onSurface }}>
                 {i18n.t("dashboard.sections.attendants")}
               </Typography>
               <Paper className={classes.paper}>
