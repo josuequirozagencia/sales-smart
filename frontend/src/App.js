@@ -92,7 +92,10 @@ const App = () => {
       const brandPrimary = tokens.normalizeHex(
         mode === "light" ? primaryColorLight : primaryColorDark
       );
-      const brandSecondary = tokens.secondaryDefault;
+      const brandSecondary =
+        mode === "light"
+          ? tokens.secondaryDefault
+          : tokens.secondaryDefaultDark;
 
       return {
           // 19 componentes leem `theme.mode` para decidir cores, mas essa
@@ -428,6 +431,25 @@ const App = () => {
                   mode === "light"
                     ? brandPrimary
                     : tokens.brandScale[300],
+              },
+            },
+
+            // Pestanas. La etiqueta activa y la barra indicadora usan el
+            // violeta de marca, que como TEXTO sobre superficie oscura queda
+            // en 2,50. Aqui se corrigen todas las pestanas del CRM a la vez
+            // en lugar de pantalla por pantalla.
+            MuiTab: {
+              textColorPrimary: {
+                "&.Mui-selected": {
+                  color:
+                    mode === "light" ? brandPrimary : tokens.brandScale[300],
+                },
+              },
+            },
+            MuiTabs: {
+              indicator: {
+                backgroundColor:
+                  mode === "light" ? brandPrimary : tokens.brandScale[300],
               },
             },
 

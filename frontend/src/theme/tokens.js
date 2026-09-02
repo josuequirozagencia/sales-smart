@@ -76,6 +76,12 @@ export const primaryDefault = "#2563eb";
 // defecto (#f50057), que nadie eligió.
 export const secondaryDefault = "#475569";
 
+// Contraparte para modo oscuro. El neutro de arriba se eligio contra fondo
+// claro (8,6 sobre blanco); sobre superficie oscura cae a 1,93 y deja
+// invisibles los botones "secondary", que son botones activos, no
+// deshabilitados. Un solo tono no puede servir a los dos modos.
+export const secondaryDefaultDark = neutral[400];
+
 // ---------------------------------------------------------------------------
 // ESCALA DE MARCA
 // ---------------------------------------------------------------------------
@@ -344,6 +350,7 @@ export default {
   neutral,
   primaryDefault,
   secondaryDefault,
+  secondaryDefaultDark,
   brandScale,
   sidebar,
   normalizeHex,

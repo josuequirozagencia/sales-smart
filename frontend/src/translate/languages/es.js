@@ -1545,6 +1545,11 @@ const messages = {
           completedAt: "Finalizada",
           confirmation: "Confirmación",
           actions: "Acciones",
+          // Estas dos vivian en un segundo bloque "table" hermano. Al ser una
+          // clave repetida del mismo objeto, ese bloque sustituia por completo
+          // a este y dejaba la tabla de campanas sin traducir.
+          recurrence: "Recurrencia",
+          nextExecution: "Próxima Ejecución",
         },
         toasts: {
           deleted: "¡Campaña eliminada con éxito!",
@@ -1554,10 +1559,6 @@ const messages = {
         confirmationModal: {
           deleteTitle: "Eliminar",
           deleteMessage: "Esta acción no se puede revertir.",
-        },
-        table: {
-          recurrence: "Recurrencia",
-          nextExecution: "Próxima Ejecución",
         },
         filters: {
           statusFilter: "Filtrar por Estado",

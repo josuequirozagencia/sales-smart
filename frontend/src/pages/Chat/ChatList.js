@@ -41,6 +41,11 @@ import UserStatusIcon from "../../components/UserModal/statusIcon";
 import { toast } from "react-toastify";
 
 const useStyles = makeStyles((theme) => ({
+  // "gray" es el mismo tono en los dos modos: sobre superficie oscura se
+  // quedaba en 3,70. El token de texto secundario sí distingue el modo.
+  textoSecundario: {
+    color: theme.palette.text.secondary,
+  },
   mainContainer: {
     display: "flex",
     flexDirection: "column",
@@ -49,7 +54,10 @@ const useStyles = makeStyles((theme) => ({
     height: "calc(100% - 58px)",
     overflow: "hidden",
     borderRadius: 0,
-    backgroundColor: theme.mode === "light" ? "#f2f2f2" : "#7f7f7f",
+    backgroundColor:
+      theme.mode === "light"
+        ? theme.palette.tokens.surface.surfaceSecondary
+        : theme.palette.tokens.surface.surface,
   },
   chatList: {
     display: "flex",
@@ -611,7 +619,7 @@ function ChatList({
                       <Typography
                         component="div"
                         variant="body2"
-                        style={{ color: "gray" }}
+                        className={classes.textoSecundario}
                       >
                         {getSecondaryText(chat)}
                       </Typography>

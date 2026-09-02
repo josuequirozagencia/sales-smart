@@ -37,7 +37,10 @@ const useStyles = makeStyles((theme) => ({
   },
   tab: {
     // background: "#f2f5f3",
-    backgroundColor: theme.mode === "light" ? "#f2f2f2" : "#7f7f7f",
+    backgroundColor:
+      theme.mode === "light"
+        ? theme.palette.tokens.surface.surfaceSecondary
+        : theme.palette.tokens.surface.surface,
     borderRadius: 4,
   },
   paper: {

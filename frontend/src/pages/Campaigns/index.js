@@ -116,7 +116,9 @@ const useStyles = makeStyles((theme) => ({
   },
   tableHeader: {
     fontWeight: 'bold',
-    backgroundColor: theme.palette.grey[100],
+    // grey[100] es el mismo gris claro en los dos modos: en oscuro dejaba la
+    // cabecera ilegible (1,04). El token si distingue el modo.
+    backgroundColor: theme.palette.tokens.surface.surfaceSecondary,
   },
 }));
 

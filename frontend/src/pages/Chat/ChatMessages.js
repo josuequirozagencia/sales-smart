@@ -155,7 +155,9 @@ const useStyles = makeStyles((theme) => ({
     fontWeight: "bold",
   },
   sendMessageIcons: {
-    color: "grey",
+    // Estaba declarado dos veces en el mismo objeto; la segunda anulaba a
+    // esta. "grey" ademas no distingue el modo.
+    color: theme.palette.text.secondary,
   },
   uploadInput: {
     display: "none",
@@ -219,9 +221,6 @@ const useStyles = makeStyles((theme) => ({
     bottom: 63,
     left: 10,
     zIndex: 1000,
-  },
-  sendMessageIcons: {
-    color: "grey",
   },
   dailyTimestampText: {
     color: "#808888",

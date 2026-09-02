@@ -81,7 +81,8 @@ const useStyles = makeStyles((theme) => ({
       },
     },
     "& .MuiTab-textColorPrimary.Mui-selected": {
-      color: theme.palette.primary.main, // Usa cor do tema
+      // El violeta de relleno como TEXTO no contrasta en oscuro (2,50).
+      color: theme.palette.tokens.brand.onSurface,
       fontWeight: 700,
     },
   },
