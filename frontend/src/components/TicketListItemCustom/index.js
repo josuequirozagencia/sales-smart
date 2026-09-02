@@ -50,6 +50,8 @@ import {
   DialogContent,
 } from "@material-ui/core";
 
+import TicketWaitTimer from "../TicketWaitTimer";
+
 const useStyles = makeStyles((theme) => ({
   ticket: {
     position: "relative",
@@ -826,6 +828,13 @@ const TicketListItemCustom = ({ setTabOpen, ticket }) => {
               </Typography>
 
               <br />
+
+              {/* Cuanto lleva el cliente esperando respuesta. Se pinta solo
+                  si la hay: el componente decide y devuelve null si no. */}
+              <TicketWaitTimer
+                waitingSince={ticket.waitingSince}
+                queue={ticket.queue}
+              />
             </>
           )}
         </ListItemSecondaryAction>
@@ -1162,6 +1171,9 @@ export default React.memo(TicketListItemCustom, (prevProps, nextProps) => {
     prevProps.ticket?.unreadMessages === nextProps.ticket?.unreadMessages &&
     prevProps.ticket?.lastMessage === nextProps.ticket?.lastMessage &&
     prevProps.ticket?.updatedAt === nextProps.ticket?.updatedAt &&
+    // Sin esto la fila no se repintaria cuando el cliente vuelve a escribir
+    // o el asesor contesta, y el contador de espera se quedaria clavado.
+    prevProps.ticket?.waitingSince === nextProps.ticket?.waitingSince &&
     prevProps.ticket?.userId === nextProps.ticket?.userId &&
     prevProps.ticket?.contact?.name === nextProps.ticket?.contact?.name &&
     prevProps.ticket?.contact?.profilePicUrl === nextProps.ticket?.contact?.profilePicUrl &&

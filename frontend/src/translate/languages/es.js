@@ -1124,6 +1124,10 @@ const messages = {
           message: "Esta acción no se puede revertir, ¿confirmar?",
         },
       },
+      ticketWaitTimer: {
+        tooltip: "El cliente lleva este tiempo esperando una respuesta humana.",
+        tooltipRotacion: "El cliente lleva este tiempo esperando. A los {{minutos}} min el ticket pasa a otro asesor.",
+      },
       ticketsList: {
         called: "Entradas",
         today: "Hoy",

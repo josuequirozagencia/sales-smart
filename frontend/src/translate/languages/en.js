@@ -1016,6 +1016,10 @@ const messages = {
           message: "This action cannot be undone, confirm?",
         },
       },
+      ticketWaitTimer: {
+        tooltip: "The customer has been waiting this long for a human reply.",
+        tooltipRotacion: "The customer has been waiting this long. After {{minutos}} min the ticket moves to another agent.",
+      },
       ticketsList: {
         called: "Call",
         today: "Today",
