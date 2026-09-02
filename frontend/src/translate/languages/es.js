@@ -176,30 +176,6 @@ const messages = {
           accessTicket: "Acceder al Ticket",
           exportExcel: "Exportar a Excel",
         },
-        exportExcel: {
-          title: "Informes de Atención",
-          startDate: "Fecha de inicio",
-          endDate: "Fecha de fin",
-          notInformed: "No informado",
-          columns: {
-            id: "ID",
-            connection: "Conexión",
-            contact: "Contacto",
-            user: "Usuario",
-            queue: "Cola",
-            status: "Estado",
-            lastMessage: "Último Mensaje",
-            openDate: "Fecha de Apertura",
-            openTime: "Hora de Apertura",
-            closeDate: "Fecha de Cierre",
-            closeTime: "Hora de Cierre",
-            supportTime: "Tiempo de Atención",
-            nps: "NPS",
-            valorVenda: "Valor de la Venta",
-            motivoNaoVenda: "Motivo de No Venta",
-            finalizadoComVenda: "Finalizado con Venta",
-          },
-        },
         finalizadoComVenda: {
           sim: "Sí",
           nao: "No",
@@ -270,6 +246,9 @@ const messages = {
             closeTime: "Hora Cierre",
             supportTime: "Tiempo de Atención",
             nps: "NPS",
+            finalizadoComVenda: "Finalizado con Venta",
+            motivoNaoVenda: "Motivo de No Venta",
+            valorVenda: "Valor de la Venta",
           },
         },
         pdf: {
@@ -293,7 +272,6 @@ const messages = {
       connections: {
         title: "Conexiones",
         waitConnection: "Espere... Las conexiones serán reiniciadas!",
-        newConnection: "Nueva Conexión",
         restartConnections: "Reiniciar Conexiones",
         callSupport: "Soporte",
         transferTickets: "Transferir Tickets",
@@ -363,7 +341,6 @@ const messages = {
           disconnect: "Desconectar",
           tryAgain: "Inténtalo de nuevo",
           qrcode: "QR CODE",
-          newQr: "Nuevo QR CODE",
           closedImported: "Cerrar todos los tickets Importados",
           preparing: "Preparando mensajes para importación",
           importing: "Importando Mensajes del WhatsApp",
@@ -1049,20 +1026,6 @@ const messages = {
           titleFileList: "Listado de archivo(s)",
         },
       },
-      chatInternal: {
-        new: "Nuevo grup",
-        modal: {
-          conversation: "Inicio",
-          title: "Título",
-          filterUsers: "Filtro por Usuarios",
-          cancel: "Cerrar",
-          save: "Guardar",
-        },
-        modalDelete: {
-          title: "Excluir Chat",
-          message: "Esta acción no se puede revertir, ¿confirmar?",
-        },
-      },
       ticketsManager: {
         questionCloseTicket: "¿Quieres cerrar todos los tickets?",
         yes: "SI",
@@ -1078,9 +1041,6 @@ const messages = {
         placeholder: "Filas",
       },
       tickets: {
-        search: {
-          placeholder: "Buscar tickets y contactos"
-        },
         inbox: {
           closedAllTickets: "¿Cerrar todos los tickets?",
           closedAll: "Cerrar Todos",
@@ -1499,17 +1459,6 @@ const messages = {
       campaigns: {
         title: "Campañas",
         searchPlaceholder: "Búsqueda",
-        dialog: {
-          form: {
-            whatsapp: "Conexión",
-            openTicket: "Abrir Ticket",
-            enabledOpenTicket: "Habilitado",
-            disabledOpenTicket: "Deshabilitado",
-            statusTicket: "Estado del Ticket",
-            closedTicketStatus: "Cerrado",
-            openTicketStatus: "Abierto",
-          },
-        },
         subMenus: {
           list: "Listados",
           listContacts: "Listados de contatos",
@@ -1550,15 +1499,6 @@ const messages = {
           // a este y dejaba la tabla de campanas sin traducir.
           recurrence: "Recurrencia",
           nextExecution: "Próxima Ejecución",
-        },
-        toasts: {
-          deleted: "¡Campaña eliminada con éxito!",
-          cancel: "¡Campaña cancelada con éxito!",
-          restart: "¡Campaña reiniciada con éxito!",
-        },
-        confirmationModal: {
-          deleteTitle: "Eliminar",
-          deleteMessage: "Esta acción no se puede revertir.",
         },
         filters: {
           statusFilter: "Filtrar por Estado",
@@ -2377,11 +2317,9 @@ const messages = {
         campaignsFlow: "Flujo de Campaña",
         campaigns: "Campaña",
         name: "Nombre",
-        status: "Estado",
         newCampaignWithFlowByPhrase: "Nueva campaña con flujo por frase",
         editCampaignWithFlowByPhrase: "Editar campaña con flujo por frase",
         phraseTriggerName: "Nombre del disparador de frase",
-        chooseAStream: "Elige una transmisión",
         whichPhraseTriggersTheFlow: " ¿Qué frase desencadena el flujo?",
         selectAConnection: "Seleccione una conexión",
         chooseAStream: "Elige una transmisión",
@@ -2481,7 +2419,6 @@ const messages = {
         reply: "Responder",
         edit: "Editar",
         delete: "Eliminar",
-        forward: "Reenviar",
         cancel: "Cancelar",
         confirmDelete: "Confirmar Eliminación",
         confirm: "Confirmar",
