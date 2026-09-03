@@ -662,7 +662,7 @@ const TicketListItemCustom = ({ setTabOpen, ticket }) => {
               height: "50px",
               borderRadius: "50%",
             }}
-            src={`${ticket?.contact?.urlPicture}`}
+            src={ticket?.contact?.urlPicture || undefined}
             className={classes.clickableAvatar}
             onClick={handleImageClick}
           />

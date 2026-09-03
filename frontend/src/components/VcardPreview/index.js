@@ -120,7 +120,7 @@ const VcardPreview = ({ contact, numbers, queueId, whatsappId, channel }) => {
                 />
                 <Grid container spacing={1}>
                     <Grid item xs={2}>
-                        <Avatar src={`${selectedContact?.urlPicture}`} />
+                        <Avatar src={selectedContact?.urlPicture || undefined} />
                     </Grid>
                     <Grid item xs={9}>
                         <Typography

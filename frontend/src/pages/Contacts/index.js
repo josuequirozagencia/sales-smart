@@ -901,7 +901,7 @@ const Contacts = () => {
                     <TableCell className={classes.idCell}>{contact.id}</TableCell>
                     <TableCell className={classes.avatarCell} align="center">
                       <Avatar 
-                        src={`${contact?.urlPicture}`}
+                        src={contact?.urlPicture || undefined}
                         className={classes.clickableAvatar}
                         onClick={() => handleOpenImageModal(contact?.urlPicture, contact.name)}
                       />
