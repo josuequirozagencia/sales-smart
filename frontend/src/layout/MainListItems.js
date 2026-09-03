@@ -406,8 +406,20 @@ const MainListItems = ({ collapsed, drawerClose }) => {
   useEffect(() => {
     // INSERIR ESSE EFFECT INTEIRO
     async function checkHelps() {
-      const helps = await list();
-      setHasHelps(helps.length > 0);
+      try {
+        const helps = await list();
+        setHasHelps(helps.length > 0);
+      } catch (err) {
+        // Este efecto corre al montar el layout, que sigue montado unos
+        // instantes despues de caducar la sesion. En ese hueco el servidor
+        // responde 401 y, sin captura, la promesa quedaba rechazada sin
+        // manejar: en desarrollo eso saca la pantalla roja de CRA.
+        //
+        // Un 401 aqui es esperado y no se avisa. El menu simplemente no
+        // muestra la ayuda, que es el comportamiento correcto para quien
+        // no tiene sesion. Cualquier otro error si se reporta.
+        if (err?.response?.status !== 401) toastError(err);
+      }
     }
     checkHelps();
   }, []);
@@ -460,16 +472,23 @@ const MainListItems = ({ collapsed, drawerClose }) => {
 
   useEffect(() => {
     async function fetchData() {
-      const companyId = user.companyId;
-      const planConfigs = await getPlanCompany(undefined, companyId);
+      try {
+        const companyId = user.companyId;
+        const planConfigs = await getPlanCompany(undefined, companyId);
 
-      setShowCampaigns(planConfigs.plan.useCampaigns);
-      setShowKanban(planConfigs.plan.useKanban);
-      setShowOpenAi(planConfigs.plan.useOpenAi);
-      setShowIntegrations(planConfigs.plan.useIntegrations);
-      setShowSchedules(planConfigs.plan.useSchedules);
-      setShowInternalChat(planConfigs.plan.useInternalChat);
-      setShowExternalApi(planConfigs.plan.useExternalApi);
+        setShowCampaigns(planConfigs.plan.useCampaigns);
+        setShowKanban(planConfigs.plan.useKanban);
+        setShowOpenAi(planConfigs.plan.useOpenAi);
+        setShowIntegrations(planConfigs.plan.useIntegrations);
+        setShowSchedules(planConfigs.plan.useSchedules);
+        setShowInternalChat(planConfigs.plan.useInternalChat);
+        setShowExternalApi(planConfigs.plan.useExternalApi);
+      } catch (err) {
+        // Mismo caso que checkHelps: con la sesion caducada esto respondia
+        // 401 sin captura. Los apartados del menu se quedan ocultos, que es
+        // lo correcto mientras no se sepa que plan tiene la empresa.
+        if (err?.response?.status !== 401) toastError(err);
+      }
     }
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
