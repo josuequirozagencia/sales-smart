@@ -1019,6 +1019,7 @@ const messages = {
       ticketWaitTimer: {
         tooltip: "The customer has been waiting this long for a human reply.",
         tooltipRotacion: "The customer has been waiting this long. After {{minutos}} min the ticket moves to another agent.",
+        tooltipEstancado: "No reply for over a day. The rotation window has passed: triage it separately.",
       },
       ticketsList: {
         called: "Call",

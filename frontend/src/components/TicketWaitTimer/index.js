@@ -32,7 +32,9 @@ let intervalo = null;
 // gastaría repintados que nadie ve.
 const CADENCIA_MS = 30000;
 
-const usarReloj = () => {
+// El prefijo "use" no es cosmetico: es lo que permite al linter aplicar
+// las reglas de hooks a esta funcion.
+const useReloj = () => {
   const [ahora, setAhora] = useState(() => Date.now());
 
   useEffect(() => {
@@ -76,6 +78,15 @@ const formatear = minutos => {
 const AVISO_SIN_ROTACION = 15;
 const ALERTA_SIN_ROTACION = 30;
 
+// Techo de la alerta: un dia.
+//
+// Por encima, el ticket deja de ser algo sobre lo que actuar ahora y pasa
+// a ser trabajo de triaje. Si todo lo viejo se quedara en rojo, la lista se
+// llenaria de alertas permanentes y el aviso perderia su unico proposito,
+// que es distinguir el lead de veinticinco minutos —recuperable— del que
+// lleva una semana abandonado.
+const TECHO_ALERTA = 24 * 60;
+
 const useStyles = makeStyles(theme => ({
   raiz: {
     display: "inline-block",
@@ -85,23 +96,53 @@ const useStyles = makeStyles(theme => ({
     padding: "1px 6px",
     borderRadius: theme.palette.tokens.radius.sm,
     whiteSpace: "nowrap",
+    // Un borde transparente en la base para que los cuatro niveles midan
+    // igual y la lista no se descuadre al cambiar uno de estado.
+    border: "1px solid transparent",
   },
+
+  // Aun hay margen. Texto suelto, sin peso visual: no hay nada que hacer.
   tranquilo: {
     color: theme.palette.text.secondary,
   },
+
+  // Se acerca el plazo.
   aviso: {
     color: theme.palette.tokens.semantic.warning.text,
     backgroundColor: theme.palette.tokens.semantic.warning.soft,
   },
+
+  // Ventana accionable: el plazo ya paso y el lead esta a punto de cambiar
+  // de asesor, o ya cambio.
+  //
+  // Relleno solido y no la pareja discreta de rojo oscuro sobre rosa: en
+  // una lista con etiquetas verdes y azules saturadas al lado, el aviso
+  // que mas importa era el que menos se veia. Blanco sobre este rojo da
+  // 4,83.
   alerta: {
-    color: theme.palette.tokens.semantic.error.text,
-    backgroundColor: theme.palette.tokens.semantic.error.soft,
+    color: theme.palette.tokens.onColor(theme.palette.tokens.semantic.error.fill),
+    backgroundColor: theme.palette.tokens.semantic.error.fill,
+  },
+
+  // Mas de un dia esperando. Deja de gritar a proposito.
+  //
+  // Un ticket de una semana ya no es "responde ahora", es otra categoria y
+  // se triaja aparte. Mantenerlo en rojo intenso agotaria el aviso y haria
+  // que el de veinticinco minutos —el unico sobre el que aun se puede
+  // actuar— se perdiera entre los abandonados.
+  //
+  // Se distingue del nivel tranquilo por el borde, no por el color: asi el
+  // texto sigue siendo el secundario del tema, que ya esta medido contra
+  // la superficie en los dos modos.
+  estancado: {
+    color: theme.palette.text.secondary,
+    borderColor: theme.palette.tokens.border.border,
   },
 }));
 
 const TicketWaitTimer = ({ waitingSince, queue }) => {
   const classes = useStyles();
-  const ahora = usarReloj();
+  const ahora = useReloj();
 
   // Sin fecha no hay espera que contar: o nunca escribió el cliente, o ya
   // se le contestó. Es el caso normal, no un error.
@@ -122,7 +163,11 @@ const TicketWaitTimer = ({ waitingSince, queue }) => {
       : null;
 
   let nivel;
-  if (umbral) {
+  if (minutos >= TECHO_ALERTA) {
+    // Por encima del techo no se mira el umbral de la cola: pasado un dia
+    // el plazo de rotacion dejo de ser la pregunta.
+    nivel = "estancado";
+  } else if (umbral) {
     if (minutos >= umbral) nivel = "alerta";
     else if (minutos >= umbral / 2) nivel = "aviso";
     else nivel = "tranquilo";
@@ -130,11 +175,18 @@ const TicketWaitTimer = ({ waitingSince, queue }) => {
   else if (minutos >= AVISO_SIN_ROTACION) nivel = "aviso";
   else nivel = "tranquilo";
 
-  const explicacion = umbral
-    ? i18n.t("ticketWaitTimer.tooltipRotacion", {
-        minutos: String(umbral),
-      })
-    : i18n.t("ticketWaitTimer.tooltip");
+  // Pasado el techo no se menciona el plazo de rotacion: ya se cumplio hace
+  // mucho y repetirlo confundiria mas que ayudar.
+  let explicacion;
+  if (nivel === "estancado") {
+    explicacion = i18n.t("ticketWaitTimer.tooltipEstancado");
+  } else if (umbral) {
+    explicacion = i18n.t("ticketWaitTimer.tooltipRotacion", {
+      minutos: String(umbral),
+    });
+  } else {
+    explicacion = i18n.t("ticketWaitTimer.tooltip");
+  }
 
   return (
     <Tooltip title={explicacion} arrow>

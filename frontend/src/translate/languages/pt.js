@@ -1037,6 +1037,7 @@ const messages = {
       ticketWaitTimer: {
         tooltip: "O cliente está esperando há esse tempo por uma resposta humana.",
         tooltipRotacion: "O cliente está esperando há esse tempo. Aos {{minutos}} min o ticket passa para outro atendente.",
+        tooltipEstancado: "Está há mais de um dia sem resposta. O prazo de rodízio já passou: reveja à parte.",
       },
       ticketsList: {
         called: "Chamado",
