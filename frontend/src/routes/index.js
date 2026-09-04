@@ -6,6 +6,8 @@ import Box from "@material-ui/core/Box";
 import LoggedInLayout from "../layout";
 import Login from "../pages/Login/";
 import Signup from "../pages/Signup";
+import ForgotPassword from "../pages/ForgotPassword";
+import ResetPassword from "../pages/ResetPassword";
 import { AuthProvider } from "../context/Auth/AuthContext";
 import { TicketsContextProvider } from "../context/Tickets/TicketsContext";
 import { WhatsAppsProvider } from "../context/WhatsApp/WhatsAppsContext";
@@ -86,6 +88,9 @@ const Routes = () => {
             <Switch>
             <Route exact path="/login" component={Login} />
             <Route exact path="/signup" component={Signup} />
+            {/* Publicas: quien ha perdido la contrasena no tiene sesion. */}
+            <Route exact path="/forgot-password" component={ForgotPassword} />
+            <Route exact path="/reset-password" component={ResetPassword} />
             <WhatsAppsProvider>
               <LoggedInLayout>
                 <Route

@@ -21,6 +21,26 @@ const messages = {
           login: "Already have an account? Log in!",
         },
       },
+      forgotPassword: {
+        title: "Reset password",
+        help: "Enter your email and we will send you a link to choose a new password.",
+        email: "Email",
+        submit: "Send instructions",
+        sent: "If an account exists for this email, you will receive instructions to reset your password. Check your spam folder too.",
+        backToLogin: "Back to sign in",
+      },
+      resetPassword: {
+        title: "New password",
+        newPassword: "New password",
+        confirmPassword: "Confirm password",
+        submit: "Save password",
+        tooShort: "Must be at least 8 characters",
+        mismatch: "Passwords do not match",
+        done: "Password updated. You can sign in now.",
+        invalidLink: "This link is invalid or has expired. Request a new one.",
+        requestNew: "Request a new link",
+        backToLogin: "Back to sign in",
+      },
       login: {
         title: "Login",
         form: {
@@ -29,6 +49,7 @@ const messages = {
           button: "Access",
         },
         buttons: {
+          forgotPassword: "Forgot your password?",
           submit: "Enter",
           register: "Don't have an account? Register!",
         },

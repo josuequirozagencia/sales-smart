@@ -3,6 +3,8 @@ import AppError from "../errors/AppError";
 import { getIO } from "../libs/socket";
 
 import AuthUserService from "../services/UserServices/AuthUserService";
+import RequestPasswordResetService from "../services/UserServices/RequestPasswordResetService";
+import ResetPasswordService from "../services/UserServices/ResetPasswordService";
 import { SendRefreshToken } from "../helpers/SendRefreshToken";
 import { RefreshTokenService } from "../services/AuthServices/RefreshTokenService";
 import FindUserFromToken from "../services/AuthServices/FindUserFromToken";
@@ -82,4 +84,34 @@ export const remove = async (
   res.clearCookie("jrt");
 
   return res.send();
+};
+
+/**
+ * Pide el enlace de recuperacion.
+ *
+ * Responde SIEMPRE lo mismo, exista o no la cuenta. Distinguir los casos
+ * convertiria este formulario en una herramienta para averiguar quien tiene
+ * cuenta en el sistema.
+ */
+export const forgotPassword = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { email } = req.body;
+
+  await RequestPasswordResetService({ email });
+
+  return res.status(200).json({ ok: true });
+};
+
+/** Consume el enlace y cambia la contrasena. */
+export const resetPassword = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { token, password } = req.body;
+
+  await ResetPasswordService({ token, password });
+
+  return res.status(200).json({ ok: true });
 };

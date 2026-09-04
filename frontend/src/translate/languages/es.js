@@ -20,6 +20,26 @@ const messages = {
           login: "¿Ya tienes una cuenta? ¡Inicia sesión!",
         },
       },
+      forgotPassword: {
+        title: "Recuperar contraseña",
+        help: "Escribe tu correo y te enviaremos un enlace para elegir una contraseña nueva.",
+        email: "Correo electrónico",
+        submit: "Enviar instrucciones",
+        sent: "Si existe una cuenta asociada a este correo, recibirás instrucciones para recuperar tu contraseña. Revisa también la carpeta de spam.",
+        backToLogin: "Volver al inicio de sesión",
+      },
+      resetPassword: {
+        title: "Nueva contraseña",
+        newPassword: "Nueva contraseña",
+        confirmPassword: "Confirmar contraseña",
+        submit: "Guardar contraseña",
+        tooShort: "Debe tener al menos 8 caracteres",
+        mismatch: "Las contraseñas no coinciden",
+        done: "Contraseña actualizada. Ya puedes iniciar sesión.",
+        invalidLink: "Este enlace no es válido o ha caducado. Solicita uno nuevo.",
+        requestNew: "Solicitar un enlace nuevo",
+        backToLogin: "Volver al inicio de sesión",
+      },
       login: {
         title: "Inicio de Sesión",
         form: {
@@ -28,6 +48,7 @@ const messages = {
           button: "Ingresar",
         },
         buttons: {
+          forgotPassword: "¿Olvidaste tu contraseña?",
           submit: "Ingresa",
           register: "¿No tienes cuenta? ¡Regístrate!",
         },

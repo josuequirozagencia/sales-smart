@@ -601,6 +601,22 @@ const Login = () => {
               >
                 {i18n.t("login.buttons.submit")}
               </Button>
+              {/* Recuperar contrasena: siempre visible. No depende de que el
+                  registro publico este abierto, porque quien ya tiene cuenta
+                  necesita poder recuperarla igualmente. */}
+              <Grid container justifyContent="center">
+                <Grid item>
+                  <Link
+                    href="#"
+                    variant="body2"
+                    component={RouterLink}
+                    to="/forgot-password"
+                    className={classes.registerLink}
+                  >
+                    {i18n.t("login.buttons.forgotPassword")}
+                  </Link>
+                </Grid>
+              </Grid>
               {allowSignup && (
                 <Grid container justifyContent="center">
                   <Grid item>

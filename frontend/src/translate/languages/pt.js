@@ -28,6 +28,26 @@ const messages = {
         noPhone: "Nenhum telefone disponível para copiar",
         copyError: "Erro ao copiar telefone",
       },
+      forgotPassword: {
+        title: "Recuperar senha",
+        help: "Digite seu e-mail e enviaremos um link para escolher uma nova senha.",
+        email: "E-mail",
+        submit: "Enviar instruções",
+        sent: "Se existir uma conta associada a este e-mail, você receberá instruções para recuperar sua senha. Verifique também a pasta de spam.",
+        backToLogin: "Voltar ao login",
+      },
+      resetPassword: {
+        title: "Nova senha",
+        newPassword: "Nova senha",
+        confirmPassword: "Confirmar senha",
+        submit: "Salvar senha",
+        tooShort: "Deve ter pelo menos 8 caracteres",
+        mismatch: "As senhas não coincidem",
+        done: "Senha atualizada. Já pode entrar.",
+        invalidLink: "Este link é inválido ou expirou. Solicite um novo.",
+        requestNew: "Solicitar um novo link",
+        backToLogin: "Voltar ao login",
+      },
       login: {
         title: "Login",
         form: {
@@ -36,6 +56,7 @@ const messages = {
           button: "Acessar",
         },
         buttons: {
+          forgotPassword: "Esqueceu sua senha?",
           submit: "Entrar",
           register: "Não tem um conta? Cadastre-se!",
         },
