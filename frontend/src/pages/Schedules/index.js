@@ -142,17 +142,21 @@ const useStyles = makeStyles((theme) => ({
   // distinguirse de un vistazo: un mensaje SE ENVIA SOLO, una cita es un
   // compromiso que alguien debe cumplir. Confundirlos seria peor que no
   // juntarlos.
+  // Los eventos llevan texto blanco encima, asi que el fondo tiene que
+  // darle 4,5 de contraste. Se usan las variantes "text" de los tokens,
+  // mas oscuras, y no las "fill": medido, el azul de relleno daba 3,68 y
+  // el verde 3,30, los dos por debajo del minimo.
   eventoCita: {
-    backgroundColor: theme.palette.tokens.brand.primary,
+    backgroundColor: theme.palette.tokens.brand.primary,   // 5,85
     borderColor: theme.palette.tokens.brand.primary,
   },
   eventoCitaGoogle: {
-    backgroundColor: theme.palette.tokens.semantic.info.fill,
-    borderColor: theme.palette.tokens.semantic.info.fill,
+    backgroundColor: theme.palette.tokens.semantic.info.text,   // 6,70
+    borderColor: theme.palette.tokens.semantic.info.text,
   },
   eventoCitaHecha: {
-    backgroundColor: theme.palette.tokens.semantic.success.fill,
-    borderColor: theme.palette.tokens.semantic.success.fill,
+    backgroundColor: theme.palette.tokens.semantic.success.text, // 5,02
+    borderColor: theme.palette.tokens.semantic.success.text,
   },
   eventoCitaCancelada: {
     // Se conserva a la vista pero apagada: saber que algo se cancelo es
@@ -170,28 +174,114 @@ const useStyles = makeStyles((theme) => ({
 
   mainPaper: {
     flex: 1,
-    padding: theme.spacing(1),
-    overflowY: "scroll",
+    padding: theme.spacing(2),
+    // "scroll" pintaba la barra siempre, incluso sin nada que desplazar.
+    overflowY: "auto",
+    borderRadius: theme.palette.tokens.radius.lg,
     ...theme.scrollbarStyles,
   },
+
+  // ---------------------------------------------------------------------
+  // Calendario
+  //
+  // react-big-calendar trae estilos pensados para fondo claro: rejilla
+  // gris, cabeceras oscuras y hoy en amarillo palido. Sobre el modo oscuro
+  // del CRM eso no se ve. Aqui se rehacen con los tokens del tema, que si
+  // distinguen el modo.
+  //
+  // Lo que habia antes estaba roto de dos maneras: theme.palette.mode solo
+  // existe en el tema v5 y esta pantalla usa el v4, asi que era undefined y
+  // los botones se ponian NEGROS al pasar por encima incluso en oscuro; y
+  // theme.palette.light es un objeto {main}, no un color, asi que como
+  // valor CSS el navegador lo descartaba.
+  // ---------------------------------------------------------------------
   calendarToolbar: {
+    "& .rbc-toolbar": {
+      marginBottom: theme.spacing(2),
+      gap: theme.spacing(1),
+      flexWrap: "wrap",
+    },
     "& .rbc-toolbar-label": {
-      color: theme.mode === "light" ? theme.palette.light : "white",
+      color: theme.palette.text.primary,
+      fontWeight: 600,
+      fontSize: "1rem",
+      textTransform: "capitalize",
     },
     "& .rbc-btn-group button": {
-      color: theme.mode === "light" ? theme.palette.light : "white",
-      "&:hover": {
-        color: theme.palette.mode === "dark" ? "#fff" : "#000",
+      color: theme.palette.text.secondary,
+      borderColor: theme.palette.tokens.border.border,
+      borderRadius: theme.palette.tokens.radius.md,
+      padding: "4px 12px",
+      transition: "background-color 180ms ease, color 180ms ease",
+      "&:hover, &:focus": {
+        color: theme.palette.text.primary,
+        backgroundColor: theme.palette.tokens.surface.surfaceSecondary,
       },
-      "&:active": {
-        color: theme.palette.mode === "dark" ? "#fff" : "#000",
+      // La vista activa se marca con el color de marca y su texto legible
+      // encima, no con un negro que desaparece sobre fondo oscuro.
+      "&.rbc-active, &.rbc-active:hover, &.rbc-active:focus": {
+        backgroundColor: theme.palette.tokens.brand.primary,
+        color: theme.palette.tokens.brand.onPrimary,
+        borderColor: theme.palette.tokens.brand.primary,
       },
+    },
+
+    // Rejilla y cabeceras.
+    "& .rbc-month-view, & .rbc-time-view, & .rbc-agenda-view table": {
+      border: `1px solid ${theme.palette.tokens.border.border}`,
+      borderRadius: theme.palette.tokens.radius.md,
+      overflow: "hidden",
+    },
+    "& .rbc-header": {
+      padding: theme.spacing(1, 0.5),
+      borderBottom: `1px solid ${theme.palette.tokens.border.border}`,
+      color: theme.palette.text.secondary,
+      fontWeight: 600,
+      fontSize: "0.75rem",
+      textTransform: "uppercase",
+      letterSpacing: "0.04em",
+    },
+    "& .rbc-month-row + .rbc-month-row, & .rbc-day-bg + .rbc-day-bg, & .rbc-header + .rbc-header":
+      {
+        borderColor: theme.palette.tokens.border.border,
+      },
+    "& .rbc-date-cell": {
+      padding: theme.spacing(0.5),
+      fontSize: "0.8125rem",
+      color: theme.palette.text.primary,
+    },
+
+    // Dias de otro mes: se atenuan en vez de pintarse de gris fijo, que
+    // sobre fondo oscuro quedaba mas claro que el resto.
+    "& .rbc-off-range-bg": {
+      backgroundColor: "transparent",
+    },
+    "& .rbc-off-range .rbc-button-link": {
+      opacity: 0.35,
+    },
+
+    // Hoy: un tinte de marca en vez del amarillo de serie.
+    "& .rbc-today": {
+      backgroundColor: `${theme.palette.tokens.brand.primary}14`,
+    },
+
+    // Eventos.
+    "& .rbc-event": {
+      borderRadius: theme.palette.tokens.radius.sm,
+      padding: "2px 6px",
+      fontSize: "0.75rem",
+      border: "none",
+      // El foco por teclado tiene que verse: sin esto no hay forma de
+      // saber en que evento estas al tabular.
       "&:focus": {
-        color: theme.palette.mode === "dark" ? "#fff" : "#000",
+        outline: `2px solid ${theme.palette.tokens.brand.onSurface}`,
+        outlineOffset: 1,
       },
-      "&.rbc-active": {
-        color: theme.palette.mode === "dark" ? "#fff" : "#000",
-      },
+    },
+    "& .rbc-show-more": {
+      color: theme.palette.tokens.brand.onSurface,
+      backgroundColor: "transparent",
+      fontWeight: 600,
     },
   },
 }));
@@ -437,6 +527,18 @@ const Schedules = () => {
     cita,
     title: (
       <div key={"c" + cita.id} className="event-container">
+        {/* El tipo NO puede distinguirse solo por color: quien no
+            diferencie el azul del verde se quedaria sin la informacion.
+            Cada estado lleva ademas su marca. */}
+        <span className="event-mark" aria-hidden="true">
+          {cita.status === "done"
+            ? "✓"
+            : cita.status === "cancelled"
+            ? "✕"
+            : cita.origin === "google"
+            ? "G"
+            : "●"}
+        </span>
         <div style={eventTitleStyle}>
           {cita.contact ? cita.contact.name : cita.title || "—"}
         </div>
@@ -569,7 +671,9 @@ const Schedules = () => {
           onSelectEvent={alPulsarEvento}
           startAccessor="start"
           endAccessor="end"
-          style={{ height: 500 }}
+          // Alto adaptable: 500px fijos dejaban hueco muerto en pantallas
+          // grandes y obligaban a desplazar en portatiles.
+          style={{ height: "calc(100vh - 260px)", minHeight: 420 }}
           className={classes.calendarToolbar}
         />
       </Paper>

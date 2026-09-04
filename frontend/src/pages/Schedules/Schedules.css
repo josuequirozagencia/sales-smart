@@ -1,22 +1,79 @@
-/* Adicione as regras CSS para ocultar os ícones */
+/*
+ * Eventos del calendario.
+ *
+ * Los iconos de editar y borrar estaban con opacity 0 y solo aparecian al
+ * pasar el raton por encima. En un movil NO HAY raton, asi que eran
+ * literalmente inalcanzables: no habia forma de editar ni borrar un
+ * mensaje programado desde el telefono.
+ *
+ * Ahora se ven siempre, atenuados para no competir con el texto, y se
+ * refuerzan al pasar por encima o al enfocarlos con el teclado.
+ */
 .event-container {
-    position: relative;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  /* Antes "center": los iconos empujaban el nombre al aparecer y el
+     evento daba un salto. Alineado al inicio, el texto no se mueve. */
+  justify-content: flex-start;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+}
+
+/* El nombre se recorta con puntos suspensivos en vez de desbordar la
+   celda del dia, que es estrecha. */
+.event-container > div:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.delete-icon,
+.edit-icon {
+  opacity: 0.6;
+  transition: opacity 180ms ease, transform 180ms ease;
+  flex: none;
+  /* Blanco de los iconos: el evento tiene fondo de color en los dos modos,
+     asi que el contraste no depende del tema. */
+  color: #fff;
+  font-size: 1rem !important;
+}
+
+.event-container:hover .delete-icon,
+.event-container:hover .edit-icon,
+.delete-icon:focus,
+.edit-icon:focus {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+/* Sin raton no hay hover: en pantallas tactiles se muestran del todo. */
+@media (hover: none) {
   .delete-icon,
   .edit-icon {
-    opacity: 0;
-    transition: opacity 0.3s;
-    margin-left: 5px; /* Adicione margem à esquerda */
-    z-index: 1; /* Garante que os ícones apareçam sobre o evento */
+    opacity: 0.85;
   }
-  
-  .event-container:hover .delete-icon,
-  .event-container:hover .edit-icon {
-    opacity: 1;
-  }
-  
+}
+
+/*
+ * Marca del tipo de cita.
+ *
+ * El color por si solo no puede llevar informacion: quien no distinga el
+ * azul del verde se quedaria sin saber si una cita viene de Google o esta
+ * cumplida. Cada estado lleva ademas su simbolo.
+ *
+ * aria-hidden en el marcado: para un lector de pantalla es decoracion, y
+ * el estado real ya se anuncia al abrir la cita.
+ */
+.event-mark {
+  flex: none;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  line-height: 1;
+  opacity: 0.9;
+  color: #fff;
+}
