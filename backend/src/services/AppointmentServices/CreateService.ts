@@ -67,6 +67,20 @@ const CreateService = async ({
     throw new AppError("ERR_TOO_MANY_REMINDERS");
   }
 
+  // Contacto OBLIGATORIO por este camino.
+  //
+  // La columna admite nulo desde que se trae la agenda de Google, donde un
+  // evento puede no tener contacto detras. Pero una cita creada DESDE
+  // ChatIA nace de una conversacion y siempre lo tiene: sin el no se
+  // podria enviar el recordatorio ni saber a quien se atiende.
+  //
+  // La comprobacion vive aqui, en el camino de la aplicacion, y no en la
+  // base: es la base la que tiene que ser permisiva para lo que entra de
+  // fuera, no la aplicacion para lo que crea dentro.
+  if (!contactId) {
+    throw new AppError("ERR_APPOINTMENT_NEEDS_CONTACT");
+  }
+
   const contact = await Contact.findOne({
     where: { id: contactId, companyId }
   });

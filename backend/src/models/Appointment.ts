@@ -44,6 +44,11 @@ class Appointment extends Model<Appointment> {
   @BelongsTo(() => Company)
   company: Company;
 
+  /**
+   * Opcional: los eventos traidos de Google pueden no tener contacto.
+   * Crear una cita desde ChatIA si lo exige, y eso se comprueba en
+   * AppointmentServices/CreateService.
+   */
   @ForeignKey(() => Contact)
   @Column
   contactId: number;
