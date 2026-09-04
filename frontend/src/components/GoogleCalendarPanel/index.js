@@ -5,6 +5,7 @@ import { Button, Paper, Typography } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
 import EventAvailableIcon from "@material-ui/icons/EventAvailable";
 import LinkOffIcon from "@material-ui/icons/LinkOff";
+import SyncIcon from "@material-ui/icons/Sync";
 
 import api from "../../services/api";
 import toastError from "../../errors/toastError";
@@ -72,6 +73,7 @@ const GoogleCalendarPanel = () => {
   });
   const [cargando, setCargando] = useState(true);
   const [confirmar, setConfirmar] = useState(false);
+  const [sincronizando, setSincronizando] = useState(false);
 
   const esAdmin = user?.profile === "admin";
 
@@ -118,6 +120,28 @@ const GoogleCalendarPanel = () => {
     }
   };
 
+  // La sincronizacion corre sola cada cinco minutos. Este boton existe
+  // para no tener que esperar a la siguiente pasada cuando acabas de
+  // cambiar algo en Google.
+  const sincronizar = async () => {
+    setSincronizando(true);
+    try {
+      const { data } = await api.post("/google/sync");
+      toast.success(
+        i18n.t("googleCalendar.toasts.synced", {
+          nuevas: data.creadas,
+          actualizadas: data.actualizadas,
+          canceladas: data.canceladas,
+        })
+      );
+      await cargar();
+    } catch (err) {
+      toastError(err);
+    } finally {
+      setSincronizando(false);
+    }
+  };
+
   const desconectar = async () => {
     try {
       await api.delete("/google/disconnect");
@@ -142,8 +166,16 @@ const GoogleCalendarPanel = () => {
       <div className={classes.cuerpo}>
         <div>
           {estado.connected ? (
-            <span className={classes.conectado}>
-              {i18n.t("googleCalendar.connectedAs")} {estado.email}
+            <span>
+              <span className={classes.conectado}>
+                {i18n.t("googleCalendar.connectedAs")} {estado.email}
+              </span>
+              {estado.lastSyncAt && (
+                <span className={classes.estado} style={{ display: "block" }}>
+                  {i18n.t("googleCalendar.lastSync")}{" "}
+                  {new Date(estado.lastSyncAt).toLocaleString()}
+                </span>
+              )}
             </span>
           ) : (
             <span className={classes.estado}>
@@ -154,14 +186,26 @@ const GoogleCalendarPanel = () => {
 
         {esAdmin && estado.configured && (
           estado.connected ? (
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<LinkOffIcon />}
-              onClick={() => setConfirmar(true)}
-            >
-              {i18n.t("googleCalendar.buttons.disconnect")}
-            </Button>
+            <span style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <Button
+                variant="outlined"
+                color="primary"
+                size="small"
+                startIcon={<SyncIcon />}
+                onClick={sincronizar}
+                disabled={sincronizando}
+              >
+                {i18n.t("googleCalendar.buttons.sync")}
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<LinkOffIcon />}
+                onClick={() => setConfirmar(true)}
+              >
+                {i18n.t("googleCalendar.buttons.disconnect")}
+              </Button>
+            </span>
           ) : (
             <Button
               variant="contained"

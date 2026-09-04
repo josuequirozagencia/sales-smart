@@ -1171,14 +1171,17 @@ const messages = {
       googleCalendar: {
         title: "Google Calendar",
         description: "Sincroniza las citas del CRM con un calendario de Google. No se te pedirá tu contraseña: te identificas en Google y autorizas solo el calendario.",
+        lastSync: "Última sincronización:",
         connectedAs: "Conectado como",
         notConfigured: "Falta configurar las credenciales del servidor (GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET en el archivo .env del backend). Se crean una sola vez en Google Cloud.",
         adminOnly: "Solo el administrador puede conectar o desconectar el calendario de la empresa.",
         buttons: {
+          sync: "Sincronizar",
           connect: "Conectar con Google",
           disconnect: "Desconectar",
         },
         toasts: {
+          synced: "Sincronizado: {{nuevas}} nuevas, {{actualizadas}} actualizadas, {{canceladas}} canceladas",
           connected: "Google Calendar conectado",
           disconnected: "Google Calendar desconectado",
           failed: "No se pudo conectar con Google",

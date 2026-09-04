@@ -64,6 +64,8 @@ import { getWbot } from "./libs/wbot";
 import { initializeBirthdayJobs, startBirthdayJob } from "./jobs/BirthdayJob";
 import { getJidOf } from "./services/WbotServices/getJidOf";
 import RecurrenceService from "./services/CampaignService/RecurrenceService";
+import GoogleCalendarIntegration from "./models/GoogleCalendarIntegration";
+import { pullFromGoogle } from "./services/GoogleCalendarServices/PullService";
 
 const connection = process.env.REDIS_URI || "";
 const limiterMax = process.env.REDIS_OPT_LIMITER_MAX || 1;
@@ -102,6 +104,12 @@ export const sendScheduledMessages = new BullQueue(
 );
 export const campaignQueue = new BullQueue("CampaignQueue", connection);
 export const queueMonitor = new BullQueue("QueueMonitor", connection);
+
+// Sondeo del Google Calendar de cada empresa conectada.
+export const googleCalendarMonitor = new BullQueue(
+  "GoogleCalendarMonitor",
+  connection
+);
 
 export const messageQueue = new BullQueue("MessageQueue", connection, {
   limiter: {
@@ -2209,6 +2217,42 @@ handleProcessLanes();
 handleCloseTicketsAutomatic();
 handleRandomUser();
 
+/**
+ * Trae los cambios del Google Calendar de cada empresa conectada.
+ *
+ * Se recorren las integraciones activas y se sincroniza una a una. Un
+ * fallo en la de una empresa no puede detener a las demas, asi que cada
+ * una va en su propio try.
+ */
+async function handleGoogleCalendarSync() {
+  try {
+    const integraciones = await GoogleCalendarIntegration.findAll({
+      where: { active: true }
+    });
+
+    for (const integracion of integraciones) {
+      try {
+        const r = await pullFromGoogle(integracion.companyId);
+        if (r && (r.creadas || r.actualizadas || r.canceladas)) {
+          logger.info(
+            `[GoogleCalendar] empresa ${integracion.companyId}: ` +
+              `${r.creadas} nuevas, ${r.actualizadas} actualizadas, ${r.canceladas} canceladas`
+          );
+        }
+      } catch (err) {
+        // Sin conexion a Google, token revocado o cuota agotada. Se anota
+        // y se sigue: la proxima pasada lo reintentara.
+        logger.error(
+          `[GoogleCalendar] fallo en empresa ${integracion.companyId}: ${err}`
+        );
+      }
+    }
+  } catch (err) {
+    Sentry.captureException(err);
+    logger.error(`[GoogleCalendar] fallo general: ${err}`);
+  }
+}
+
 export async function startQueueProcess() {
   logger.info("Iniciando processamento de filas");
 
@@ -2229,6 +2273,8 @@ export async function startQueueProcess() {
   userMonitor.process("VerifyLoginStatus", handleLoginStatus);
 
   queueMonitor.process("VerifyQueueStatus", handleVerifyQueue);
+
+  googleCalendarMonitor.process("SyncGoogleCalendar", handleGoogleCalendarSync);
 
   initializeBirthdayJobs();
 
@@ -2255,6 +2301,18 @@ export async function startQueueProcess() {
     {},
     {
       repeat: { cron: "* * * * *", key: "verify-login" },
+      removeOnComplete: true
+    }
+  );
+
+  // Cada cinco minutos. Mas a menudo gastaria cuota de la API de Google
+  // sin ganar nada: no hay push, asi que el retraso es inevitable, y cinco
+  // minutos es imperceptible para una agenda.
+  googleCalendarMonitor.add(
+    "SyncGoogleCalendar",
+    {},
+    {
+      repeat: { cron: "0 */5 * * * *", key: "sync-google-calendar" },
       removeOnComplete: true
     }
   );
