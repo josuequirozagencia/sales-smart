@@ -12,6 +12,7 @@ import {
   DataType
 } from "sequelize-typescript";
 import Company from "./Company";
+import { encrypt, decrypt } from "../helpers/SecretBox";
 
 /**
  * Permiso de acceso al Google Calendar de la empresa.
@@ -38,11 +39,36 @@ class GoogleCalendarIntegration extends Model<GoogleCalendarIntegration> {
   @Column
   email: string;
 
-  @Column(DataType.TEXT)
+  // Los dos tokens se guardan CIFRADOS.
+  //
+  // El cifrado vive en el lector y el escritor de la columna, no en quien
+  // los usa: asi cualquier codigo que lea integracion.accessToken recibe
+  // el valor en claro sin saber nada de esto, y no puede olvidarse de
+  // descifrar. Y al asignarlo se cifra siempre, sin excepcion posible.
+  @Column({
+    type: DataType.TEXT,
+    get(this: GoogleCalendarIntegration) {
+      return decrypt(this.getDataValue("accessToken"));
+    },
+    set(this: GoogleCalendarIntegration, valor: string) {
+      this.setDataValue("accessToken", encrypt(valor));
+    }
+  })
   accessToken: string;
 
-  /** Google solo lo entrega la primera vez que se autoriza. */
-  @Column(DataType.TEXT)
+  /**
+   * Google solo lo entrega la primera vez que se autoriza, asi que es el
+   * secreto de verdad: con el se piden accesos nuevos indefinidamente.
+   */
+  @Column({
+    type: DataType.TEXT,
+    get(this: GoogleCalendarIntegration) {
+      return decrypt(this.getDataValue("refreshToken"));
+    },
+    set(this: GoogleCalendarIntegration, valor: string) {
+      this.setDataValue("refreshToken", encrypt(valor));
+    }
+  })
   refreshToken: string;
 
   @Column
