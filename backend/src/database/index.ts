@@ -43,6 +43,9 @@ import LogTicket from "../models/LogTicket";
 import Prompt from "../models/Prompt";
 import Partner from "../models/Partner";
 import ContactWallet from "../models/ContactWallet";
+import QueueProduct from "../models/QueueProduct";
+import Sale from "../models/Sale";
+import Appointment from "../models/Appointment";
 import ScheduledMessages from "../models/ScheduledMessages";
 import ScheduledMessagesEnvio from "../models/ScheduledMessagesEnvio";
 import Versions from "../models/Versions";
@@ -110,6 +113,9 @@ const models = [
   Prompt,
   Partner,
   ContactWallet,
+  QueueProduct,
+  Sale,
+  Appointment,
   ScheduledMessages,
   ScheduledMessagesEnvio,
   Versions,
