@@ -241,10 +241,18 @@ const useStyles = makeStyles((theme) => ({
   },
   secondaryContentSecond: {
     display: "flex",
-    alignItems: "flex-start",
-    flexWrap: "nowrap",
+    alignItems: "center",
+    // "nowrap" obligaba a las insignias a caber en una sola linea pasara lo
+    // que pasara: al estrechar la ventana se salian del item en vez de
+    // reacomodarse. Con "wrap" bajan a la linea siguiente, que es lo que
+    // hace falta cuando un ticket lleva conexion, cola, usuario, etiquetas
+    // y ahora tambien el tiempo de espera.
+    flexWrap: "wrap",
     flexDirection: "row",
     alignContent: "flex-start",
+    // Separacion propia en vez de los marginRight de 1px de cada insignia,
+    // que las dejaban pegadas entre si.
+    gap: 3,
   },
   ticketInfo1: {
     position: "relative",
@@ -714,6 +722,20 @@ const TicketListItemCustom = ({ setTabOpen, ticket }) => {
               >
                 {renderLastMessage()}
                 <span className={classes.secondaryContentSecond}>
+                  {/* Cuanto lleva el cliente esperando respuesta.
+
+                      Va aqui, con las demas insignias, y no en el carril
+                      derecho: alli conviven DOS ListItemSecondaryAction que
+                      MUI posiciona en absoluto contra el mismo borde, asi
+                      que cualquier cosa que se anada se monta sobre los
+                      iconos. Aqui es flujo normal y se reordena solo al
+                      estrechar la ventana.
+
+                      Va primero porque es la senal mas urgente de la fila. */}
+                  <TicketWaitTimer
+                    waitingSince={ticket.waitingSince}
+                    queue={ticket.queue}
+                  />
                   {ticket?.whatsapp ? (
                     <Badge
                       className={classes.connectionTag}
@@ -826,15 +848,6 @@ const TicketListItemCustom = ({ setTabOpen, ticket }) => {
                   <>{format(parseISO(ticket.updatedAt), "dd/MM/yyyy")}</>
                 )}
               </Typography>
-
-              <br />
-
-              {/* Cuanto lleva el cliente esperando respuesta. Se pinta solo
-                  si la hay: el componente decide y devuelve null si no. */}
-              <TicketWaitTimer
-                waitingSince={ticket.waitingSince}
-                queue={ticket.queue}
-              />
             </>
           )}
         </ListItemSecondaryAction>
