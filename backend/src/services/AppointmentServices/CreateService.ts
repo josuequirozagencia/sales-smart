@@ -5,6 +5,7 @@ import Appointment from "../../models/Appointment";
 import AppointmentReminder from "../../models/AppointmentReminder";
 import Contact from "../../models/Contact";
 import CreateScheduleService from "../ScheduleServices/CreateService";
+import { pushAppointment } from "../GoogleCalendarServices/PushService";
 import EnsureContactTagService, {
   APPOINTMENT_TAG_NAME,
   APPOINTMENT_TAG_COLOR
@@ -131,6 +132,13 @@ const CreateService = async ({
   } catch (err) {
     // La etiqueta es comodidad visual, no el registro.
   }
+
+  // Reflejo en Google Calendar, si la empresa lo tiene conectado.
+  //
+  // Va DESPUES de guardar y no lanza nunca: si el calendario esta caido o
+  // sin conectar, la cita existe igual. Perderla por no poder copiarla
+  // seria peor que quedarse sin copia.
+  await pushAppointment(appointment);
 
   await appointment.reload({ include: [{ model: AppointmentReminder }] });
 

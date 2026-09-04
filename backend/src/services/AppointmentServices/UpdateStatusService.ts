@@ -2,6 +2,7 @@ import AppError from "../../errors/AppError";
 import Appointment from "../../models/Appointment";
 import AppointmentReminder from "../../models/AppointmentReminder";
 import Schedule from "../../models/Schedule";
+import { removeFromGoogle, pushAppointment } from "../GoogleCalendarServices/PushService";
 
 const ESTADOS = ["pending", "done", "cancelled"];
 
@@ -53,6 +54,15 @@ const UpdateStatusService = async (
   }
 
   await appointment.update({ status });
+
+  // Google refleja el cambio de estado. Una cita cancelada se retira del
+  // calendario: dejarla puesta mostraria al asesor un compromiso que ya no
+  // existe. Una marcada como cumplida se queda, porque ocurrio.
+  if (status === "cancelled") {
+    await removeFromGoogle(appointment);
+  } else {
+    await pushAppointment(appointment);
+  }
 
   return appointment;
 };
