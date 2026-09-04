@@ -47,6 +47,7 @@ import QueueProduct from "../models/QueueProduct";
 import Sale from "../models/Sale";
 import Appointment from "../models/Appointment";
 import AppointmentReminder from "../models/AppointmentReminder";
+import GoogleCalendarIntegration from "../models/GoogleCalendarIntegration";
 import ScheduledMessages from "../models/ScheduledMessages";
 import ScheduledMessagesEnvio from "../models/ScheduledMessagesEnvio";
 import Versions from "../models/Versions";
@@ -118,6 +119,7 @@ const models = [
   Sale,
   Appointment,
   AppointmentReminder,
+  GoogleCalendarIntegration,
   ScheduledMessages,
   ScheduledMessagesEnvio,
   Versions,

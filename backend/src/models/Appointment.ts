@@ -81,6 +81,21 @@ class Appointment extends Model<Appointment> {
   @Column
   status: string;
 
+  /** Identificador del evento en Google, si esta sincronizado. */
+  @Column
+  googleEventId: string;
+
+  /**
+   * De donde nacio: "crm" o "google".
+   *
+   * Decide quien manda cuando las dos versiones no coinciden. Lo que nacio
+   * aqui manda sobre su copia en Google, y al reves, de modo que cada
+   * evento tiene un dueño claro y nunca se pisan.
+   */
+  @Default("crm")
+  @Column
+  origin: string;
+
   // Los avisos viven en tabla aparte: una cita puede tener hasta tres.
   @HasMany(() => AppointmentReminder, { onDelete: "CASCADE", hooks: true })
   reminders: AppointmentReminder[];

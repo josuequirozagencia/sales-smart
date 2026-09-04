@@ -1060,6 +1060,26 @@ const messages = {
           message: "It will be removed from the totals. The contact tag stays, since they may have other sales.",
         },
       },
+      googleCalendar: {
+        title: "Google Calendar",
+        description: "Sync CRM appointments with a Google calendar. You will not be asked for your password: you sign in at Google and authorise the calendar only.",
+        connectedAs: "Connected as",
+        notConfigured: "Server credentials are missing (GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in the backend .env). They are created once in Google Cloud.",
+        adminOnly: "Only the administrator can connect or disconnect the company calendar.",
+        buttons: {
+          connect: "Connect with Google",
+          disconnect: "Disconnect",
+        },
+        toasts: {
+          connected: "Google Calendar connected",
+          disconnected: "Google Calendar disconnected",
+          failed: "Could not connect to Google",
+        },
+        confirmDisconnect: {
+          title: "Disconnect Google Calendar",
+          message: "Events already created in Google stay there. They will stop syncing.",
+        },
+      },
       appointmentModal: {
         title: "Schedule",
         noReminders: "No reminders. You can add up to 3.",

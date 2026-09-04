@@ -49,6 +49,7 @@ import WebhookIcon from '@mui/icons-material/Webhook';
 import FacebookLogin from "react-facebook-login/dist/facebook-login-render-props";
 
 import MainContainer from "../../components/MainContainer";
+import GoogleCalendarPanel from "../../components/GoogleCalendarPanel";
 import MainHeader from "../../components/MainHeader";
 import MainHeaderButtonsWrapper from "../../components/MainHeaderButtonsWrapper";
 import Title from "../../components/Title";
@@ -926,6 +927,11 @@ const Connections = () => {
               </PopupState>
             </MainHeaderButtonsWrapper>
           </MainHeader>
+
+          {/* Conexion con Google Calendar. Va aqui, con las demas
+              conexiones externas, y no en Ajustes: es lo mismo que
+              conectar un WhatsApp, un servicio de fuera. */}
+          <GoogleCalendarPanel />
 
           {
             statusImport?.all ? (

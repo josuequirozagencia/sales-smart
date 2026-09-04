@@ -1078,6 +1078,26 @@ const messages = {
           message: "Será descontada dos totais. A etiqueta do contato não é retirada, pois ele pode ter outras vendas.",
         },
       },
+      googleCalendar: {
+        title: "Google Calendar",
+        description: "Sincroniza os compromissos do CRM com um calendário do Google. Não será pedida a sua senha: você se identifica no Google e autoriza apenas o calendário.",
+        connectedAs: "Conectado como",
+        notConfigured: "Faltam as credenciais do servidor (GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET no .env do backend). Criam-se uma única vez no Google Cloud.",
+        adminOnly: "Apenas o administrador pode conectar ou desconectar o calendário da empresa.",
+        buttons: {
+          connect: "Conectar com Google",
+          disconnect: "Desconectar",
+        },
+        toasts: {
+          connected: "Google Calendar conectado",
+          disconnected: "Google Calendar desconectado",
+          failed: "Não foi possível conectar ao Google",
+        },
+        confirmDisconnect: {
+          title: "Desconectar Google Calendar",
+          message: "Os eventos já criados no Google permanecem lá. Deixarão de sincronizar.",
+        },
+      },
       appointmentModal: {
         title: "Agendar",
         noReminders: "Sem lembretes. Você pode adicionar até 3.",
