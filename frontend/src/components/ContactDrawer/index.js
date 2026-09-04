@@ -14,6 +14,7 @@ import PermIdentityIcon from '@material-ui/icons/PermIdentity';
 import PersonIcon from "@material-ui/icons/Person";
 import CreateIcon from '@material-ui/icons/Create';
 import MonetizationOnOutlinedIcon from "@material-ui/icons/MonetizationOnOutlined";
+import EventAvailableOutlinedIcon from "@material-ui/icons/EventAvailableOutlined";
 import SearchIcon from '@material-ui/icons/Search';
 import ClearIcon from '@material-ui/icons/Clear';
 import BlockIcon from '@material-ui/icons/Block';
@@ -51,6 +52,7 @@ import {
 import { ContactForm } from "../ContactForm";
 import ContactModal from "../ContactModal";
 import SaleModal from "../SaleModal";
+import AppointmentModal from "../AppointmentModal";
 import { ContactNotes } from "../ContactNotes";
 import ImageIcon from '@material-ui/icons/Image';
 import VideocamIcon from '@material-ui/icons/Videocam';
@@ -396,6 +398,7 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) =>
 
 	const [modalOpen, setModalOpen] = useState(false);
 	const [saleModalOpen, setSaleModalOpen] = useState(false);
+	const [appointmentModalOpen, setAppointmentModalOpen] = useState(false);
 	const [blockingContact, setBlockingContact] = useState(contact.active);
 	const [openForm, setOpenForm] = useState(false);
 	const [tabValue, setTabValue] = useState(0);
@@ -1014,6 +1017,16 @@ const fetchGroupParticipants = async () => {
 										<MonetizationOnOutlinedIcon />
 									</IconButton>
 								</Tooltip>
+								{/* Agendar una cita o seguimiento con este contacto. */}
+								<Tooltip title={i18n.t("appointmentModal.buttons.open")} arrow>
+									<IconButton
+										className={classes.actionIcon}
+										onClick={() => setAppointmentModalOpen(true)}
+										size="small"
+									>
+										<EventAvailableOutlinedIcon />
+									</IconButton>
+								</Tooltip>
 								<Tooltip title={i18n.t("contactDrawer.buttons.edit")} arrow>
 									<IconButton
 										className={`${classes.actionIcon} ${classes.editIcon}`}
@@ -1200,6 +1213,12 @@ const fetchGroupParticipants = async () => {
 										<SaleModal
 											open={saleModalOpen}
 											onClose={() => setSaleModalOpen(false)}
+											contact={contact}
+											ticket={ticket}
+										/>
+										<AppointmentModal
+											open={appointmentModalOpen}
+											onClose={() => setAppointmentModalOpen(false)}
 											contact={contact}
 											ticket={ticket}
 										/>

@@ -1060,6 +1060,27 @@ const messages = {
           message: "It will be removed from the totals. The contact tag stays, since they may have other sales.",
         },
       },
+      appointmentModal: {
+        title: "Schedule",
+        tagHint: "Saving adds the “Agenda” tag to the contact.",
+        reminderTooLate: "With that lead time the reminder would fire in the past, so it will not be scheduled. Pick a shorter lead time or a later date.",
+        form: {
+          when: "Date and time",
+          title: "Subject",
+          notes: "Notes",
+          withReminder: "Send a WhatsApp reminder",
+          reminderBody: "Reminder message",
+          leadTime: "Lead time",
+        },
+        buttons: {
+          open: "Schedule",
+          save: "Schedule",
+          cancel: "Cancel",
+        },
+        toasts: {
+          created: "Appointment scheduled",
+        },
+      },
       saleModal: {
         title: "Register sale",
         tagHint: "Saving adds the “Venta” tag to the contact.",

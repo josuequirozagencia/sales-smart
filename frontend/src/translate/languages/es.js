@@ -1168,6 +1168,27 @@ const messages = {
           message: "Se descontará de los totales. La etiqueta del contacto no se retira, porque puede tener otras ventas.",
         },
       },
+      appointmentModal: {
+        title: "Agendar",
+        tagHint: "Al guardar se añade la etiqueta «Agenda» al contacto.",
+        reminderTooLate: "Con esa antelación el aviso saldría en un momento ya pasado, así que no se programará. Elige menos antelación o una fecha más lejana.",
+        form: {
+          when: "Fecha y hora",
+          title: "Motivo",
+          notes: "Notas",
+          withReminder: "Enviar recordatorio por WhatsApp",
+          reminderBody: "Mensaje del recordatorio",
+          leadTime: "Antelación",
+        },
+        buttons: {
+          open: "Agendar",
+          save: "Agendar",
+          cancel: "Cancelar",
+        },
+        toasts: {
+          created: "Cita agendada",
+        },
+      },
       saleModal: {
         title: "Registrar venta",
         tagHint: "Al guardar se añade la etiqueta «Venta» al contacto.",
