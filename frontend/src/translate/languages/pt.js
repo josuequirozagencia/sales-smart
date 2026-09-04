@@ -1034,6 +1034,35 @@ const messages = {
           message: "Esta ação não pode ser revertida, confirmar?",
         },
       },
+      queueProducts: {
+        tabTitle: "Produtos",
+        help: "O que você cadastrar aqui é o que aparecerá no formulário de venda quando o ticket pertencer a esta fila.",
+        saveQueueFirst: "Salve a fila primeiro para poder adicionar produtos.",
+        loading: "Carregando...",
+        empty: "Ainda não há produtos nesta fila.",
+        form: {
+          name: "Produto ou serviço",
+          price: "Preço",
+        },
+        buttons: {
+          add: "Adicionar",
+          delete: "Excluir",
+        },
+        table: {
+          name: "Produto",
+          price: "Preço",
+          active: "Ativo",
+          actions: "Ações",
+        },
+        toasts: {
+          added: "Produto adicionado",
+          deleted: "Produto excluído",
+        },
+        confirmDelete: {
+          title: "Excluir produto",
+          message: "As vendas já registradas mantêm o nome do produto e não se perdem.",
+        },
+      },
       ticketWaitTimer: {
         tooltip: "O cliente está esperando há esse tempo por uma resposta humana.",
         tooltipRotacion: "O cliente está esperando há esse tempo. Aos {{minutos}} min o ticket passa para outro atendente.",

@@ -34,6 +34,7 @@ import Step from "@material-ui/core/Step";
 import StepLabel from "@material-ui/core/StepLabel";
 import StepContent from "@material-ui/core/StepContent";
 import ConfirmationModal from "../ConfirmationModal";
+import QueueProducts from "../QueueProducts";
 import Checkbox from '@mui/material/Checkbox';
 
 import OptionsChatBot from "../ChatBots/options";
@@ -453,9 +454,16 @@ const QueueModal = ({ open, onClose, queueId, onEdit }) => {
           onChange={(e, v) => setTab(v)}
           aria-label="disabled tabs example"
         >
-          <Tab label={i18n.t("queueModal.title.queueData")} />
-          {schedulesEnabled && <Tab label={i18n.t("queueModal.title.text")} />}
+          {/* value explicito en cada pestaña: la de horarios es
+              condicional, y sin esto al ocultarse se corrian los indices y
+              la ultima pestaña dejaba de coincidir con su panel. */}
+          <Tab value={0} label={i18n.t("queueModal.title.queueData")} />
+          {schedulesEnabled && (
+            <Tab value={1} label={i18n.t("queueModal.title.text")} />
+          )}
+          <Tab value={2} label={i18n.t("queueProducts.tabTitle")} />
         </Tabs>
+        {tab === 2 && <QueueProducts queueId={queueId} />}
         {tab === 0 && (
           <Formik
             initialValues={queue}

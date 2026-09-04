@@ -1016,6 +1016,35 @@ const messages = {
           message: "This action cannot be undone, confirm?",
         },
       },
+      queueProducts: {
+        tabTitle: "Products",
+        help: "Whatever you add here is what shows up in the sale form when the ticket belongs to this queue.",
+        saveQueueFirst: "Save the queue first to add products to it.",
+        loading: "Loading...",
+        empty: "No products in this queue yet.",
+        form: {
+          name: "Product or service",
+          price: "Price",
+        },
+        buttons: {
+          add: "Add",
+          delete: "Delete",
+        },
+        table: {
+          name: "Product",
+          price: "Price",
+          active: "Active",
+          actions: "Actions",
+        },
+        toasts: {
+          added: "Product added",
+          deleted: "Product deleted",
+        },
+        confirmDelete: {
+          title: "Delete product",
+          message: "Recorded sales keep the product name and are not lost.",
+        },
+      },
       ticketWaitTimer: {
         tooltip: "The customer has been waiting this long for a human reply.",
         tooltipRotacion: "The customer has been waiting this long. After {{minutos}} min the ticket moves to another agent.",
