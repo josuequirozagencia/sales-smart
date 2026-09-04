@@ -20,6 +20,10 @@ const publicSettingsKeys = [
   // de que la prueba vencio— cuando aun no se sabe de que empresa es quien
   // mira, asi que tienen que ser legibles sin sesion. No son secretos: son
   // precisamente los datos de contacto que uno quiere que se vean.
+  // El registro consulta si hace falta aprobacion antes de que exista
+  // empresa ni sesion, asi que tiene que poder leerse sin autenticar. No
+  // es sensible: solo dice si las altas pasan por revision.
+  "requireApproval",
   "supportEmail",
   "supportPhone",
   "supportNote"
