@@ -25,6 +25,12 @@ googleCalendarRoutes.get(
   GoogleCalendarController.callback
 );
 
+googleCalendarRoutes.post(
+  "/google/sync",
+  isAuth,
+  GoogleCalendarController.sync
+);
+
 googleCalendarRoutes.delete(
   "/google/disconnect",
   isAuth,

@@ -8,6 +8,7 @@ import {
   handleCallback,
   disconnect
 } from "../services/GoogleCalendarServices/OAuthService";
+import { pullFromGoogle } from "../services/GoogleCalendarServices/PullService";
 
 /**
  * Conexion con Google Calendar.
@@ -95,4 +96,26 @@ export const remove = async (
   await disconnect(companyId);
 
   return res.json({ message: "Disconnected" });
+};
+
+/**
+ * Sincroniza a peticion del usuario.
+ *
+ * Existe ademas del sondeo automatico para no obligar a esperar a la
+ * siguiente pasada cuando alguien acaba de cambiar algo en Google.
+ */
+export const sync = async (req: Request, res: Response): Promise<Response> => {
+  const { companyId, profile } = req.user;
+
+  if (profile !== "admin") {
+    throw new AppError("ERR_NO_PERMISSION", 403);
+  }
+
+  const resultado = await pullFromGoogle(companyId);
+
+  if (!resultado) {
+    throw new AppError("ERR_GOOGLE_NOT_CONNECTED", 400);
+  }
+
+  return res.json(resultado);
 };
