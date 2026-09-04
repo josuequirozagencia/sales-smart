@@ -18,12 +18,15 @@ const aNumero = (v: any): number | null => {
 };
 
 export const index = async (req: Request, res: Response): Promise<Response> => {
-  const { companyId } = req.user;
+  // El perfil decide cuanto se ve: un asesor solo sus citas.
+  const { companyId, id: userId, profile } = req.user;
   const { contactId, status, initialDate, finalDate } =
     req.query as IndexQuery;
 
   const appointments = await ListService({
     companyId,
+    userId: Number(userId),
+    profile,
     contactId: contactId ? Number(contactId) : undefined,
     status,
     initialDate,
