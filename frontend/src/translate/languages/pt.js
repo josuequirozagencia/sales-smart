@@ -1080,6 +1080,7 @@ const messages = {
       },
       appointmentModal: {
         title: "Agendar",
+        noReminders: "Sem lembretes. Você pode adicionar até 3.",
         tagHint: "Ao salvar, a etiqueta “Agenda” é adicionada ao contato.",
         reminderTooLate: "Com essa antecedência o aviso sairia num momento já passado, portanto não será agendado. Escolha menos antecedência ou uma data mais distante.",
         form: {
@@ -1087,10 +1088,12 @@ const messages = {
           title: "Motivo",
           notes: "Notas",
           withReminder: "Enviar lembrete por WhatsApp",
+          reminders: "Lembretes",
           reminderBody: "Mensagem do lembrete",
           leadTime: "Antecedência",
         },
         buttons: {
+          addReminder: "Adicionar",
           open: "Agendar",
           save: "Agendar",
           cancel: "Cancelar",

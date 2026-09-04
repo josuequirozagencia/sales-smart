@@ -46,6 +46,7 @@ import ContactWallet from "../models/ContactWallet";
 import QueueProduct from "../models/QueueProduct";
 import Sale from "../models/Sale";
 import Appointment from "../models/Appointment";
+import AppointmentReminder from "../models/AppointmentReminder";
 import ScheduledMessages from "../models/ScheduledMessages";
 import ScheduledMessagesEnvio from "../models/ScheduledMessagesEnvio";
 import Versions from "../models/Versions";
@@ -116,6 +117,7 @@ const models = [
   QueueProduct,
   Sale,
   Appointment,
+  AppointmentReminder,
   ScheduledMessages,
   ScheduledMessagesEnvio,
   Versions,

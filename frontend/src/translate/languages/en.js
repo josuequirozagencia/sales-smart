@@ -1062,6 +1062,7 @@ const messages = {
       },
       appointmentModal: {
         title: "Schedule",
+        noReminders: "No reminders. You can add up to 3.",
         tagHint: "Saving adds the “Agenda” tag to the contact.",
         reminderTooLate: "With that lead time the reminder would fire in the past, so it will not be scheduled. Pick a shorter lead time or a later date.",
         form: {
@@ -1069,10 +1070,12 @@ const messages = {
           title: "Subject",
           notes: "Notes",
           withReminder: "Send a WhatsApp reminder",
+          reminders: "Reminders",
           reminderBody: "Reminder message",
           leadTime: "Lead time",
         },
         buttons: {
+          addReminder: "Add",
           open: "Schedule",
           save: "Schedule",
           cancel: "Cancel",

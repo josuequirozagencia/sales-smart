@@ -1170,6 +1170,7 @@ const messages = {
       },
       appointmentModal: {
         title: "Agendar",
+        noReminders: "Sin recordatorios. Puedes añadir hasta 3.",
         tagHint: "Al guardar se añade la etiqueta «Agenda» al contacto.",
         reminderTooLate: "Con esa antelación el aviso saldría en un momento ya pasado, así que no se programará. Elige menos antelación o una fecha más lejana.",
         form: {
@@ -1177,10 +1178,12 @@ const messages = {
           title: "Motivo",
           notes: "Notas",
           withReminder: "Enviar recordatorio por WhatsApp",
+          reminders: "Recordatorios",
           reminderBody: "Mensaje del recordatorio",
           leadTime: "Antelación",
         },
         buttons: {
+          addReminder: "Añadir",
           open: "Agendar",
           save: "Agendar",
           cancel: "Cancelar",

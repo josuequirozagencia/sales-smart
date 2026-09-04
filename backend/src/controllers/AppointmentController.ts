@@ -41,8 +41,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     scheduledAt,
     title,
     notes,
-    reminderBody,
-    reminderMinutesBefore,
+    reminders,
     whatsappId
   } = req.body;
 
@@ -54,8 +53,16 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     scheduledAt,
     title,
     notes,
-    reminderBody,
-    reminderMinutesBefore: aNumero(reminderMinutesBefore) ?? 60,
+    // Se normaliza aqui y no en el servicio: el formulario puede mandar
+    // filas a medio rellenar, y las que no tienen texto no son un aviso.
+    reminders: Array.isArray(reminders)
+      ? reminders
+          .filter((r: any) => r && typeof r.body === "string" && r.body.trim())
+          .map((r: any) => ({
+            body: r.body,
+            minutesBefore: aNumero(r.minutesBefore) ?? 60
+          }))
+      : [],
     whatsappId: aNumero(whatsappId)
   });
 

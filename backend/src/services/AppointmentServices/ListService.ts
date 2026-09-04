@@ -1,6 +1,7 @@
 import { Op } from "sequelize";
 
 import Appointment from "../../models/Appointment";
+import AppointmentReminder from "../../models/AppointmentReminder";
 import Contact from "../../models/Contact";
 import Ticket from "../../models/Ticket";
 import User from "../../models/User";
@@ -41,7 +42,8 @@ const ListService = async ({
         attributes: ["id", "name", "number", "urlPicture"]
       },
       { model: Ticket, as: "ticket", attributes: ["id", "uuid", "status"] },
-      { model: User, as: "user", attributes: ["id", "name"] }
+      { model: User, as: "user", attributes: ["id", "name"] },
+      { model: AppointmentReminder }
     ],
     // Ascendente: una agenda se lee hacia adelante, lo mas proximo primero.
     order: [["scheduledAt", "ASC"]]

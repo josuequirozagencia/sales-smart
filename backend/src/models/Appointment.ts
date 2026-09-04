@@ -10,13 +10,14 @@ import {
   BelongsTo,
   Default,
   AllowNull,
+  HasMany,
   DataType
 } from "sequelize-typescript";
 import Company from "./Company";
 import Contact from "./Contact";
 import Ticket from "./Ticket";
 import User from "./User";
-import Schedule from "./Schedule";
+import AppointmentReminder from "./AppointmentReminder";
 
 /**
  * Cita o seguimiento agendado con un contacto.
@@ -25,8 +26,9 @@ import Schedule from "./Schedule";
  * programado —texto y hora de envio— y una cita es un compromiso que
  * existe aunque no se mande nada, y que se cumple o se cancela.
  *
- * Al agendar se crea ademas un Schedule con el recordatorio, y se guarda
- * aqui cual es para poder anularlo si la cita se cancela.
+ * Al agendar se crean ademas los recordatorios pedidos —hasta tres—, cada
+ * uno con su mensaje programado, y se conservan en AppointmentReminders
+ * para poder anularlos si la cita se cancela.
  */
 @Table
 class Appointment extends Model<Appointment> {
@@ -79,13 +81,9 @@ class Appointment extends Model<Appointment> {
   @Column
   status: string;
 
-  /** Recordatorio programado al crearla, si se pidio. */
-  @ForeignKey(() => Schedule)
-  @Column
-  scheduleId: number;
-
-  @BelongsTo(() => Schedule)
-  schedule: Schedule;
+  // Los avisos viven en tabla aparte: una cita puede tener hasta tres.
+  @HasMany(() => AppointmentReminder, { onDelete: "CASCADE", hooks: true })
+  reminders: AppointmentReminder[];
 
   @CreatedAt
   createdAt: Date;

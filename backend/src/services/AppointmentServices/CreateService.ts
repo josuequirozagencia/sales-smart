@@ -2,12 +2,27 @@ import * as Yup from "yup";
 
 import AppError from "../../errors/AppError";
 import Appointment from "../../models/Appointment";
+import AppointmentReminder from "../../models/AppointmentReminder";
 import Contact from "../../models/Contact";
 import CreateScheduleService from "../ScheduleServices/CreateService";
 import EnsureContactTagService, {
   APPOINTMENT_TAG_NAME,
   APPOINTMENT_TAG_COLOR
 } from "../SaleServices/EnsureContactTagService";
+
+/**
+ * Tope de avisos por cita.
+ *
+ * Esta aqui y en un solo sitio para poder subirlo sin buscarlo por el
+ * codigo. Tres cubre el caso habitual —el dia antes, unas horas antes y
+ * un ultimo aviso— sin convertir un recordatorio en acoso.
+ */
+export const MAX_REMINDERS = 3;
+
+interface ReminderInput {
+  body: string;
+  minutesBefore: number;
+}
 
 interface Request {
   companyId: number;
@@ -17,10 +32,7 @@ interface Request {
   scheduledAt: string;
   title?: string;
   notes?: string;
-  /** Texto del recordatorio a enviar. Sin el, no se programa ninguno. */
-  reminderBody?: string;
-  /** Minutos de antelacion del recordatorio. */
-  reminderMinutesBefore?: number;
+  reminders?: ReminderInput[];
   whatsappId?: number;
 }
 
@@ -32,8 +44,7 @@ const CreateService = async ({
   scheduledAt,
   title = null,
   notes = null,
-  reminderBody = null,
-  reminderMinutesBefore = 60,
+  reminders = [],
   whatsappId = null
 }: Request): Promise<Appointment> => {
   const schema = Yup.object().shape({
@@ -51,42 +62,15 @@ const CreateService = async ({
     throw new AppError("ERR_INVALID_APPOINTMENT_DATE");
   }
 
+  if (reminders.length > MAX_REMINDERS) {
+    throw new AppError("ERR_TOO_MANY_REMINDERS");
+  }
+
   const contact = await Contact.findOne({
     where: { id: contactId, companyId }
   });
   if (!contact) {
     throw new AppError("ERR_NO_CONTACT_FOUND", 404);
-  }
-
-  // El recordatorio se programa ANTES de crear la cita, para poder guardar
-  // su identificador y despues poder anularlo si la cita se cancela.
-  let scheduleId: number = null;
-
-  if (reminderBody && reminderBody.trim()) {
-    const aviso = new Date(
-      cuando.getTime() - (Number(reminderMinutesBefore) || 0) * 60000
-    );
-
-    // Un recordatorio para un momento que ya paso no se programa: se
-    // enviaria de inmediato y el contacto recibiria un aviso de algo que
-    // esta a punto de ocurrir o ya ocurrio.
-    if (aviso.getTime() > Date.now()) {
-      try {
-        const schedule = await CreateScheduleService({
-          body: reminderBody.trim(),
-          sendAt: aviso.toISOString(),
-          contactId,
-          companyId,
-          userId,
-          whatsappId
-        });
-        scheduleId = schedule.id;
-      } catch (err) {
-        // La cita vale por si misma. Si el recordatorio no se pudo
-        // programar, se guarda igual sin el: perder la cita por eso seria
-        // peor que quedarse sin aviso.
-      }
-    }
   }
 
   const appointment = await Appointment.create({
@@ -97,9 +81,45 @@ const CreateService = async ({
     scheduledAt: cuando,
     title,
     notes,
-    status: "pending",
-    scheduleId
+    status: "pending"
   } as any);
+
+  // Los avisos se crean DESPUES de la cita: cada uno necesita su id, y si
+  // alguno fallara la cita ya esta guardada y no se pierde.
+  for (const r of reminders) {
+    if (!r || !r.body || !r.body.trim()) continue;
+
+    const antelacion = Number(r.minutesBefore) || 0;
+    const envio = new Date(cuando.getTime() - antelacion * 60000);
+
+    let scheduleId: number = null;
+
+    // Un aviso para un momento que ya paso no se programa: saldria de
+    // inmediato, anunciando algo inminente o ya ocurrido. Se deja
+    // registrado igual, sin mensaje, para que se vea que se pidio.
+    if (envio.getTime() > Date.now()) {
+      try {
+        const schedule = await CreateScheduleService({
+          body: r.body.trim(),
+          sendAt: envio.toISOString(),
+          contactId,
+          companyId,
+          userId,
+          whatsappId
+        });
+        scheduleId = schedule.id;
+      } catch (err) {
+        // Un aviso que no se pudo programar no invalida los demas ni la
+        // cita.
+      }
+    }
+
+    await AppointmentReminder.create({
+      appointmentId: appointment.id,
+      scheduleId,
+      minutesBefore: antelacion
+    } as any);
+  }
 
   try {
     await EnsureContactTagService(
@@ -109,11 +129,10 @@ const CreateService = async ({
       APPOINTMENT_TAG_COLOR
     );
   } catch (err) {
-    // Igual que en las ventas: la etiqueta es comodidad visual, no el
-    // registro, y no vale tumbar una cita valida por ella.
+    // La etiqueta es comodidad visual, no el registro.
   }
 
-  await appointment.reload();
+  await appointment.reload({ include: [{ model: AppointmentReminder }] });
 
   return appointment;
 };

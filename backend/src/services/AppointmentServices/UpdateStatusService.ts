@@ -1,5 +1,6 @@
 import AppError from "../../errors/AppError";
 import Appointment from "../../models/Appointment";
+import AppointmentReminder from "../../models/AppointmentReminder";
 import Schedule from "../../models/Schedule";
 
 const ESTADOS = ["pending", "done", "cancelled"];
@@ -7,9 +8,10 @@ const ESTADOS = ["pending", "done", "cancelled"];
 /**
  * Cambia el estado de una cita.
  *
- * Al cancelarla se borra tambien su recordatorio: dejarlo programado
- * enviaria al contacto un aviso de una cita que ya no existe, que es peor
- * que no avisar.
+ * Al cancelarla se borran TODOS sus recordatorios pendientes: dejar uno
+ * vivo enviaria al contacto el aviso de una cita que ya no existe, que es
+ * peor que no avisar. Los que ya se enviaron no se tocan, porque borrarlos
+ * no desharia nada y solo perderia el rastro.
  */
 const UpdateStatusService = async (
   appointmentId: number | string,
@@ -21,23 +23,33 @@ const UpdateStatusService = async (
   }
 
   const appointment = await Appointment.findOne({
-    where: { id: appointmentId, companyId }
+    where: { id: appointmentId, companyId },
+    include: [{ model: AppointmentReminder }]
   });
 
   if (!appointment) {
     throw new AppError("ERR_NO_APPOINTMENT_FOUND", 404);
   }
 
-  if (status === "cancelled" && appointment.scheduleId) {
-    try {
-      await Schedule.destroy({
-        where: { id: appointment.scheduleId, companyId }
-      });
-    } catch (err) {
-      // Si el recordatorio ya no existiera, cancelar la cita sigue siendo
-      // lo correcto.
+  if (status === "cancelled") {
+    const avisos = appointment.reminders || [];
+
+    for (const aviso of avisos) {
+      if (!aviso.scheduleId) continue;
+      try {
+        const schedule = await Schedule.findOne({
+          where: { id: aviso.scheduleId, companyId }
+        });
+        // Un aviso ya enviado se deja: borrarlo no lo devuelve.
+        if (schedule && !schedule.sentAt) {
+          await schedule.destroy();
+          await aviso.update({ scheduleId: null });
+        }
+      } catch (err) {
+        // Si el mensaje ya no existiera, cancelar la cita sigue siendo lo
+        // correcto.
+      }
     }
-    await appointment.update({ scheduleId: null });
   }
 
   await appointment.update({ status });

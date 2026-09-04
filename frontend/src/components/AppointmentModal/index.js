@@ -2,13 +2,12 @@ import React, { useEffect, useState } from "react";
 
 import {
   Button,
-  Checkbox,
+  IconButton,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   FormControl,
-  FormControlLabel,
   InputLabel,
   MenuItem,
   Select,
@@ -16,6 +15,8 @@ import {
   Typography,
 } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
+import AddIcon from "@material-ui/icons/Add";
+import DeleteOutlineIcon from "@material-ui/icons/DeleteOutline";
 
 import api from "../../services/api";
 import toastError from "../../errors/toastError";
@@ -33,6 +34,10 @@ import { i18n } from "../../translate/i18n";
 // Antelaciones ofrecidas, en minutos.
 const ANTELACIONES = [15, 30, 60, 120, 24 * 60];
 
+// Mismo tope que aplica el servidor. Tres cubre el dia antes, unas horas
+// antes y un ultimo aviso, sin convertir el recordatorio en acoso.
+const MAX_AVISOS = 3;
+
 const useStyles = makeStyles(theme => ({
   fila: {
     display: "flex",
@@ -41,6 +46,19 @@ const useStyles = makeStyles(theme => ({
     flexWrap: "wrap",
   },
   campo: { flex: "1 1 200px", minWidth: 160 },
+  cabeceraAvisos: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: theme.spacing(2),
+    marginBottom: theme.spacing(1),
+    fontWeight: 600,
+  },
+  bloqueAviso: {
+    borderLeft: `2px solid ${theme.palette.tokens.border.border}`,
+    paddingLeft: theme.spacing(1.5),
+    marginBottom: theme.spacing(1),
+  },
   aviso: {
     marginTop: theme.spacing(1),
     padding: theme.spacing(1, 1.5),
@@ -69,9 +87,9 @@ const AppointmentModal = ({ open, onClose, contact, ticket, onSaved }) => {
   const [scheduledAt, setScheduledAt] = useState(enUnaHora);
   const [title, setTitle] = useState("");
   const [notes, setNotes] = useState("");
-  const [conRecordatorio, setConRecordatorio] = useState(false);
-  const [reminderBody, setReminderBody] = useState("");
-  const [antelacion, setAntelacion] = useState(60);
+  // Hasta tres avisos. Se guardan como lista y no como tres variables
+  // sueltas para que anadir o quitar uno no descoloque a los demas.
+  const [avisos, setAvisos] = useState([]);
   const [guardando, setGuardando] = useState(false);
 
   useEffect(() => {
@@ -79,18 +97,30 @@ const AppointmentModal = ({ open, onClose, contact, ticket, onSaved }) => {
       setScheduledAt(enUnaHora());
       setTitle("");
       setNotes("");
-      setConRecordatorio(false);
-      setReminderBody("");
-      setAntelacion(60);
+      setAvisos([]);
     }
   }, [open]);
 
-  // Un recordatorio cuyo momento de envio ya paso no se programaria en el
-  // servidor. Se avisa aqui para que no parezca que se perdio.
-  const avisoTardio =
-    conRecordatorio &&
+  // Un aviso cuyo momento de envio ya paso no se programaria en el
+  // servidor. Se marca aqui para que no parezca que se perdio.
+  const esTardio = a =>
     scheduledAt &&
-    new Date(scheduledAt).getTime() - antelacion * 60000 <= Date.now();
+    new Date(scheduledAt).getTime() - a.minutesBefore * 60000 <= Date.now();
+
+  const anadirAviso = () => {
+    if (avisos.length >= MAX_AVISOS) return;
+    // Cada aviso nuevo propone una antelacion distinta de las ya puestas:
+    // tres avisos a la misma hora no serian tres avisos.
+    const usadas = avisos.map(a => a.minutesBefore);
+    const libre = ANTELACIONES.find(m => !usadas.includes(m)) ?? 60;
+    setAvisos([...avisos, { body: "", minutesBefore: libre }]);
+  };
+
+  const cambiarAviso = (i, campo, valor) => {
+    setAvisos(avisos.map((a, j) => (j === i ? { ...a, [campo]: valor } : a)));
+  };
+
+  const quitarAviso = i => setAvisos(avisos.filter((_, j) => j !== i));
 
   const guardar = async () => {
     setGuardando(true);
@@ -103,8 +133,7 @@ const AppointmentModal = ({ open, onClose, contact, ticket, onSaved }) => {
         scheduledAt: new Date(scheduledAt).toISOString(),
         title,
         notes,
-        reminderBody: conRecordatorio ? reminderBody : null,
-        reminderMinutesBefore: antelacion,
+        reminders: avisos,
         whatsappId: ticket?.whatsappId,
       });
       toast.success(i18n.t("appointmentModal.toasts.created"));
@@ -154,20 +183,27 @@ const AppointmentModal = ({ open, onClose, contact, ticket, onSaved }) => {
           onChange={e => setNotes(e.target.value)}
         />
 
-        <FormControlLabel
-          style={{ marginTop: 12 }}
-          control={
-            <Checkbox
-              color="primary"
-              checked={conRecordatorio}
-              onChange={e => setConRecordatorio(e.target.checked)}
-            />
-          }
-          label={i18n.t("appointmentModal.form.withReminder")}
-        />
+        <div className={classes.cabeceraAvisos}>
+          <span>{i18n.t("appointmentModal.form.reminders")}</span>
+          <Button
+            size="small"
+            color="primary"
+            startIcon={<AddIcon />}
+            onClick={anadirAviso}
+            disabled={avisos.length >= MAX_AVISOS}
+          >
+            {i18n.t("appointmentModal.buttons.addReminder")}
+          </Button>
+        </div>
 
-        {conRecordatorio && (
-          <>
+        {avisos.length === 0 && (
+          <Typography variant="body2" color="textSecondary">
+            {i18n.t("appointmentModal.noReminders")}
+          </Typography>
+        )}
+
+        {avisos.map((a, i) => (
+          <div key={i} className={classes.bloqueAviso}>
             <div className={classes.fila}>
               <TextField
                 className={classes.campo}
@@ -176,41 +212,34 @@ const AppointmentModal = ({ open, onClose, contact, ticket, onSaved }) => {
                 size="small"
                 multiline
                 minRows={2}
-                value={reminderBody}
-                onChange={e => setReminderBody(e.target.value)}
+                value={a.body}
+                onChange={e => cambiarAviso(i, "body", e.target.value)}
               />
-              <FormControl
-                variant="outlined"
-                size="small"
-                className={classes.campo}
-              >
-                <InputLabel>
-                  {i18n.t("appointmentModal.form.leadTime")}
-                </InputLabel>
+              <FormControl variant="outlined" size="small" className={classes.campo}>
+                <InputLabel>{i18n.t("appointmentModal.form.leadTime")}</InputLabel>
                 <Select
-                  value={antelacion}
-                  onChange={e => setAntelacion(e.target.value)}
+                  value={a.minutesBefore}
+                  onChange={e => cambiarAviso(i, "minutesBefore", e.target.value)}
                   label={i18n.t("appointmentModal.form.leadTime")}
                 >
                   {ANTELACIONES.map(m => (
                     <MenuItem key={m} value={m}>
-                      {m < 60
-                        ? `${m} min`
-                        : m < 1440
-                        ? `${m / 60} h`
-                        : `${m / 1440} d`}
+                      {m < 60 ? `${m} min` : m < 1440 ? `${m / 60} h` : `${m / 1440} d`}
                     </MenuItem>
                   ))}
                 </Select>
               </FormControl>
+              <IconButton size="small" onClick={() => quitarAviso(i)}>
+                <DeleteOutlineIcon fontSize="small" />
+              </IconButton>
             </div>
-            {avisoTardio && (
+            {esTardio(a) && (
               <div className={classes.aviso}>
                 {i18n.t("appointmentModal.reminderTooLate")}
               </div>
             )}
-          </>
-        )}
+          </div>
+        ))}
 
         <Typography
           variant="caption"
