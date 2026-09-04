@@ -170,7 +170,20 @@ const useStyles = makeStyles((theme) => ({
     flexWrap: "wrap",
     alignItems: "center",
   },
-  selector: { minWidth: 150 },
+  selector: {
+    minWidth: 150,
+    // En un movil dos selectores de 150px mas el buscador no caben ni
+    // envolviendo bien: se reparten el ancho a partes iguales.
+    [theme.breakpoints.down("xs")]: {
+      minWidth: 0,
+      flex: "1 1 45%",
+    },
+  },
+  filtrosMovil: {
+    [theme.breakpoints.down("xs")]: {
+      width: "100%",
+    },
+  },
 
   mainPaper: {
     flex: 1,
@@ -277,6 +290,20 @@ const useStyles = makeStyles((theme) => ({
         outline: `2px solid ${theme.palette.tokens.brand.onSurface}`,
         outlineOffset: 1,
       },
+    },
+    // La vista Agenda es una TABLA, y una tabla no encoge como la
+    // rejilla del mes: se desplaza dentro de su caja. Esto es contencion,
+    // no ocultar el problema — el contenido sigue siendo alcanzable.
+    "& .rbc-agenda-view": {
+      overflowX: "auto",
+    },
+    // La rejilla del mes si encoge sola, pero por debajo de cierto ancho el
+    // numero del dia se solapa con el evento.
+    [theme.breakpoints.down("xs")]: {
+      "& .rbc-date-cell": { fontSize: "0.6875rem" },
+      "& .rbc-header": { fontSize: "0.625rem", padding: theme.spacing(0.5, 0) },
+      "& .rbc-event": { fontSize: "0.6875rem", padding: "1px 3px" },
+      "& .rbc-toolbar .rbc-btn-group button": { padding: "4px 8px", fontSize: "0.75rem" },
     },
     "& .rbc-show-more": {
       color: theme.palette.tokens.brand.onSurface,
@@ -598,7 +625,7 @@ const Schedules = () => {
           {i18n.t("schedules.title")} ({eventos.length})
         </Title>
         <MainHeaderButtonsWrapper>
-          <div className={classes.filtros}>
+          <div className={`${classes.filtros} ${classes.filtrosMovil}`}>
             <TextField
               select
               size="small"
@@ -671,9 +698,12 @@ const Schedules = () => {
           onSelectEvent={alPulsarEvento}
           startAccessor="start"
           endAccessor="end"
-          // Alto adaptable: 500px fijos dejaban hueco muerto en pantallas
-          // grandes y obligaban a desplazar en portatiles.
-          style={{ height: "calc(100vh - 260px)", minHeight: 420 }}
+          // El Paper que lo contiene ya tiene flex 1 dentro de una columna
+          // flex, asi que ocupa lo que sobra tras la cabecera. Con 100% el
+          // calendario lo hereda y se adapta solo, crezca lo que crezca la
+          // cabecera al envolver en movil. minHeight es un suelo: si algun
+          // dia el alto no resolviera, el calendario no desapareceria.
+          style={{ height: "100%", minHeight: 380 }}
           className={classes.calendarToolbar}
         />
       </Paper>
