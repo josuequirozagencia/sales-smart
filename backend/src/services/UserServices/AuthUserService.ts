@@ -1,5 +1,6 @@
 import User from "../../models/User";
 import AppError from "../../errors/AppError";
+import { evaluarAccesoDeUsuario } from "../../helpers/CompanyAccessPolicy";
 import {
   createAccessToken,
   createRefreshToken
@@ -7,6 +8,7 @@ import {
 import { SerializeUser } from "../../helpers/SerializeUser";
 import Queue from "../../models/Queue";
 import Company from "../../models/Company";
+import Plan from "../../models/Plan";
 import Setting from "../../models/Setting";
 import CompaniesSettings from "../../models/CompaniesSettings";
 
@@ -78,7 +80,25 @@ const AuthUserService = async ({
   }
 
   if (await user.checkPassword(password)) {
-    const company = await Company.findByPk(user?.companyId);
+    // Se incluye el plan: la politica necesita saber si es una prueba
+    // para decidir el corte por vencimiento. Sin el, isTrial seria siempre
+    // falso y el corte no actuaria nunca, fallando en silencio.
+    const company = await Company.findByPk(user?.companyId, {
+      include: [{ model: Plan }]
+    });
+
+    // La contrasena es correcta, pero puede que la empresa no pueda
+    // entrar: pendiente de aprobacion, rechazada, suspendida o con la
+    // prueba vencida.
+    //
+    // Se comprueba DESPUES de validar la contrasena a proposito: hacerlo
+    // antes revelaria el estado de una empresa a quien solo conoce un
+    // correo, sin demostrar que es de los suyos.
+    const bloqueo = evaluarAccesoDeUsuario(user, company);
+    if (bloqueo) {
+      throw new AppError(bloqueo, 401);
+    }
+
     await company.update({
       lastLogin: new Date()
     });

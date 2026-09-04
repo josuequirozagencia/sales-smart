@@ -34,6 +34,24 @@ const languageOptions = [
 ];
 
 const useStyles = makeStyles((theme) => ({
+  // Aviso de acceso bloqueado. Fijo, no pasajero: el usuario no lo
+  // resuelve reintentando y tiene que poder leerlo con calma.
+  avisoBloqueo: {
+    width: "100%",
+    padding: theme.spacing(2),
+    marginBottom: theme.spacing(2),
+    borderRadius: theme.palette.tokens.radius.md,
+    backgroundColor: theme.palette.tokens.semantic.warning.soft,
+    color: theme.palette.tokens.semantic.warning.text,
+    fontSize: "0.875rem",
+    lineHeight: 1.5,
+  },
+  avisoSoporte: {
+    marginTop: theme.spacing(1),
+    paddingTop: theme.spacing(1),
+    borderTop: "1px solid currentColor",
+    opacity: 0.9,
+  },
   root: {
     width: "100vw",
     height: "100vh",
@@ -353,6 +371,11 @@ const Login = () => {
   const [user, setUser] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [allowSignup, setAllowSignup] = useState(false);
+  // Motivo por el que no se puede entrar, si lo hay. Se muestra fijo y no
+  // como aviso pasajero: son situaciones que el usuario no arregla
+  // reintentando, y necesita leer que hacer.
+  const [bloqueo, setBloqueo] = useState(null);
+  const [soporte, setSoporte] = useState({ email: "", phone: "", note: "" });
   const { getPublicSetting } = useSettings();
   const { handleLogin } = useContext(AuthContext);
 
@@ -378,11 +401,27 @@ const Login = () => {
 
   const handlSubmit = (e) => {
     e.preventDefault();
-    handleLogin(user);
+    setBloqueo(null);
+    handleLogin(user).catch(codigo => {
+      if (typeof codigo === "string") setBloqueo(codigo);
+    });
   };
 
   useEffect(() => {
     const companyId = getCompanyIdFromUrl();
+
+    // Datos de soporte para el aviso de prueba vencida. Si fallan, el
+    // mensaje sale igual sin ellos: no puede depender de esto.
+    ["supportEmail", "supportPhone", "supportNote"].forEach((clave) => {
+      getPublicSetting(clave, companyId)
+        .then((valor) =>
+          setSoporte((s) => ({
+            ...s,
+            [clave.replace("support", "").toLowerCase()]: valor || "",
+          }))
+        )
+        .catch(() => {});
+    });
 
     getPublicSetting("userCreation", companyId)
       .then((data) => {
@@ -601,6 +640,23 @@ const Login = () => {
               >
                 {i18n.t("login.buttons.submit")}
               </Button>
+
+              {bloqueo && (
+                <div className={classes.avisoBloqueo}>
+                  {i18n.t(`backendErrors.${bloqueo}`)}
+                  {/* Los datos de contacto solo se muestran cuando sirven
+                      de algo: en el resto de bloqueos no hay nada que
+                      gestionar con soporte. */}
+                  {bloqueo === "ERR_TRIAL_EXPIRED" &&
+                    (soporte.email || soporte.phone || soporte.note) && (
+                      <div className={classes.avisoSoporte}>
+                        {soporte.note && <div>{soporte.note}</div>}
+                        {soporte.email && <div>{soporte.email}</div>}
+                        {soporte.phone && <div>{soporte.phone}</div>}
+                      </div>
+                    )}
+                </div>
+              )}
               {/* Recuperar contrasena: siempre visible. No depende de que el
                   registro publico este abierto, porque quien ya tiene cuenta
                   necesita poder recuperarla igualmente. */}

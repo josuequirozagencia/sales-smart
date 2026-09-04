@@ -2405,6 +2405,10 @@ const messages = {
         ERR_WAPP_INVALID_CONTACT: "Este no es un número de whatsapp válido.",
         ERR_WAPP_DOWNLOAD_MEDIA:
           "No se pudieron descargar los medios de WhatsApp. Verifique la página de conexiones.",
+        ERR_COMPANY_PENDING: "Tu solicitud de registro está pendiente de aprobación. Te avisaremos cuando tu cuenta haya sido aprobada.",
+        ERR_COMPANY_REJECTED: "Tu solicitud de registro no fue aprobada.",
+        ERR_COMPANY_SUSPENDED: "Tu cuenta se encuentra suspendida. Contacta con el administrador.",
+        ERR_TRIAL_EXPIRED: "Tu periodo de prueba ha finalizado. Ponte en contacto con soporte para continuar.",
         ERR_INVALID_CREDENTIALS: "Error de autenticación. Vuelva a intentarlo.",
         ERR_SENDING_WAPP_MSG:
           "Error al enviar el mensaje de WhatsApp. Verifique la página de conexiones.",

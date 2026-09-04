@@ -2420,6 +2420,10 @@ const messages = {
         ERR_WAPP_INVALID_CONTACT: "This is not a valid whatsapp number.",
         ERR_WAPP_DOWNLOAD_MEDIA:
           "Could not download media from WhatsApp. Check connections page.",
+        ERR_COMPANY_PENDING: "Your registration is pending approval. We will let you know once your account has been approved.",
+        ERR_COMPANY_REJECTED: "Your registration request was not approved.",
+        ERR_COMPANY_SUSPENDED: "Your account is suspended. Please contact the administrator.",
+        ERR_TRIAL_EXPIRED: "Your trial period has ended. Please contact support to continue.",
         ERR_INVALID_CREDENTIALS: "Authentication error. Please try again.",
         ERR_SENDING_WAPP_MSG:
           "Error sending WhatsApp message. Check connections page.",

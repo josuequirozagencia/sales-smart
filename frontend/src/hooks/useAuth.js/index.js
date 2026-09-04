@@ -318,6 +318,21 @@ Entre em contato com o Suporte para mais informações! `);
         setLoading(false);
       }
     } catch (err) {
+      // Los bloqueos de acceso NO se muestran como aviso pasajero: son
+      // situaciones que el usuario no puede resolver reintentando, y un
+      // mensaje que se cierra en dos segundos no le deja leer que hacer.
+      // Se propagan para que la pantalla de login los muestre fijos.
+      const codigo = err?.response?.data?.error;
+      const bloqueos = [
+        "ERR_COMPANY_PENDING",
+        "ERR_COMPANY_REJECTED",
+        "ERR_COMPANY_SUSPENDED",
+        "ERR_TRIAL_EXPIRED"
+      ];
+      if (bloqueos.includes(codigo)) {
+        setLoading(false);
+        throw codigo;
+      }
       toastError(err);
       setLoading(false);
     }

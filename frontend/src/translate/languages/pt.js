@@ -2469,6 +2469,10 @@ const messages = {
         ERR_WAPP_INVALID_CONTACT: "Este não é um número de Whatsapp válido.",
         ERR_WAPP_DOWNLOAD_MEDIA:
           "Não foi possível baixar mídia do WhatsApp. Verifique a página de conexões.",
+        ERR_COMPANY_PENDING: "Seu cadastro está aguardando aprovação. Avisaremos assim que sua conta for aprovada.",
+        ERR_COMPANY_REJECTED: "Seu cadastro não foi aprovado.",
+        ERR_COMPANY_SUSPENDED: "Sua conta está suspensa. Entre em contato com o administrador.",
+        ERR_TRIAL_EXPIRED: "Seu período de teste terminou. Entre em contato com o suporte para continuar.",
         ERR_INVALID_CREDENTIALS:
           "Erro de autenticação. Por favor, tente novamente.",
         ERR_SENDING_WAPP_MSG:
