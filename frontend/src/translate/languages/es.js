@@ -2021,6 +2021,23 @@ const messages = {
         },
       },
       schedules: {
+        appointment: {
+          title: "Cita",
+          noContact: "Sin contacto (evento de Google)",
+          fromGoogle: "Traída de Google Calendar",
+          goToChat: "Ir a la conversación",
+          cancel: "Cancelar cita",
+          done: "Marcar cumplida",
+          updated: "Cita actualizada",
+        },
+        view: {
+          label: "Ver",
+          all: "Todo",
+          appointments: "Citas",
+          messages: "Mensajes",
+          byUser: "Asesor",
+          allUsers: "Todos los asesores",
+        },
         title: "Programas",
         date: "Fecha",
         time: "Hora",

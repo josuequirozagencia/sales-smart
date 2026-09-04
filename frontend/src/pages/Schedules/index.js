@@ -11,7 +11,13 @@ import { makeStyles } from "@material-ui/core/styles";
 import Paper from "@material-ui/core/Paper";
 import Button from "@material-ui/core/Button";
 import TextField from "@material-ui/core/TextField";
+import MenuItem from "@material-ui/core/MenuItem";
 import InputAdornment from "@material-ui/core/InputAdornment";
+import Dialog from "@material-ui/core/Dialog";
+import DialogTitle from "@material-ui/core/DialogTitle";
+import DialogContent from "@material-ui/core/DialogContent";
+import DialogActions from "@material-ui/core/DialogActions";
+import Typography from "@material-ui/core/Typography";
 import MainContainer from "../../components/MainContainer";
 import MainHeader from "../../components/MainHeader";
 import Title from "../../components/Title";
@@ -23,6 +29,7 @@ import ScheduleModal from "../../components/ScheduleModal";
 import ConfirmationModal from "../../components/ConfirmationModal";
 import toastError from "../../errors/toastError";
 import moment from "moment";
+import useAppointments from "./useAppointments";
 // import { SocketContext } from "../../context/Socket/SocketContext";
 import { AuthContext } from "../../context/Auth/AuthContext";
 import usePlans from "../../hooks/usePlans";
@@ -131,6 +138,36 @@ const reducer = (state, action) => {
 };
 
 const useStyles = makeStyles((theme) => ({
+  // Citas y mensajes conviven en la misma rejilla, asi que tienen que
+  // distinguirse de un vistazo: un mensaje SE ENVIA SOLO, una cita es un
+  // compromiso que alguien debe cumplir. Confundirlos seria peor que no
+  // juntarlos.
+  eventoCita: {
+    backgroundColor: theme.palette.tokens.brand.primary,
+    borderColor: theme.palette.tokens.brand.primary,
+  },
+  eventoCitaGoogle: {
+    backgroundColor: theme.palette.tokens.semantic.info.fill,
+    borderColor: theme.palette.tokens.semantic.info.fill,
+  },
+  eventoCitaHecha: {
+    backgroundColor: theme.palette.tokens.semantic.success.fill,
+    borderColor: theme.palette.tokens.semantic.success.fill,
+  },
+  eventoCitaCancelada: {
+    // Se conserva a la vista pero apagada: saber que algo se cancelo es
+    // informacion, no ruido.
+    opacity: 0.45,
+    textDecoration: "line-through",
+  },
+  filtros: {
+    display: "flex",
+    gap: theme.spacing(1),
+    flexWrap: "wrap",
+    alignItems: "center",
+  },
+  selector: { minWidth: 150 },
+
   mainPaper: {
     flex: 1,
     padding: theme.spacing(1),
@@ -176,6 +213,24 @@ const Schedules = () => {
   const [schedules, dispatch] = useReducer(reducer, []);
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [contactId, setContactId] = useState(+getUrlParam("contactId"));
+
+  // Que se muestra en el calendario: todo, solo citas o solo mensajes.
+  const [queVer, setQueVer] = useState("todo");
+  // Filtro por asesor, util solo para quien ve las citas de varios.
+  const [asesorId, setAsesorId] = useState("");
+  // Cita sobre la que se pulso, para ofrecer sus acciones.
+  const [citaAbierta, setCitaAbierta] = useState(null);
+
+  const {
+    appointments,
+    // recargar no se extrae: cambiarEstado ya refresca, y aqui las citas
+    // no cambian por ninguna otra via.
+    cambiarEstado,
+    idsDeRecordatorios,
+    asesores
+  } = useAppointments();
+
+  const esAdmin = user?.profile === "admin";
 
   const { getPlanCompany } = usePlans();
 
@@ -313,6 +368,104 @@ const Schedules = () => {
     return str;
   };
 
+  // Al pulsar un evento: si es una cita se ofrecen sus acciones; si es un
+  // mensaje programado no se hace nada, porque ya lleva sus iconos encima.
+  const alPulsarEvento = evento => {
+    if (evento.tipo === "cita") setCitaAbierta(evento.cita);
+  };
+
+  const accionCita = async estado => {
+    if (!citaAbierta) return;
+    try {
+      await cambiarEstado(citaAbierta.id, estado);
+      toast.success(i18n.t("schedules.appointment.updated"));
+    } catch (err) {
+      toastError(err);
+    } finally {
+      setCitaAbierta(null);
+    }
+  };
+
+  const irAConversacion = () => {
+    if (citaAbierta?.ticket?.uuid) {
+      history.push(`/tickets/${citaAbierta.ticket.uuid}`);
+    }
+    setCitaAbierta(null);
+  };
+
+  // --- Eventos del calendario -------------------------------------------
+  //
+  // Se mezclan dos cosas distintas y hay que mantenerlas distinguibles: un
+  // mensaje programado se envia solo; una cita es un compromiso que
+  // alguien debe cumplir.
+
+  // Los recordatorios de una cita son mensajes programados, asi que sin
+  // filtrarlos apareceria el mismo aviso DOS VECES: como cita y como
+  // mensaje. Se conserva la cita, que es lo que interesa en una agenda.
+  const mensajesVisibles = schedules.filter(
+    m => !idsDeRecordatorios.has(m.id)
+  );
+
+  const citasVisibles = appointments.filter(
+    a => !asesorId || (a.user && a.user.id === Number(asesorId))
+  );
+
+  const eventosMensajes = mensajesVisibles.map(schedule => ({
+    tipo: "mensaje",
+    title: (
+      <div key={"m" + schedule.id} className="event-container">
+        <div style={eventTitleStyle}>{schedule?.contact?.name}</div>
+        <DeleteOutlineIcon
+          onClick={() => handleDeleteSchedule(schedule.id)}
+          className="delete-icon"
+        />
+        <EditIcon
+          onClick={() => {
+            handleEditSchedule(schedule);
+            setScheduleModalOpen(true);
+          }}
+          className="edit-icon"
+        />
+      </div>
+    ),
+    start: new Date(schedule.sendAt),
+    end: new Date(schedule.sendAt)
+  }));
+
+  const eventosCitas = citasVisibles.map(cita => ({
+    tipo: "cita",
+    cita,
+    title: (
+      <div key={"c" + cita.id} className="event-container">
+        <div style={eventTitleStyle}>
+          {cita.contact ? cita.contact.name : cita.title || "—"}
+        </div>
+      </div>
+    ),
+    start: new Date(cita.scheduledAt),
+    end: new Date(cita.scheduledAt)
+  }));
+
+  const eventos =
+    queVer === "citas"
+      ? eventosCitas
+      : queVer === "mensajes"
+      ? eventosMensajes
+      : [...eventosMensajes, ...eventosCitas];
+
+  // Color por tipo y estado. La cita cancelada no se oculta: saber que algo
+  // se cancelo es informacion, no ruido.
+  const estiloEvento = evento => {
+    if (evento.tipo !== "cita") return {};
+    const c = evento.cita;
+    const clases = [];
+    if (c.status === "done") clases.push(classes.eventoCitaHecha);
+    else if (c.origin === "google") clases.push(classes.eventoCitaGoogle);
+    else clases.push(classes.eventoCita);
+    if (c.status === "cancelled") clases.push(classes.eventoCitaCancelada);
+    return { className: clases.join(" ") };
+  };
+
   return (
     <MainContainer>
       <ConfirmationModal
@@ -340,9 +493,43 @@ const Schedules = () => {
       )}
       <MainHeader>
         <Title>
-          {i18n.t("schedules.title")} ({schedules.length})
+          {i18n.t("schedules.title")} ({eventos.length})
         </Title>
         <MainHeaderButtonsWrapper>
+          <div className={classes.filtros}>
+            <TextField
+              select
+              size="small"
+              variant="outlined"
+              className={classes.selector}
+              value={queVer}
+              onChange={e => setQueVer(e.target.value)}
+              label={i18n.t("schedules.view.label")}
+            >
+              <MenuItem value="todo">{i18n.t("schedules.view.all")}</MenuItem>
+              <MenuItem value="citas">{i18n.t("schedules.view.appointments")}</MenuItem>
+              <MenuItem value="mensajes">{i18n.t("schedules.view.messages")}</MenuItem>
+            </TextField>
+
+            {/* Filtrar por asesor solo tiene sentido para quien ve las
+                citas de varios; a un asesor le sobraria. */}
+            {esAdmin && asesores.length > 1 && (
+              <TextField
+                select
+                size="small"
+                variant="outlined"
+                className={classes.selector}
+                value={asesorId}
+                onChange={e => setAsesorId(e.target.value)}
+                label={i18n.t("schedules.view.byUser")}
+              >
+                <MenuItem value="">{i18n.t("schedules.view.allUsers")}</MenuItem>
+                {asesores.map(a => (
+                  <MenuItem key={a.id} value={a.id}>{a.name}</MenuItem>
+                ))}
+              </TextField>
+            )}
+          </div>
           <TextField
             placeholder={i18n.t("contacts.searchPlaceholder")}
             type="search"
@@ -377,32 +564,56 @@ const Schedules = () => {
             weekdayFormat: "dddd",
           }}
           localizer={localizer}
-          events={schedules.map((schedule) => ({
-            title: (
-              <div key={schedule.id} className="event-container">
-                <div style={eventTitleStyle}>{schedule?.contact?.name}</div>
-                <DeleteOutlineIcon
-                  onClick={() => handleDeleteSchedule(schedule.id)}
-                  className="delete-icon"
-                />
-                <EditIcon
-                  onClick={() => {
-                    handleEditSchedule(schedule);
-                    setScheduleModalOpen(true);
-                  }}
-                  className="edit-icon"
-                />
-              </div>
-            ),
-            start: new Date(schedule.sendAt),
-            end: new Date(schedule.sendAt),
-          }))}
+          events={eventos}
+          eventPropGetter={estiloEvento}
+          onSelectEvent={alPulsarEvento}
           startAccessor="start"
           endAccessor="end"
           style={{ height: 500 }}
           className={classes.calendarToolbar}
         />
       </Paper>
+
+      {/* Acciones de una cita. Un mensaje programado no pasa por aqui:
+          sus iconos de editar y borrar van en el propio evento. */}
+      <Dialog open={!!citaAbierta} onClose={() => setCitaAbierta(null)} maxWidth="xs" fullWidth>
+        <DialogTitle>
+          {citaAbierta?.title || i18n.t("schedules.appointment.title")}
+        </DialogTitle>
+        <DialogContent dividers>
+          <Typography variant="body2">
+            {citaAbierta?.contact
+              ? citaAbierta.contact.name
+              : i18n.t("schedules.appointment.noContact")}
+          </Typography>
+          <Typography variant="body2" color="textSecondary">
+            {citaAbierta && new Date(citaAbierta.scheduledAt).toLocaleString()}
+          </Typography>
+          {citaAbierta?.notes && (
+            <Typography variant="body2" style={{ marginTop: 8 }}>
+              {citaAbierta.notes}
+            </Typography>
+          )}
+          {citaAbierta?.origin === "google" && (
+            <Typography variant="caption" color="textSecondary" component="p" style={{ marginTop: 8 }}>
+              {i18n.t("schedules.appointment.fromGoogle")}
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          {citaAbierta?.ticket?.uuid && (
+            <Button onClick={irAConversacion}>
+              {i18n.t("schedules.appointment.goToChat")}
+            </Button>
+          )}
+          <Button onClick={() => accionCita("cancelled")}>
+            {i18n.t("schedules.appointment.cancel")}
+          </Button>
+          <Button color="primary" variant="contained" onClick={() => accionCita("done")}>
+            {i18n.t("schedules.appointment.done")}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </MainContainer>
   );
 };

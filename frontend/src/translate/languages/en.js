@@ -2038,6 +2038,23 @@ const messages = {
         },
       },
       schedules: {
+        appointment: {
+          title: "Appointment",
+          noContact: "No contact (Google event)",
+          fromGoogle: "Pulled from Google Calendar",
+          goToChat: "Go to conversation",
+          cancel: "Cancel appointment",
+          done: "Mark as done",
+          updated: "Appointment updated",
+        },
+        view: {
+          label: "Show",
+          all: "Everything",
+          appointments: "Appointments",
+          messages: "Messages",
+          byUser: "Agent",
+          allUsers: "All agents",
+        },
         title: "Schedules",
         date: "Date",
         time: "Time",

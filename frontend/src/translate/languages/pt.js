@@ -2078,6 +2078,23 @@ const messages = {
         },
       },
       schedules: {
+        appointment: {
+          title: "Compromisso",
+          noContact: "Sem contato (evento do Google)",
+          fromGoogle: "Trazido do Google Calendar",
+          goToChat: "Ir para a conversa",
+          cancel: "Cancelar compromisso",
+          done: "Marcar como cumprido",
+          updated: "Compromisso atualizado",
+        },
+        view: {
+          label: "Ver",
+          all: "Tudo",
+          appointments: "Compromissos",
+          messages: "Mensagens",
+          byUser: "Atendente",
+          allUsers: "Todos os atendentes",
+        },
         title: "Agendamentos",
         date: "Data",
         time: "Hora",
