@@ -1034,6 +1034,28 @@ const messages = {
           message: "Esta ação não pode ser revertida, confirmar?",
         },
       },
+      saleModal: {
+        title: "Registrar venda",
+        tagHint: "Ao salvar, a etiqueta “Venta” é adicionada ao contato.",
+        form: {
+          product: "Produto ou serviço",
+          productFree: "Produto ou serviço",
+          noProduct: "Sem produto",
+          paymentMethod: "Forma de pagamento",
+          total: "Total",
+          deposit: "Entrada",
+          pending: "PENDENTE",
+          notes: "Notas",
+        },
+        buttons: {
+          open: "Registrar venda",
+          save: "Registrar venda",
+          cancel: "Cancelar",
+        },
+        toasts: {
+          created: "Venda registrada",
+        },
+      },
       queueProducts: {
         tabTitle: "Produtos",
         help: "O que você cadastrar aqui é o que aparecerá no formulário de venda quando o ticket pertencer a esta fila.",

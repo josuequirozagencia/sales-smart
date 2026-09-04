@@ -13,6 +13,7 @@ import GroupIcon from "@material-ui/icons/Group";
 import PermIdentityIcon from '@material-ui/icons/PermIdentity';
 import PersonIcon from "@material-ui/icons/Person";
 import CreateIcon from '@material-ui/icons/Create';
+import MonetizationOnOutlinedIcon from "@material-ui/icons/MonetizationOnOutlined";
 import SearchIcon from '@material-ui/icons/Search';
 import ClearIcon from '@material-ui/icons/Clear';
 import BlockIcon from '@material-ui/icons/Block';
@@ -49,6 +50,7 @@ import {
 } from "@material-ui/core";
 import { ContactForm } from "../ContactForm";
 import ContactModal from "../ContactModal";
+import SaleModal from "../SaleModal";
 import { ContactNotes } from "../ContactNotes";
 import ImageIcon from '@material-ui/icons/Image';
 import VideocamIcon from '@material-ui/icons/Videocam';
@@ -393,6 +395,7 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) =>
 	const classes = useStyles();
 
 	const [modalOpen, setModalOpen] = useState(false);
+	const [saleModalOpen, setSaleModalOpen] = useState(false);
 	const [blockingContact, setBlockingContact] = useState(contact.active);
 	const [openForm, setOpenForm] = useState(false);
 	const [tabValue, setTabValue] = useState(0);
@@ -1000,6 +1003,17 @@ const fetchGroupParticipants = async () => {
 							
 							{/* Ícones de ação com tooltips */}
 							<div className={classes.contactActions}>
+								{/* Registrar una venta de este contacto. Los productos que
+								    ofrece salen de la cola del ticket. */}
+								<Tooltip title={i18n.t("saleModal.buttons.open")} arrow>
+									<IconButton
+										className={classes.actionIcon}
+										onClick={() => setSaleModalOpen(true)}
+										size="small"
+									>
+										<MonetizationOnOutlinedIcon />
+									</IconButton>
+								</Tooltip>
 								<Tooltip title={i18n.t("contactDrawer.buttons.edit")} arrow>
 									<IconButton
 										className={`${classes.actionIcon} ${classes.editIcon}`}
@@ -1183,6 +1197,12 @@ const fetchGroupParticipants = async () => {
 											onClose={() => setModalOpen(false)}
 											contactId={contact.id}
 										></ContactModal>
+										<SaleModal
+											open={saleModalOpen}
+											onClose={() => setSaleModalOpen(false)}
+											contact={contact}
+											ticket={ticket}
+										/>
 										<Typography variant="subtitle1">
 											{i18n.t("contactDrawer.extraInfo")}
 										</Typography>

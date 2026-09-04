@@ -1016,6 +1016,28 @@ const messages = {
           message: "This action cannot be undone, confirm?",
         },
       },
+      saleModal: {
+        title: "Register sale",
+        tagHint: "Saving adds the “Venta” tag to the contact.",
+        form: {
+          product: "Product or service",
+          productFree: "Product or service",
+          noProduct: "No product",
+          paymentMethod: "Payment method",
+          total: "Total",
+          deposit: "Paid",
+          pending: "OUTSTANDING",
+          notes: "Notes",
+        },
+        buttons: {
+          open: "Register sale",
+          save: "Register sale",
+          cancel: "Cancel",
+        },
+        toasts: {
+          created: "Sale recorded",
+        },
+      },
       queueProducts: {
         tabTitle: "Products",
         help: "Whatever you add here is what shows up in the sale form when the ticket belongs to this queue.",
