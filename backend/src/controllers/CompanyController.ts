@@ -1,4 +1,5 @@
 import { verify } from "jsonwebtoken";
+import ReviewCompanyService from "../services/CompanyService/ReviewCompanyService";
 import authConfig from "../config/auth";
 import * as Yup from "yup";
 import { Request, Response } from "express";
@@ -442,4 +443,27 @@ export const indexPlan = async (req: Request, res: Response): Promise<Response> 
   } else {
     return res.status(400).json({ error: "Você não possui permissão para acessar este recurso!" });
   }
+};
+/**
+ * Aprobar, rechazar, suspender o reactivar una empresa.
+ *
+ * El revisor sale de req.user, nunca del cuerpo de la peticion: si no,
+ * cualquiera podria atribuir su decision a otra persona.
+ */
+export const review = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { id } = req.params;
+  const { status, reason } = req.body;
+  const { id: reviewerId } = req.user;
+
+  const company = await ReviewCompanyService({
+    companyId: id,
+    status,
+    reviewerId: Number(reviewerId),
+    reason
+  });
+
+  return res.status(200).json(company);
 };

@@ -4,6 +4,14 @@ import { useHistory } from "react-router-dom";
 // import { SocketContext } from "../../context/Socket/SocketContext";
 
 import { makeStyles, useTheme } from "@material-ui/core/styles";
+import Chip from "@material-ui/core/Chip";
+import MenuItem from "@material-ui/core/MenuItem";
+import TextField from "@material-ui/core/TextField";
+import Typography from "@material-ui/core/Typography";
+import Dialog from "@material-ui/core/Dialog";
+import DialogTitle from "@material-ui/core/DialogTitle";
+import DialogContent from "@material-ui/core/DialogContent";
+import DialogActions from "@material-ui/core/DialogActions";
 import Paper from "@material-ui/core/Paper";
 import Button from "@material-ui/core/Button";
 import Table from "@material-ui/core/Table";
@@ -95,6 +103,10 @@ const Companies = () => {
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [searchParam, setSearchParam] = useState("");
   const [companies, dispatch] = useReducer(reducer, []);
+  // Filtro por estado de la solicitud y dialogo del motivo de rechazo.
+  const [filtroSolicitud, setFiltroSolicitud] = useState("todas");
+  const [rechazando, setRechazando] = useState(null);
+  const [motivo, setMotivo] = useState("");
   const { dateToClient, datetimeToClient } = useDate();
 
   // const { getPlanCompany } = usePlans();
@@ -185,6 +197,52 @@ const Companies = () => {
       loadMore();
     }
   };
+
+  // Color por estado. Se acompana SIEMPRE del texto en la etiqueta: quien
+  // no distinga los tonos tiene que poder leer el estado igualmente.
+  const estiloSolicitud = (estado) => {
+    const t = theme.palette.tokens;
+    switch (estado) {
+      case "pending":
+        return { backgroundColor: t.semantic.warning.soft, color: t.semantic.warning.text };
+      case "rejected":
+        return { backgroundColor: t.semantic.error.soft, color: t.semantic.error.text };
+      case "suspended":
+        return { backgroundColor: t.surface.surfaceSecondary, color: theme.palette.text.secondary };
+      default:
+        return { backgroundColor: t.semantic.success.soft, color: t.semantic.success.text };
+    }
+  };
+
+  const revisar = async (company, status, razon) => {
+    try {
+      await api.put(`/companies/${company.id}/review`, { status, reason: razon });
+      toast.success(i18n.t("compaies.approval.updated"));
+      // Se fuerza la relectura: el efecto que carga la lista depende de
+      // pageNumber, asi que reiniciar y volver a la primera pagina la
+      // vuelve a pedir. Llamar a handleSearch no valdria: espera un evento.
+      dispatch({ type: "RESET" });
+      setPageNumber(1);
+    } catch (err) {
+      toastError(err);
+    } finally {
+      setRechazando(null);
+      setMotivo("");
+    }
+  };
+
+  const pedirMotivo = (company) => {
+    setMotivo("");
+    setRechazando(company);
+  };
+
+  // El filtro se aplica sobre lo ya cargado. La lista de empresas de una
+  // instalacion es corta; pedir al servidor por cada cambio de filtro
+  // seria un viaje sin ganancia.
+  const empresasVisibles = companies.filter((c) => {
+    if (filtroSolicitud === "todas") return true;
+    return (c.approvalStatus || "approved") === filtroSolicitud;
+  });
 
   const renderStatus = (row) => {
     return row.status === false ? "Não" : "Sim";
@@ -294,8 +352,23 @@ const Companies = () => {
       />
       <MainHeader>
         <Title>
-          {i18n.t("compaies.title")} ({companies.length})
+          {i18n.t("compaies.title")} ({empresasVisibles.length})
         </Title>
+        <TextField
+          select
+          size="small"
+          variant="outlined"
+          style={{ minWidth: 180, marginLeft: 16 }}
+          value={filtroSolicitud}
+          onChange={(e) => setFiltroSolicitud(e.target.value)}
+          label={i18n.t("compaies.approval.filter")}
+        >
+          {["todas", "pending", "approved", "rejected", "suspended"].map((v) => (
+            <MenuItem key={v} value={v}>
+              {i18n.t(`compaies.approval.${v}`)}
+            </MenuItem>
+          ))}
+        </TextField>
         {/* <MainHeaderButtonsWrapper>
                     <TextField
                         placeholder={i18n.t("contacts.searchPlaceholder")}
@@ -332,6 +405,11 @@ const Companies = () => {
               </TableCell>
               <TableCell align="center">
                 {i18n.t("compaies.table.status")}
+              </TableCell>
+              {/* Estado de la SOLICITUD, distinto del campo status, que
+                  dice si la empresa esta activa. Son dos cosas. */}
+              <TableCell align="center">
+                {i18n.t("compaies.table.approval")}
               </TableCell>
               <TableCell align="center">
                 {i18n.t("compaies.table.name")}
@@ -378,11 +456,41 @@ const Companies = () => {
           </TableHead>
           <TableBody>
             <>
-              {companies.map((company) => (
+              {empresasVisibles.map((company) => (
                 <TableRow style={rowStyle(company)} key={company.id}>
                   <TableCell style={cellStyle(company)} align="center">{company.id}</TableCell>
                   <TableCell style={cellStyle(company)} align="center">
                     {renderStatus(company.status)}
+                  </TableCell>
+                  <TableCell style={cellStyle(company)} align="center">
+                    <Chip
+                      size="small"
+                      label={i18n.t(`compaies.approval.${company.approvalStatus || "approved"}`)}
+                      style={estiloSolicitud(company.approvalStatus)}
+                    />
+                    {/* Las acciones solo aparecen donde tienen sentido: no
+                        se ofrece aprobar lo ya aprobado. */}
+                    {company.approvalStatus === "pending" && (
+                      <div style={{ marginTop: 4 }}>
+                        <Button size="small" color="primary"
+                          onClick={() => revisar(company, "approved")}>
+                          {i18n.t("compaies.approval.approve")}
+                        </Button>
+                        <Button size="small"
+                          onClick={() => pedirMotivo(company)}>
+                          {i18n.t("compaies.approval.reject")}
+                        </Button>
+                      </div>
+                    )}
+                    {(company.approvalStatus === "rejected" ||
+                      company.approvalStatus === "suspended") && (
+                      <div style={{ marginTop: 4 }}>
+                        <Button size="small" color="primary"
+                          onClick={() => revisar(company, "approved")}>
+                          {i18n.t("compaies.approval.reactivate")}
+                        </Button>
+                      </div>
+                    )}
                   </TableCell>
                   <TableCell style={cellStyle(company)} align="center">{company.name}</TableCell>
                   <TableCell style={cellStyle(company)} align="center">{company.email}</TableCell>
@@ -443,6 +551,40 @@ const Companies = () => {
           </TableBody>
         </Table>
       </Paper>
+      {/* Rechazar pide confirmacion y permite anotar el motivo. Sin
+          confirmacion, un clic accidental dejaria fuera a una empresa. */}
+      <Dialog open={!!rechazando} onClose={() => setRechazando(null)} maxWidth="xs" fullWidth>
+        <DialogTitle>{i18n.t("compaies.approval.rejectTitle")}</DialogTitle>
+        <DialogContent dividers>
+          <Typography variant="body2" style={{ marginBottom: 12 }}>
+            {i18n.t("compaies.approval.rejectConfirm", {
+              empresa: rechazando ? rechazando.name : "",
+            })}
+          </Typography>
+          <TextField
+            fullWidth
+            multiline
+            minRows={2}
+            variant="outlined"
+            size="small"
+            label={i18n.t("compaies.approval.reason")}
+            value={motivo}
+            onChange={(e) => setMotivo(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRechazando(null)}>
+            {i18n.t("compaies.approval.cancel")}
+          </Button>
+          <Button
+            color="secondary"
+            variant="contained"
+            onClick={() => revisar(rechazando, "rejected", motivo)}
+          >
+            {i18n.t("compaies.approval.reject")}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </MainContainer>
   );
 };
