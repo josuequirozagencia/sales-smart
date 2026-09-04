@@ -3,6 +3,7 @@ import { useHistory } from "react-router-dom";
 
 import {
   Avatar,
+  Button,
   Chip,
   FormControl,
   IconButton,
@@ -24,6 +25,7 @@ import SearchIcon from "@material-ui/icons/Search";
 import InputAdornment from "@material-ui/core/InputAdornment";
 import DeleteOutlineIcon from "@material-ui/icons/DeleteOutline";
 import ChatIcon from "@material-ui/icons/Chat";
+import GetAppIcon from "@material-ui/icons/GetApp";
 
 import MainContainer from "../../components/MainContainer";
 import MainHeader from "../../components/MainHeader";
@@ -132,6 +134,7 @@ const Sales = () => {
   const [formaPago, setFormaPago] = useState("");
   const [cargando, setCargando] = useState(false);
   const [paraBorrar, setParaBorrar] = useState(null);
+  const [exportando, setExportando] = useState(false);
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -171,6 +174,34 @@ const Sales = () => {
     }
   };
 
+  const exportar = async () => {
+    setExportando(true);
+    try {
+      // El CSV lo arma el servidor con TODAS las ventas del filtro: la
+      // pantalla solo tiene cargada la pagina visible.
+      const { data } = await api.get("/sales/export", {
+        params: {
+          searchParam: busqueda,
+          paymentMethod: formaPago || undefined,
+        },
+        responseType: "blob",
+      });
+      const url = window.URL.createObjectURL(new Blob([data]));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `ventas-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      // Sin esto el blob se queda en memoria hasta recargar la pagina.
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      toastError(err);
+    } finally {
+      setExportando(false);
+    }
+  };
+
   const irAConversacion = venta => {
     if (venta.ticket?.uuid) history.push(`/tickets/${venta.ticket.uuid}`);
   };
@@ -189,6 +220,16 @@ const Sales = () => {
         <Title>
           {i18n.t("sales.title")} ({totales.count})
         </Title>
+        <Button
+          variant="outlined"
+          color="primary"
+          size="small"
+          startIcon={<GetAppIcon />}
+          onClick={exportar}
+          disabled={exportando || totales.count === 0}
+        >
+          {i18n.t("sales.buttons.export")}
+        </Button>
       </MainHeader>
 
       <Paper className={classes.contenedor} variant="outlined">

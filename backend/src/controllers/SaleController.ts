@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import CreateService from "../services/SaleServices/CreateService";
 import ListService from "../services/SaleServices/ListService";
 import DeleteService from "../services/SaleServices/DeleteService";
+import ExportCsvService from "../services/SaleServices/ExportCsvService";
 
 /**
  * Ventas.
@@ -93,4 +94,37 @@ export const remove = async (
   await DeleteService(saleId, companyId);
 
   return res.status(200).json({ message: "Sale deleted" });
+};
+
+export const exportCsv = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { companyId } = req.user;
+  const {
+    searchParam,
+    initialDate,
+    finalDate,
+    paymentMethod
+  } = req.query as IndexQuery;
+
+  const csv = await ExportCsvService({
+    companyId,
+    searchParam,
+    initialDate,
+    finalDate,
+    paymentMethod
+  });
+
+  const fecha = new Date().toISOString().slice(0, 10);
+
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="ventas-${fecha}.csv"`
+  );
+
+  // BOM al principio: sin el, Excel abre el archivo en la codificacion del
+  // sistema y los acentos salen rotos.
+  res.send("﻿" + csv);
 };

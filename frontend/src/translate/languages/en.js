@@ -1048,6 +1048,7 @@ const messages = {
           actions: "Actions",
         },
         buttons: {
+          export: "Export CSV",
           goToChat: "Go to conversation",
           delete: "Delete",
         },
