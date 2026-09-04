@@ -1016,6 +1016,49 @@ const messages = {
           message: "This action cannot be undone, confirm?",
         },
       },
+      sales: {
+        title: "Sales",
+        searchPlaceholder: "Search by contact, product or payment method...",
+        loading: "Loading...",
+        empty: "No sales recorded yet.",
+        cards: {
+          billed: "Billed",
+          paid: "Paid",
+          pending: "Outstanding",
+          new: "New",
+          crossSell: "Cross-sell",
+        },
+        filters: {
+          payment: "Payment method",
+          allPayments: "All",
+        },
+        type: {
+          new: "New",
+          crossSell: "Cross-sell",
+        },
+        table: {
+          contact: "Contact",
+          product: "Product",
+          type: "Type",
+          payment: "Payment",
+          total: "Total",
+          paid: "Paid",
+          pending: "Outstanding",
+          date: "Date",
+          actions: "Actions",
+        },
+        buttons: {
+          goToChat: "Go to conversation",
+          delete: "Delete",
+        },
+        toasts: {
+          deleted: "Sale deleted",
+        },
+        confirmDelete: {
+          title: "Delete sale",
+          message: "It will be removed from the totals. The contact tag stays, since they may have other sales.",
+        },
+      },
       saleModal: {
         title: "Register sale",
         tagHint: "Saving adds the “Venta” tag to the contact.",

@@ -1124,6 +1124,49 @@ const messages = {
           message: "Esta acción no se puede revertir, ¿confirmar?",
         },
       },
+      sales: {
+        title: "Ventas",
+        searchPlaceholder: "Buscar por contacto, producto o forma de pago...",
+        loading: "Cargando...",
+        empty: "Todavía no hay ventas registradas.",
+        cards: {
+          billed: "Facturado",
+          paid: "Abonado",
+          pending: "Pendiente",
+          new: "Nuevas",
+          crossSell: "Cross-sell",
+        },
+        filters: {
+          payment: "Forma de pago",
+          allPayments: "Todas",
+        },
+        type: {
+          new: "Nueva",
+          crossSell: "Cross-sell",
+        },
+        table: {
+          contact: "Contacto",
+          product: "Producto",
+          type: "Tipo",
+          payment: "Pago",
+          total: "Total",
+          paid: "Abono",
+          pending: "Restante",
+          date: "Fecha",
+          actions: "Acciones",
+        },
+        buttons: {
+          goToChat: "Ir a la conversación",
+          delete: "Eliminar",
+        },
+        toasts: {
+          deleted: "Venta eliminada",
+        },
+        confirmDelete: {
+          title: "Eliminar venta",
+          message: "Se descontará de los totales. La etiqueta del contacto no se retira, porque puede tener otras ventas.",
+        },
+      },
       saleModal: {
         title: "Registrar venta",
         tagHint: "Al guardar se añade la etiqueta «Venta» al contacto.",

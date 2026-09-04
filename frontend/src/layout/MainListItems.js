@@ -38,6 +38,7 @@ import ForumIcon from "@material-ui/icons/Forum";
 import LocalAtmIcon from "@material-ui/icons/LocalAtm";
 import BusinessIcon from "@material-ui/icons/Business";
 import CakeIcon from "@material-ui/icons/Cake";
+import MonetizationOnOutlinedIcon from "@material-ui/icons/MonetizationOnOutlined";
 import {
   AllInclusive,
   AttachFile,
@@ -659,6 +660,13 @@ useEffect(() => {
                       to="/reports"
                       primary={i18n.t("mainDrawer.listItems.reports")}
                       icon={<Description />}
+                      tooltip={collapsed}
+                    />
+                    <ListItemLink
+                      small
+                      to="/sales"
+                      primary={i18n.t("sales.title")}
+                      icon={<MonetizationOnOutlinedIcon />}
                       tooltip={collapsed}
                     />
                     <ListItemLink

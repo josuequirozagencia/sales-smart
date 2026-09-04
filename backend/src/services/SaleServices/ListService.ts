@@ -26,6 +26,10 @@ export interface SaleTotals {
   pending: number;
   /** Cuantas ventas hay en el periodo. */
   count: number;
+  /** Ventas que son la PRIMERA compra de ese contacto. */
+  newCount: number;
+  /** Ventas a quien ya habia comprado antes. */
+  crossSellCount: number;
 }
 
 interface Response {
@@ -99,9 +103,31 @@ const ListService = async ({
   const todas = await Sale.findAll({
     where,
     include: [includeContact],
-    attributes: ["total", "deposit"],
+    attributes: ["id", "contactId", "total", "deposit"],
     raw: true
   });
+
+  // Primera compra de cada contacto, mirando TODO su historial y no solo el
+  // periodo filtrado. Si se mirara solo el filtro, la primera venta del mes
+  // pasaria por "nueva" aunque el cliente llevara comprando un ano.
+  const contactos = [...new Set(todas.map((s: any) => s.contactId))];
+  const primeras = new Set<number>();
+
+  if (contactos.length) {
+    const historial = await Sale.findAll({
+      where: { companyId, contactId: { [Op.in]: contactos } },
+      attributes: ["id", "contactId", "createdAt"],
+      order: [["createdAt", "ASC"], ["id", "ASC"]],
+      raw: true
+    });
+    const vistos = new Set<number>();
+    historial.forEach((s: any) => {
+      if (!vistos.has(s.contactId)) {
+        vistos.add(s.contactId);
+        primeras.add(s.id);
+      }
+    });
+  }
 
   const totals = todas.reduce<SaleTotals>(
     (acc, s: any) => {
@@ -113,10 +139,18 @@ const ListService = async ({
       // una venta no puede restar de lo pendiente de las otras.
       acc.pending += Math.max(0, total - deposit);
       acc.count += 1;
+      if (primeras.has(s.id)) acc.newCount += 1;
+      else acc.crossSellCount += 1;
       return acc;
     },
-    { billed: 0, paid: 0, pending: 0, count: 0 }
+    { billed: 0, paid: 0, pending: 0, count: 0, newCount: 0, crossSellCount: 0 }
   );
+
+  // Cada venta lleva si fue la primera de ese contacto, para que la tabla
+  // pueda etiquetarla sin volver a preguntar.
+  sales.forEach(s => {
+    (s as any).setDataValue("isFirstPurchase", primeras.has(s.id));
+  });
 
   return {
     sales,

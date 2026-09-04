@@ -53,6 +53,7 @@ const AllConnections = lazy(() => import("../pages/AllConnections/"));
 const Reports = lazy(() => import("../pages/Reports"));
 const ResponseTime = lazy(() => import("../pages/ResponseTime"));
 const RelatorioVendas = lazy(() => import("../pages/RelatorioVendas"));
+const Sales = lazy(() => import("../pages/Sales"));
 const Subscription = lazy(() => import("../pages/Subscription/"));
 const QueueIntegration = lazy(() => import("../pages/QueueIntegration"));
 const Files = lazy(() => import("../pages/Files/"));
@@ -170,6 +171,7 @@ const Routes = () => {
                   component={ResponseTime}
                   isPrivate
                 />
+                <Route exact path="/sales" component={Sales} isPrivate />
                 <Route
                   exact
                   path="/relatorio-vendas"
