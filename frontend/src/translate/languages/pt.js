@@ -2444,6 +2444,11 @@ const messages = {
         },
       },
       ticketOptionsMenu: {
+        contactInfo: {
+          show: "Ver dados do contato",
+          hide: "Ocultar dados do contato",
+          label: "Dados do contato",
+        },
         schedule: "Agendamento",
         delete: "Deletar",
         transfer: "Transferir",

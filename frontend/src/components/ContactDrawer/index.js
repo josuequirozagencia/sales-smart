@@ -3,22 +3,25 @@ import React, { useEffect, useState, useContext } from "react";
 import { makeStyles } from "@material-ui/core/styles";
 import Typography from "@material-ui/core/Typography";
 import IconButton from "@material-ui/core/IconButton";
-import CloseIcon from "@material-ui/icons/Close";
 import Drawer from "@material-ui/core/Drawer";
 import Link from "@material-ui/core/Link";
 import InputLabel from "@material-ui/core/InputLabel";
 import Button from "@material-ui/core/Button";
 import Paper from "@material-ui/core/Paper";
-import GroupIcon from "@material-ui/icons/Group";
-import PermIdentityIcon from '@material-ui/icons/PermIdentity';
-import PersonIcon from "@material-ui/icons/Person";
-import CreateIcon from '@material-ui/icons/Create';
-import MonetizationOnOutlinedIcon from "@material-ui/icons/MonetizationOnOutlined";
-import EventAvailableOutlinedIcon from "@material-ui/icons/EventAvailableOutlined";
-import SearchIcon from '@material-ui/icons/Search';
-import ClearIcon from '@material-ui/icons/Clear';
-import BlockIcon from '@material-ui/icons/Block';
-import LockOpenIcon from '@material-ui/icons/LockOpen';
+// Iconos en trazo del set propio del proyecto — ver components/Icons.
+import {
+  CloseIcon,
+  GroupIcon,
+  PermIdentityIcon,
+  PersonIcon,
+  CreateIcon,
+  MonetizationOnOutlinedIcon,
+  EventAvailableOutlinedIcon,
+  SearchIcon,
+  ClearIcon,
+  BlockIcon,
+  LockOpenIcon,
+} from "../Icons";
 import Avatar from '@material-ui/core/Avatar';
 import formatSerializedId from '../../utils/formatSerializedId';
 import { i18n } from "../../translate/i18n";
@@ -54,13 +57,15 @@ import ContactModal from "../ContactModal";
 import SaleModal from "../SaleModal";
 import AppointmentModal from "../AppointmentModal";
 import { ContactNotes } from "../ContactNotes";
-import ImageIcon from '@material-ui/icons/Image';
-import VideocamIcon from '@material-ui/icons/Videocam';
-import AudiotrackIcon from '@material-ui/icons/Audiotrack';
-import InsertDriveFileIcon from '@material-ui/icons/InsertDriveFile';
-import LinkIcon from '@material-ui/icons/Link';
-import InfoIcon from '@material-ui/icons/Info';
-import MessageIcon from '@material-ui/icons/Message';
+import {
+  ImageIcon,
+  VideocamIcon,
+  AudiotrackIcon,
+  InsertDriveFileIcon,
+  LinkIcon,
+  InfoIcon,
+  MessageIcon,
+} from "../Icons";
 
 import { AuthContext } from "../../context/Auth/AuthContext";
 import useCompanySettings from "../../hooks/useSettings/companySettings";

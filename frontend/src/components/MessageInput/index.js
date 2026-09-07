@@ -28,6 +28,10 @@ import {
   Box,
 } from "@material-ui/core";
 import { blue, green, pink, grey } from "@material-ui/core/colors";
+// Iconos en trazo (outline) del set propio del proyecto — ver
+// components/Icons. Reemplazan a los de @material-ui/icons, que eran
+// rellenos, sin cambiar nada de donde se usan (mismos nombres locales).
+// WhatsApp es la excepcion: es un icono de marca, se deja tal cual.
 import {
   AttachFile,
   CheckCircleOutline,
@@ -45,24 +49,20 @@ import {
   Reply,
   Duo,
   Timer,
-  WhatsApp,
   Info,
-  AccountTree
-} from "@material-ui/icons";
-
-import {
-  FormatBold as FormatBoldIcon,
-  FormatItalic as FormatItalicIcon,
-  FormatStrikethrough as FormatStrikethroughIcon,
-  Code as CodeIcon,
-  FormatListNumbered as FormatListNumberedIcon,
-  FormatListBulleted as FormatListBulletedIcon,
-  FormatQuote as FormatQuoteIcon,
-  FormatClear as FormatClearIcon,
-} from "@material-ui/icons";
-
-import AddIcon from "@material-ui/icons/Add";
-import { CameraAlt } from "@material-ui/icons";
+  AccountTree,
+  Add as AddIcon,
+  CameraAlt,
+  FormatBoldIcon,
+  FormatItalicIcon,
+  FormatStrikethroughIcon,
+  CodeIcon,
+  FormatListNumberedIcon,
+  FormatListBulletedIcon,
+  FormatQuoteIcon,
+  FormatClearIcon,
+} from "../Icons";
+import { WhatsApp } from "@material-ui/icons";
 import MicRecorder from "mic-recorder-to-mp3";
 import clsx from "clsx";
 import { ReplyMessageContext } from "../../context/ReplyingMessage/ReplyingMessageContext";

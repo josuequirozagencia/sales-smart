@@ -3,8 +3,12 @@ import { useParams, useHistory } from "react-router-dom";
 
 import clsx from "clsx";
 
-import { makeStyles, Paper } from "@material-ui/core";
+import { makeStyles, useTheme, Paper, IconButton, Tooltip, useMediaQuery } from "@material-ui/core";
+// Del set propio del proyecto, como el resto de esta seccion: el boton
+// quedaba con un icono relleno de Material-UI entre iconos de trazo.
+import { InfoOutlined as InfoOutlinedIcon } from "../Icons";
 
+import { i18n } from "../../translate/i18n";
 import ContactDrawer from "../ContactDrawer";
 import MessageInput from "../MessageInput/";
 import TicketHeader from "../TicketHeader";
@@ -66,9 +70,14 @@ const Ticket = () => {
 
   const { user, socket } = useContext(AuthContext);
   const { setTabOpen } = useContext(TicketsContext);
+  const theme = useTheme();
+  // En pantallas anchas el panel de contacto arranca visible, como una
+  // columna más — en pantallas angostas (agentes en laptop) sigue
+  // arrancando cerrado para no robarle espacio al chat. Se calcula una
+  // sola vez al montar, no se fuerza a cada cambio de tamaño de ventana.
+  const wideScreen = useMediaQuery(theme.breakpoints.up("lg"), { noSsr: true });
 
-
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(wideScreen);
   const [loading, setLoading] = useState(true);
   const [contact, setContact] = useState({});
   const [ticket, setTicket] = useState({});
@@ -233,6 +242,26 @@ const Ticket = () => {
           contact={contact}
           onQuickMessageSelect={handleQuickMessageSelect}
         />
+        {/* Los textos salen del diccionario: escritos a mano en castellano
+            se los verian igual quien tenga la aplicacion en portugues o en
+            ingles. */}
+        {ticket.contact !== undefined && (
+          <Tooltip
+            title={
+              drawerOpen
+                ? i18n.t("ticketOptionsMenu.contactInfo.hide")
+                : i18n.t("ticketOptionsMenu.contactInfo.show")
+            }
+          >
+            <IconButton
+              color={drawerOpen ? "primary" : "default"}
+              onClick={drawerOpen ? handleDrawerClose : handleDrawerOpen}
+              aria-label={i18n.t("ticketOptionsMenu.contactInfo.label")}
+            >
+              <InfoOutlinedIcon />
+            </IconButton>
+          </Tooltip>
+        )}
         </TicketHeader>
         {/* </div> */}
         <Paper>

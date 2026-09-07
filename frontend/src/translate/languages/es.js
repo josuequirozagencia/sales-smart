@@ -2383,6 +2383,11 @@ const messages = {
         },
       },
       ticketOptionsMenu: {
+        contactInfo: {
+          show: "Ver información de contacto",
+          hide: "Ocultar información de contacto",
+          label: "Información de contacto",
+        },
         schedule: "Programa",
         delete: "Borrar",
         transfer: "Transferir",

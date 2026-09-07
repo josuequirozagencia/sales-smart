@@ -2395,6 +2395,11 @@ const messages = {
         },
       },
       ticketOptionsMenu: {
+        contactInfo: {
+          show: "Show contact details",
+          hide: "Hide contact details",
+          label: "Contact details",
+        },
         schedule: "Schedule",
         delete: "Delete",
         transfer: "Transfer",

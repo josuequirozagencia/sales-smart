@@ -218,8 +218,12 @@ const useStyles = makeStyles((theme) => ({
   },
 
   badgeStyle: {
-    color: "white",
-    backgroundColor: green[500],
+    // El badge de mensajes sin leer usaba green[500] con texto blanco fijo:
+    // ~2.98 de contraste, por debajo del minimo de 4.5. Se cambia al verde de
+    // exito del sistema de tokens, con el mismo criterio de onColor que ya
+    // usan las insignias de conexion/cola/agente y ContactTag mas arriba.
+    color: theme.palette.tokens.onColor(theme.palette.tokens.semantic.success.fill),
+    backgroundColor: theme.palette.tokens.semantic.success.fill,
   },
 
   acceptButton: {
@@ -615,6 +619,19 @@ const TicketListItemCustom = ({ setTabOpen, ticket }) => {
     );
   };
 
+  // Franja de color a la izquierda de la fila, del mismo color que la
+  // primera etiqueta del ticket (o, si no tiene, la del contacto). Es una
+  // segunda lectura del estado sin tener que leer las insignias de texto:
+  // se ve el color de un vistazo, igual que la barra de "seleccionado" que
+  // ya existe en classes.ticket.
+  //
+  // Cuando el ticket esta seleccionado, la barra de seleccion (el primario
+  // de marca, vía classes.ticket) ya cumple ese papel, asi que la franja de
+  // etiqueta se omite ahi para no competir con ella.
+  const isSelected = Boolean(ticketId && ticketId === ticket.uuid);
+  const stripeColor =
+    ticket.tags?.[0]?.color || ticket.contact?.tags?.[0]?.color || null;
+
   return (
     <React.Fragment key={ticket.id}>
       {openAlert && (
@@ -658,11 +675,23 @@ const TicketListItemCustom = ({ setTabOpen, ticket }) => {
 
           handleSelectTicket(ticket);
         }}
-        selected={ticketId && ticketId === ticket.uuid}
+        selected={isSelected}
         className={clsx(classes.ticket, {
           [classes.pendingTicket]: ticket.status === "pending",
         })}
       >
+        {stripeColor && !isSelected && (
+          <span
+            style={{
+              position: "absolute",
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: 3,
+              backgroundColor: stripeColor,
+            }}
+          />
+        )}
         <ListItemAvatar style={{ marginLeft: "-15px" }}>
           <Avatar
             style={{

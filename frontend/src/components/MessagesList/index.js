@@ -13,18 +13,19 @@ import {
   makeStyles
 } from "@material-ui/core";
 
+// Iconos en trazo del set propio del proyecto — ver components/Icons.
+// Facebook/Instagram/WhatsApp quedan con los de Material-UI: son iconos de
+// marca, no se unifican con el resto del sistema visual.
 import {
   AccessTime,
   Done,
   DoneAll,
   ExpandMore,
   GetApp,
-  Facebook,
-  Instagram,
   Reply,
-  WhatsApp
-} from "@material-ui/icons";
-import LockIcon from '@material-ui/icons/Lock';
+  LockIcon,
+} from "../Icons";
+import { Facebook, Instagram, WhatsApp } from "@material-ui/icons";
 import MarkdownWrapper from "../MarkdownWrapper";
 import VcardPreview from "../VcardPreview";
 import LocationPreview from "../LocationPreview";
