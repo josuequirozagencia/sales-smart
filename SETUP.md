@@ -39,6 +39,32 @@ Estado del setup local en Windows 10 Pro (i7-3770, 16 GB RAM).
 | PostgreSQL 13 | 5432 | servicio automático |
 | Memurai (Redis) | 6379 | solo `127.0.0.1` |
 
+### Arrancar el backend
+
+```bash
+cd backend && npm start
+```
+
+Levanta `dist/server.js` con nodemon y tarda unos **10 segundos** en abrir el
+puerto 8080. Tres cosas que conviene saber:
+
+- **Sirve `dist/`, no `src/`.** Cualquier cambio en TypeScript necesita
+  `npm run build` antes de verse. La CLI de migraciones también lee de `dist/`:
+  una migración recién escrita no se aplica hasta compilar.
+- **Nodemon vigila toda la carpeta `backend/`.** Dejar ahí un script suelto
+  —aunque sea temporal y no lo importe nadie— reinicia el servidor y tumba lo
+  que estuviera en curso. Los scripts de un rato van fuera del proyecto.
+- **Muere con la terminal que lo lanzó.** Si el frontend responde pero no se
+  puede iniciar sesión, lo primero que hay que mirar es si el 8080 sigue en pie:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/version
+```
+
+  Un `200` significa que el backend está vivo. Sin respuesta, es que no está
+  corriendo: la pantalla de login carga igual, porque es el frontend quien la
+  sirve, y el fallo solo se nota al pulsar el botón.
+
 ### Arrancar el frontend
 
 ```bash
