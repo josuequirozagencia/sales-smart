@@ -1,8 +1,12 @@
 import crypto from "crypto";
+import { fn, col, where as sqlWhere } from "sequelize";
 
 import User from "../../models/User";
 import { SendMail } from "../../helpers/SendMail";
 import logger from "../../utils/logger";
+import CreateAuthAuditService, {
+  EVENTOS
+} from "../AuthAuditServices/CreateAuthAuditService";
 
 /**
  * Pide un enlace para restablecer la contrasena.
@@ -26,15 +30,47 @@ export const hashToken = (token: string): string =>
 
 interface Request {
   email: string;
+  /** Direccion de quien lo pide, solo para la auditoria. */
+  ip?: string | null;
 }
 
 const RequestPasswordResetService = async ({
-  email
+  email,
+  ip
 }: Request): Promise<void> => {
   if (!email || !email.trim()) return;
 
+  // Busqueda SIN distinguir mayusculas.
+  //
+  // El correo se guarda tal y como se escribio al registrarse, asi que
+  // comparar contra la version en minusculas no encontraria a quien puso
+  // Nombre@Gmail.com. Y como este servicio calla a proposito cuando no
+  // hay cuenta, el fallo seria invisible: ni llega el correo ni se avisa
+  // de nada.
+  //
+  // Se compara lower(email) contra lower(lo escrito), y NO con iLike:
+  // ahi los caracteres _ y % del texto actuarian como comodines y podrian
+  // hacer coincidir la cuenta de otra persona.
   const user = await User.findOne({
-    where: { email: email.trim().toLowerCase() }
+    where: sqlWhere(fn("lower", col("email")), email.trim().toLowerCase()),
+    // Si hubiera dos correos que solo se diferencian en mayusculas, se
+    // elige siempre el mismo en vez de uno al azar.
+    order: [["id", "ASC"]]
+  });
+
+  // Se anota SIEMPRE, exista la cuenta o no. Una rafaga de peticiones
+  // para correos que no existen es justo la senal de que alguien esta
+  // sondeando quien tiene cuenta, y sin registro no se ve.
+  //
+  // Esto no filtra nada: la tabla es interna y la respuesta al que
+  // pregunta sigue siendo identica en los dos casos.
+  await CreateAuthAuditService({
+    event: EVENTOS.PASSWORD_RESET_REQUESTED,
+    companyId: user ? user.companyId : null,
+    userId: user ? user.id : null,
+    email,
+    detail: user ? "cuenta encontrada" : "sin cuenta",
+    ip
   });
 
   // Silencio deliberado: el que pregunta no puede distinguir este caso.

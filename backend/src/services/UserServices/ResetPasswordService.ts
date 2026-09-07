@@ -4,6 +4,9 @@ import * as Yup from "yup";
 import AppError from "../../errors/AppError";
 import User from "../../models/User";
 import { hashToken } from "./RequestPasswordResetService";
+import CreateAuthAuditService, {
+  EVENTOS
+} from "../AuthAuditServices/CreateAuthAuditService";
 
 /**
  * Consume el enlace y cambia la contrasena.
@@ -27,11 +30,14 @@ import { hashToken } from "./RequestPasswordResetService";
 interface Request {
   token: string;
   password: string;
+  /** Direccion de quien lo hace, solo para la auditoria. */
+  ip?: string | null;
 }
 
 const ResetPasswordService = async ({
   token,
-  password
+  password,
+  ip
 }: Request): Promise<void> => {
   const schema = Yup.object().shape({
     // Ocho caracteres es el minimo que ya exige el registro del proyecto;
@@ -70,6 +76,15 @@ const ResetPasswordService = async ({
     passwordResetTokenHash: null,
     passwordResetExpiresAt: null,
     tokenVersion: (user.tokenVersion || 0) + 1
+  });
+
+  // NO se anota nada de la contrasena, ni el token. Solo que se cambio.
+  await CreateAuthAuditService({
+    event: EVENTOS.PASSWORD_RESET_COMPLETED,
+    companyId: user.companyId,
+    userId: user.id,
+    email: user.email,
+    ip
   });
 };
 

@@ -1,5 +1,6 @@
 import { verify } from "jsonwebtoken";
 import ReviewCompanyService from "../services/CompanyService/ReviewCompanyService";
+import ListAuthAuditService from "../services/AuthAuditServices/ListAuthAuditService";
 import authConfig from "../config/auth";
 import * as Yup from "yup";
 import { Request, Response } from "express";
@@ -466,4 +467,22 @@ export const review = async (
   });
 
   return res.status(200).json(company);
+};
+
+/** Historial de la solicitud. Solo el superadministrador. */
+export const audit = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { id } = req.params;
+  const { limit } = req.query as { limit?: string };
+  const { id: requesterId } = req.user;
+
+  const registros = await ListAuthAuditService({
+    companyId: id,
+    requesterId: Number(requesterId),
+    limit: limit ? Number(limit) : undefined
+  });
+
+  return res.status(200).json(registros);
 };

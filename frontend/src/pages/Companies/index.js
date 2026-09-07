@@ -107,6 +107,11 @@ const Companies = () => {
   const [filtroSolicitud, setFiltroSolicitud] = useState("todas");
   const [rechazando, setRechazando] = useState(null);
   const [motivo, setMotivo] = useState("");
+  // Historial de la solicitud. Se pide solo al abrirlo: traerlo con cada
+  // listado cargaria la pantalla con datos que casi nunca se miran.
+  const [historialDe, setHistorialDe] = useState(null);
+  const [historial, setHistorial] = useState([]);
+  const [cargandoHistorial, setCargandoHistorial] = useState(false);
   const { dateToClient, datetimeToClient } = useDate();
 
   // const { getPlanCompany } = usePlans();
@@ -228,6 +233,20 @@ const Companies = () => {
     } finally {
       setRechazando(null);
       setMotivo("");
+    }
+  };
+
+  const verHistorial = async (company) => {
+    setHistorialDe(company);
+    setHistorial([]);
+    setCargandoHistorial(true);
+    try {
+      const { data } = await api.get(`/companies/${company.id}/audit`);
+      setHistorial(data);
+    } catch (err) {
+      toastError(err);
+    } finally {
+      setCargandoHistorial(false);
     }
   };
 
@@ -491,6 +510,14 @@ const Companies = () => {
                         </Button>
                       </div>
                     )}
+                    {/* El historial esta siempre disponible: la pregunta
+                        de quien aprobo esto y cuando se hace sobre todo
+                        cuando ya no queda ninguna accion pendiente. */}
+                    <div>
+                      <Button size="small" onClick={() => verHistorial(company)}>
+                        {i18n.t("compaies.approval.history")}
+                      </Button>
+                    </div>
                   </TableCell>
                   <TableCell style={cellStyle(company)} align="center">{company.name}</TableCell>
                   <TableCell style={cellStyle(company)} align="center">{company.email}</TableCell>
@@ -582,6 +609,62 @@ const Companies = () => {
             onClick={() => revisar(rechazando, "rejected", motivo)}
           >
             {i18n.t("compaies.approval.reject")}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Historial de la solicitud. Solo lectura: se consulta, no se
+          edita, porque una linea de auditoria que se puede cambiar no
+          sirve para lo que existe. */}
+      <Dialog
+        open={!!historialDe}
+        onClose={() => setHistorialDe(null)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          {i18n.t("compaies.approval.historyTitle")}
+          {historialDe ? ` — ${historialDe.name}` : ""}
+        </DialogTitle>
+        <DialogContent dividers>
+          {cargandoHistorial && (
+            <Typography variant="body2">
+              {i18n.t("compaies.approval.historyLoading")}
+            </Typography>
+          )}
+          {!cargandoHistorial && historial.length === 0 && (
+            <Typography variant="body2" color="textSecondary">
+              {i18n.t("compaies.approval.historyEmpty")}
+            </Typography>
+          )}
+          {!cargandoHistorial &&
+            historial.map((linea) => (
+              <div
+                key={linea.id}
+                style={{
+                  padding: 8,
+                  borderBottom: `1px solid ${theme.palette.tokens.border.border}`,
+                }}
+              >
+                <Typography variant="body2" style={{ fontWeight: 600 }}>
+                  {i18n.t(`compaies.approval.events.${linea.event}`)}
+                </Typography>
+                <Typography variant="caption" color="textSecondary">
+                  {new Date(linea.createdAt).toLocaleString()}
+                  {linea.actor ? ` · ${linea.actor.name}` : ""}
+                  {linea.ip ? ` · ${linea.ip}` : ""}
+                </Typography>
+                {linea.detail && (
+                  <Typography variant="body2" color="textSecondary">
+                    {linea.detail}
+                  </Typography>
+                )}
+              </div>
+            ))}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setHistorialDe(null)}>
+            {i18n.t("compaies.approval.close")}
           </Button>
         </DialogActions>
       </Dialog>

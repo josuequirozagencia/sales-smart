@@ -1,6 +1,9 @@
 import User from "../../models/User";
 import AppError from "../../errors/AppError";
 import { evaluarAccesoDeUsuario } from "../../helpers/CompanyAccessPolicy";
+import CreateAuthAuditService, {
+  EVENTOS
+} from "../AuthAuditServices/CreateAuthAuditService";
 import {
   createAccessToken,
   createRefreshToken
@@ -34,6 +37,8 @@ interface SerializedUser {
 interface Request {
   email: string;
   password: string;
+  /** Direccion de quien intenta entrar, solo para la auditoria. */
+  ip?: string | null;
 }
 
 interface Response {
@@ -44,7 +49,8 @@ interface Response {
 
 const AuthUserService = async ({
   email,
-  password
+  password,
+  ip
 }: Request): Promise<Response> => {
   const user = await User.findOne({
     where: { email },
@@ -96,6 +102,17 @@ const AuthUserService = async ({
     // correo, sin demostrar que es de los suyos.
     const bloqueo = evaluarAccesoDeUsuario(user, company);
     if (bloqueo) {
+      // Se anota antes de cortar. Un acceso denegado es justo lo que
+      // hay que poder mirar despues, cuando alguien llama diciendo que
+      // no puede entrar.
+      await CreateAuthAuditService({
+        event: EVENTOS.LOGIN_BLOCKED,
+        companyId: user.companyId,
+        userId: user.id,
+        email: user.email,
+        detail: bloqueo,
+        ip
+      });
       throw new AppError(bloqueo, 401);
     }
 

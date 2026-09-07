@@ -11,6 +11,10 @@ import ShowUserService from "../services/UserServices/ShowUserService";
 import DeleteUserService from "../services/UserServices/DeleteUserService";
 import SimpleListService from "../services/UserServices/SimpleListService";
 import CreateCompanyService from "../services/CompanyService/CreateCompanyService";
+import CreateAuthAuditService, {
+  EVENTOS,
+  ipDePeticion
+} from "../services/AuthAuditServices/CreateAuthAuditService";
 import { SendMail } from "../helpers/SendMail";
 import { useDate } from "../utils/useDate";
 import ShowCompanyService from "../services/CompanyService/ShowCompanyService";
@@ -105,7 +109,34 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
 
   // CPF/CNPJ agora é opcional - removida validação obrigatória
 
-  const companyUser = bodyCompanyId || userCompanyId;
+  // El registro publico crea SIEMPRE una empresa nueva.
+  //
+  // Antes se aceptaba un companyId venido en el cuerpo: bastaba abrir
+  // /signup?companyId=3 para crearse una cuenta de ADMINISTRADOR dentro de
+  // esa empresa, sin invitacion ni comprobacion alguna, y saltandose de
+  // paso la aprobacion. Ninguna pantalla genera ese enlace, asi que no se
+  // pierde nada al dejar de honrarlo. Para dar de alta a alguien en una
+  // empresa que ya existe esta la pantalla de usuarios, que exige sesion
+  // de administrador.
+  const esRegistroPublico = req.url === "/signup";
+  const companyUser = esRegistroPublico
+    ? null
+    : bodyCompanyId || userCompanyId;
+
+  // Aprobacion manual, solo para el registro publico: una empresa creada
+  // por el superadministrador desde el panel ya viene revisada.
+  let naceAprobada = true;
+  if (esRegistroPublico) {
+    try {
+      naceAprobada =
+        (await CheckSettingsHelper("requireApproval")) !== "enabled";
+    } catch (err) {
+      // Si el ajuste no esta, se exige aprobacion igualmente. Ante la duda
+      // la puerta cerrada, que es lo mismo que decide la migracion con su
+      // valor por defecto.
+      naceAprobada = false;
+    }
+  }
 
   let plan = null;
   if (planId) {
@@ -134,6 +165,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
       phone: phone,
       planId: planId,
       status: true,
+      approvalStatus: naceAprobada ? "approved" : "pending",
       dueDate: date,
       recurrence: "",
       document: document ? document.replace(/\D/g, '') : "",
@@ -156,14 +188,44 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
 
     const user = await CreateCompanyService(companyData);
 
+    // Rastro de la solicitud. No lanza nunca: ver el servicio.
+    //
+    // CreateCompanyService devuelve la EMPRESA, pese al nombre de la
+    // variable, que viene de antes.
+    await CreateAuthAuditService({
+      event: naceAprobada
+        ? EVENTOS.REGISTRATION_CREATED
+        : EVENTOS.REGISTRATION_PENDING,
+      companyId: user ? user.id : null,
+      email,
+      detail: `plan=${plan ? plan.name : planId || "-"} origen=${
+        esRegistroPublico ? "signup" : "panel"
+      }`,
+      ip: ipDePeticion(req)
+    });
+
     try {
+      // Aviso de registro.
+      //
+      // NO lleva la contrasena. La acaba de elegir quien se registra y ya
+      // la sabe; meterla en un correo la deja en claro en su buzon, en el
+      // servidor de correo y en cualquier reenvio, para siempre. Si la
+      // pierde, el camino es <he olvidado mi contrasena>, que caduca en una
+      // hora y solo funciona una vez.
       const _email = {
         to: email,
-        subject: `Login e senha da Empresa ${companyName}`,
-        text: `Olá ${name}, este é um email sobre o cadastro da ${companyName}!<br><br>
-        Segue os dados da sua empresa:<br><br>Nome: ${companyName}<br>Email: ${email}<br>Senha: ${password}<br>Data Vencimento Trial: ${dateToClient(
-          date
-        )}`
+        subject: naceAprobada
+          ? `Bienvenido a ${companyName}`
+          : `Recibimos la solicitud de registro de ${companyName}`,
+        text: naceAprobada
+          ? `Hola ${name}, tu empresa ${companyName} ya esta registrada.<br><br>` +
+            `Nombre: ${companyName}<br>Correo de acceso: ${email}<br>` +
+            `Fin del periodo de prueba: ${dateToClient(date)}<br><br>` +
+            `Entra con ese correo y la contrasena que elegiste.`
+          : `Hola ${name}, recibimos la solicitud de registro de ${companyName}.` +
+            `<br><br>Esta pendiente de revision. Te avisaremos por este mismo` +
+            ` correo en cuanto se apruebe, y entonces podras entrar con` +
+            ` ${email} y la contrasena que elegiste.`
       };
 
       await SendMail(_email);
@@ -182,9 +244,20 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
         const whatsappId = whatsappCompany.whatsapps[0].id;
         const wbot = getWbot(whatsappId);
 
-        const body = `Olá ${name}, este é uma mensagem sobre o cadastro da ${companyName}!\n\nSegue os dados da sua empresa:\n\nNome: ${companyName}\nEmail: ${email}\nSenha: ${password}\nData Vencimento Trial: ${dateToClient(
-          date
-        )}`;
+        const body = naceAprobada
+          ? `Hola ${name}, tu empresa ${companyName} ya esta registrada.` +
+            `
+
+Correo de acceso: ${email}` +
+            `
+Fin del periodo de prueba: ${dateToClient(date)}` +
+            `
+
+Entra con ese correo y la contrasena que elegiste.`
+          : `Hola ${name}, recibimos la solicitud de registro de ${companyName}.` +
+            `
+
+Esta pendiente de revision. Te avisamos en cuanto se apruebe.`;
 
         await wbot.sendMessage(`55${phone}@s.whatsapp.net`, { text: body });
       }

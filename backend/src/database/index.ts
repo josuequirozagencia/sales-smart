@@ -48,6 +48,7 @@ import Sale from "../models/Sale";
 import Appointment from "../models/Appointment";
 import AppointmentReminder from "../models/AppointmentReminder";
 import GoogleCalendarIntegration from "../models/GoogleCalendarIntegration";
+import AuthAuditLog from "../models/AuthAuditLog";
 import ScheduledMessages from "../models/ScheduledMessages";
 import ScheduledMessagesEnvio from "../models/ScheduledMessagesEnvio";
 import Versions from "../models/Versions";
@@ -120,6 +121,7 @@ const models = [
   Appointment,
   AppointmentReminder,
   GoogleCalendarIntegration,
+  AuthAuditLog,
   ScheduledMessages,
   ScheduledMessagesEnvio,
   Versions,

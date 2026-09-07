@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useContext } from "react";
-import qs from 'query-string'
 
 import * as Yup from "yup";
 import { useHistory } from "react-router-dom";
@@ -105,13 +104,14 @@ const SignUp = () => {
     const [loading, setLoading] = useState(false);
     const { getPublicSetting } = useSettings();
 
-    let companyId = null
-    const params = qs.parse(window.location.search)
-    if (params.companyId !== undefined) {
-        companyId = params.companyId
-    }
-
-    const initialState = { name: "", email: "", password: "", phone: "", companyId, companyName: "", planId: "" };
+    // El registro publico crea siempre una empresa nueva.
+    //
+    // Aqui se leia un companyId de la URL y se enviaba al servidor, que
+    // hasta ahora lo obedecia: /signup?companyId=3 creaba una cuenta de
+    // administrador dentro de esa empresa, sin invitacion. El servidor ya
+    // no lo acepta, y se quita tambien de aqui para no dejar un formulario
+    // que aparenta hacer algo que no hace.
+    const initialState = { name: "", email: "", password: "", phone: "", companyName: "", planId: "" };
 
     const [user, setUser] = useState(initialState);
 

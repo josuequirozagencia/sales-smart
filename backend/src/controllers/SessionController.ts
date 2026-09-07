@@ -5,6 +5,7 @@ import { getIO } from "../libs/socket";
 import AuthUserService from "../services/UserServices/AuthUserService";
 import RequestPasswordResetService from "../services/UserServices/RequestPasswordResetService";
 import ResetPasswordService from "../services/UserServices/ResetPasswordService";
+import { ipDePeticion } from "../services/AuthAuditServices/CreateAuthAuditService";
 import { SendRefreshToken } from "../helpers/SendRefreshToken";
 import { RefreshTokenService } from "../services/AuthServices/RefreshTokenService";
 import FindUserFromToken from "../services/AuthServices/FindUserFromToken";
@@ -16,7 +17,8 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
 
   const { token, serializedUser, refreshToken } = await AuthUserService({
     email,
-    password
+    password,
+    ip: ipDePeticion(req)
   });
 
   SendRefreshToken(res, refreshToken);
@@ -99,7 +101,7 @@ export const forgotPassword = async (
 ): Promise<Response> => {
   const { email } = req.body;
 
-  await RequestPasswordResetService({ email });
+  await RequestPasswordResetService({ email, ip: ipDePeticion(req) });
 
   return res.status(200).json({ ok: true });
 };
@@ -111,7 +113,7 @@ export const resetPassword = async (
 ): Promise<Response> => {
   const { token, password } = req.body;
 
-  await ResetPasswordService({ token, password });
+  await ResetPasswordService({ token, password, ip: ipDePeticion(req) });
 
   return res.status(200).json({ ok: true });
 };

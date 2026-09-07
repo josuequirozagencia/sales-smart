@@ -20,6 +20,14 @@ interface CompanyData {
   companyUserName?: string;
   generateInvoice?: boolean;
   currency?: string;
+  /**
+   * Estado de la solicitud con el que nace la empresa.
+   *
+   * Se deja OPCIONAL a proposito: quien no lo pase se queda con el valor
+   * por defecto de la columna, que es approved. Asi ninguno de los sitios
+   * que ya llamaban aqui cambia de comportamiento.
+   */
+  approvalStatus?: string;
 }
 
 const validateCnpjWithReceita = async (cnpj: string): Promise<boolean> => {
@@ -57,7 +65,8 @@ const CreateCompanyService = async (
     paymentMethod,
     companyUserName,
     generateInvoice,
-    currency
+    currency,
+    approvalStatus
   } = companyData;
 
   const companySchema = Yup.object().shape({
@@ -107,7 +116,9 @@ if (document && document.trim() !== "") {
       document: document ? document.replace(/\D/g, '') : "",
       paymentMethod,
       generateInvoice,
-      currency: currency || "BRL"
+      currency: currency || "BRL",
+      // Sin valor explicito manda el defecto de la columna (approved).
+      ...(approvalStatus ? { approvalStatus } : {})
     },
       { transaction: t }
     );

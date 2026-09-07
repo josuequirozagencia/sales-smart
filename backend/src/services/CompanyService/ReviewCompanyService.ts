@@ -1,6 +1,10 @@
 import AppError from "../../errors/AppError";
 import Company from "../../models/Company";
 import User from "../../models/User";
+import NotifyCompanyDecisionService from "./NotifyCompanyDecisionService";
+import CreateAuthAuditService, {
+  EVENTOS
+} from "../AuthAuditServices/CreateAuthAuditService";
 
 /**
  * Aprobar, rechazar, suspender o reactivar una empresa.
@@ -63,6 +67,11 @@ const ReviewCompanyService = async ({
     throw new AppError("ERR_CANNOT_BLOCK_OWN_COMPANY", 403);
   }
 
+  // Se guarda antes de escribir: despues del update ya no se puede saber
+  // de donde venia, y el registro de auditoria es mucho mas util contando
+  // el salto que solo el destino.
+  const estadoAnterior = (company as any).approvalStatus;
+
   await company.update({
     approvalStatus: status,
     approvedByUserId: reviewerId,
@@ -72,6 +81,26 @@ const ReviewCompanyService = async ({
     // pareciera vigente.
     rejectionReason: status === "approved" ? null : reason
   });
+
+  // Rastro de la decision. No lanza: ver el servicio.
+  await CreateAuthAuditService({
+    event:
+      status === "approved"
+        ? EVENTOS.REGISTRATION_APPROVED
+        : status === "rejected"
+        ? EVENTOS.REGISTRATION_REJECTED
+        : status === "suspended"
+        ? EVENTOS.REGISTRATION_SUSPENDED
+        : EVENTOS.REGISTRATION_PENDING,
+    companyId: company.id,
+    actorUserId: reviewerId,
+    email: company.email,
+    detail: `${estadoAnterior} -> ${status}${reason ? ` | ${reason}` : ""}`
+  });
+
+  // Aviso al interesado. Va DESPUES de guardar y tampoco lanza: que el
+  // correo falle no puede deshacer una decision ya tomada.
+  await NotifyCompanyDecisionService({ company, status, reason });
 
   return company;
 };
