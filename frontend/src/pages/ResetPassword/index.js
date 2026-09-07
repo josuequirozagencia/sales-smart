@@ -31,10 +31,16 @@ const useStyles = makeStyles(theme => ({
     minHeight: "100vh",
     display: "flex",
     alignItems: "center",
+    justifyContent: "center",
+    padding: theme.spacing(2),
+    boxSizing: "border-box",
     backgroundColor: theme.palette.tokens.surface.background,
   },
   tarjeta: {
     padding: theme.spacing(4),
+    width: "100%",
+    maxWidth: 420,
+    margin: "0 auto",
     borderRadius: theme.palette.tokens.radius.lg,
     border: `1px solid ${theme.palette.tokens.border.border}`,
   },
@@ -72,14 +78,27 @@ const ResetPassword = () => {
     e.preventDefault();
     setGuardando(true);
     try {
-      await api.post("/reset-password", { token, password });
+      await api.post("/auth/reset-password", { token, password });
       toast.success(i18n.t("resetPassword.done"));
       history.push("/login");
     } catch (err) {
       // El servidor devuelve el mismo error para token inexistente, usado o
       // caducado. Se traduce a un mensaje que dice que hacer, no cual de
       // los tres casos fue.
-      toast.error(i18n.t("resetPassword.invalidLink"));
+      //
+      // Un fallo de transporte es otra cosa y se dice aparte: culpar al
+      // enlace cuando el problema es que la peticion no llego manda a
+      // pedir otro enlace que fallara igual.
+      // El 401 entra en la lista a proposito: esta aplicacion responde 401
+      // a las rutas que NO existen, no solo a las que exigen sesion. Y esta
+      // ruta, cuando existe, contesta 200 siempre. Asi que aqui un 401 solo
+      // puede significar que la peticion no llego a su sitio.
+      const estado = err?.response?.status;
+      if (!err?.response || [401, 404, 405].includes(estado)) {
+        toast.error(i18n.t("resetPassword.technicalError"));
+      } else {
+        toast.error(i18n.t("resetPassword.invalidLink"));
+      }
     } finally {
       setGuardando(false);
     }

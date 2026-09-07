@@ -29,10 +29,16 @@ const useStyles = makeStyles(theme => ({
     minHeight: "100vh",
     display: "flex",
     alignItems: "center",
+    justifyContent: "center",
+    padding: theme.spacing(2),
+    boxSizing: "border-box",
     backgroundColor: theme.palette.tokens.surface.background,
   },
   tarjeta: {
     padding: theme.spacing(4),
+    width: "100%",
+    maxWidth: 420,
+    margin: "0 auto",
     borderRadius: theme.palette.tokens.radius.lg,
     border: `1px solid ${theme.palette.tokens.border.border}`,
   },
@@ -50,6 +56,14 @@ const useStyles = makeStyles(theme => ({
     marginBottom: theme.spacing(2),
     fontSize: "0.875rem",
   },
+  error: {
+    padding: theme.spacing(2),
+    borderRadius: theme.palette.tokens.radius.md,
+    backgroundColor: theme.palette.tokens.semantic.error.soft,
+    color: theme.palette.tokens.semantic.error.text,
+    marginBottom: theme.spacing(2),
+    fontSize: "0.875rem",
+  },
   volver: { display: "block", textAlign: "center" },
 }));
 
@@ -60,20 +74,36 @@ const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [enviado, setEnviado] = useState(false);
+  // Fallo TECNICO, distinto de que la cuenta no exista.
+  const [averiado, setAveriado] = useState(false);
 
   const enviar = async e => {
     e.preventDefault();
     setEnviando(true);
     try {
-      await api.post("/forgot-password", { email });
+      await api.post("/auth/forgot-password", { email });
     } catch (err) {
-      // Tampoco aqui se distingue: un error visible revelaria informacion
-      // sobre la cuenta. Lo unico que puede fallar del lado del usuario es
-      // la red, y en ese caso reintentar es inofensivo.
+      // Que la cuenta exista o no NUNCA se distingue: eso convertiria la
+      // pantalla en una forma de averiguar quien tiene cuenta.
+      //
+      // Pero un fallo de TRANSPORTE si se cuenta, y no filtra nada: que
+      // el servidor no conteste, o que la ruta no exista, no depende de
+      // ninguna cuenta. Callarlo tambien aqui fue justamente lo que
+      // escondio durante una fase entera que esta pantalla llamaba a una
+      // ruta equivocada: se decia <enviado> sin haber enviado nada.
+      // El 401 entra en la lista a proposito: esta aplicacion responde 401
+      // a las rutas que NO existen, no solo a las que exigen sesion. Y esta
+      // ruta, cuando existe, contesta 200 siempre. Asi que aqui un 401 solo
+      // puede significar que la peticion no llego a su sitio.
+      const estado = err?.response?.status;
+      if (!err?.response || [401, 404, 405].includes(estado)) {
+        setAveriado(true);
+        return;
+      }
     } finally {
       setEnviando(false);
-      setEnviado(true);
     }
+    setEnviado(true);
   };
 
   return (
@@ -84,6 +114,12 @@ const ForgotPassword = () => {
           <Typography variant="h6" className={classes.titulo}>
             {i18n.t("forgotPassword.title")}
           </Typography>
+
+          {averiado && (
+            <div className={classes.error}>
+              {i18n.t("forgotPassword.technicalError")}
+            </div>
+          )}
 
           {enviado ? (
             <>

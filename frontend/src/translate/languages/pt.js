@@ -29,6 +29,7 @@ const messages = {
         copyError: "Erro ao copiar telefone",
       },
       forgotPassword: {
+        technicalError: "Não foi possível processar a solicitação. Tente novamente em alguns minutos.",
         title: "Recuperar senha",
         help: "Digite seu e-mail e enviaremos um link para escolher uma nova senha.",
         email: "E-mail",
@@ -37,6 +38,7 @@ const messages = {
         backToLogin: "Voltar ao login",
       },
       resetPassword: {
+        technicalError: "Não foi possível processar a solicitação. Tente novamente em alguns minutos.",
         title: "Nova senha",
         newPassword: "Nova senha",
         confirmPassword: "Confirmar senha",

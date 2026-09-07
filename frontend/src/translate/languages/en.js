@@ -22,6 +22,7 @@ const messages = {
         },
       },
       forgotPassword: {
+        technicalError: "We could not process the request. Please try again in a few minutes.",
         title: "Reset password",
         help: "Enter your email and we will send you a link to choose a new password.",
         email: "Email",
@@ -30,6 +31,7 @@ const messages = {
         backToLogin: "Back to sign in",
       },
       resetPassword: {
+        technicalError: "We could not process the request. Please try again in a few minutes.",
         title: "New password",
         newPassword: "New password",
         confirmPassword: "Confirm password",

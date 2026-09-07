@@ -21,6 +21,7 @@ const messages = {
         },
       },
       forgotPassword: {
+        technicalError: "No pudimos procesar la solicitud. Inténtalo de nuevo en unos minutos.",
         title: "Recuperar contraseña",
         help: "Escribe tu correo y te enviaremos un enlace para elegir una contraseña nueva.",
         email: "Correo electrónico",
@@ -29,6 +30,7 @@ const messages = {
         backToLogin: "Volver al inicio de sesión",
       },
       resetPassword: {
+        technicalError: "No pudimos procesar la solicitud. Inténtalo de nuevo en unos minutos.",
         title: "Nueva contraseña",
         newPassword: "Nueva contraseña",
         confirmPassword: "Confirmar contraseña",
