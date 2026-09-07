@@ -374,10 +374,13 @@ const Login = () => {
   // Motivo por el que no se puede entrar, si lo hay. Se muestra fijo y no
   // como aviso pasajero: son situaciones que el usuario no arregla
   // reintentando, y necesita leer que hacer.
-  const [bloqueo, setBloqueo] = useState(null);
+  //
+  // Llega del CONTEXTO y no de un estado de aqui: esta pantalla se
+  // desmonta mientras dura el intento —Route pinta la carga— y volveria
+  // montada de cero con el aviso perdido. Ver la nota en useAuth.
   const [soporte, setSoporte] = useState({ email: "", phone: "", note: "" });
   const { getPublicSetting } = useSettings();
-  const { handleLogin } = useContext(AuthContext);
+  const { handleLogin, bloqueoAcceso: bloqueo, limpiarBloqueo } = useContext(AuthContext);
 
   const [open, setOpen] = useState(false);
   const ref = useRef();
@@ -401,10 +404,10 @@ const Login = () => {
 
   const handlSubmit = (e) => {
     e.preventDefault();
-    setBloqueo(null);
-    handleLogin(user).catch(codigo => {
-      if (typeof codigo === "string") setBloqueo(codigo);
-    });
+    limpiarBloqueo();
+    // El motivo lo guarda handleLogin en el contexto; aqui solo hay que
+    // evitar que el rechazo quede sin recoger.
+    handleLogin(user).catch(() => {});
   };
 
   useEffect(() => {

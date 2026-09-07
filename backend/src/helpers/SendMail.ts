@@ -13,7 +13,19 @@ export async function SendMail(mailData: MailData) {
     auth: {
       user: process.env.MAIL_USER,
       pass: process.env.MAIL_PASS
-    }
+    },
+    // Topes de espera.
+    //
+    // Sin ellos, un servidor de correo que no contesta deja la peticion
+    // colgada hasta que el sistema operativo se rinde, que pueden ser
+    // minutos. Como este helper se llama DENTRO de operaciones que el
+    // usuario esta esperando —aprobar una empresa, registrarse—, eso
+    // convierte un correo mal configurado en una pantalla congelada.
+    //
+    // Con tope, el envio falla, se anota, y la operacion sigue.
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000
   };
 
   const transporter = nodemailer.createTransport(options);

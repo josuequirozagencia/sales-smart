@@ -98,9 +98,14 @@ const ReviewCompanyService = async ({
     detail: `${estadoAnterior} -> ${status}${reason ? ` | ${reason}` : ""}`
   });
 
-  // Aviso al interesado. Va DESPUES de guardar y tampoco lanza: que el
-  // correo falle no puede deshacer una decision ya tomada.
-  await NotifyCompanyDecisionService({ company, status, reason });
+  // Aviso al interesado. Va DESPUES de guardar y NO se espera.
+  //
+  // Antes se esperaba, y con el correo mal configurado la llamada se
+  // quedaba colgada: quien pulsaba <aprobar> veia la pantalla parada
+  // aunque la decision ya estuviera guardada. El servicio no lanza
+  // nunca y anota sus propios fallos, asi que no esperarlo no pierde
+  // nada; el .catch esta solo para que un rechazo no quede suelto.
+  NotifyCompanyDecisionService({ company, status, reason }).catch(() => {});
 
   return company;
 };

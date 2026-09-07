@@ -4,7 +4,7 @@ import useAuth from "../../hooks/useAuth.js";
 const AuthContext = createContext();
 
 const AuthProvider = ({ children }) => {
-	const { loading, user, isAuth, handleLogin, handleLogout, socket } = useAuth();
+	const { loading, user, isAuth, handleLogin, handleLogout, socket, bloqueoAcceso, limpiarBloqueo } = useAuth();
 
 	// Memoizar o valor do contexto para evitar re-renders desnecessários
 	const contextValue = useMemo(() => ({
@@ -13,8 +13,10 @@ const AuthProvider = ({ children }) => {
 		isAuth,
 		handleLogin,
 		handleLogout,
-		socket
-	}), [loading, user, isAuth, handleLogin, handleLogout, socket]);
+		socket,
+		bloqueoAcceso,
+		limpiarBloqueo
+	}), [loading, user, isAuth, handleLogin, handleLogout, socket, bloqueoAcceso, limpiarBloqueo]);
 
 	return (
 		<AuthContext.Provider value={contextValue}>

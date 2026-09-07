@@ -4,6 +4,8 @@ const messages = {
       signup: {
         title: "Cadastre-se",
         toasts: {
+          pending:
+            "Solicitação enviada! Está pendente de aprovação; avisaremos por e-mail quando puder ser ativada.",
           success: "Usuário criado com sucesso! Faça seu login!!!.",
           disabled:
             "Cadastro de usuários está desabilitado no momento. Por favor, tente novamente mais tarde.",

@@ -4,6 +4,8 @@ const messages = {
       signup: {
         title: "Sign Up",
         toasts: {
+          pending:
+            "Request sent. It is pending approval; we will email you once your account is active.",
           success: "User successfully created! Please log in!",
           disabled:
             "User registration is currently disabled. Please try again later.",

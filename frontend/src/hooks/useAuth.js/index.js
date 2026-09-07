@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useHistory } from "react-router-dom";
 import { has, isArray } from "lodash";
 
@@ -13,6 +13,22 @@ import moment from "moment";
 const useAuth = () => {
   const history = useHistory();
   const [isAuth, setIsAuth] = useState(false);
+  /**
+   * Motivo por el que se ha denegado el acceso, si lo hay.
+   *
+   * Vive AQUI y no en la pantalla de login a proposito. Mientras dura el
+   * intento, `loading` hace que Route pinte la pantalla de carga, y eso
+   * DESMONTA el login: al volver se monta uno nuevo y cualquier estado
+   * suyo se ha perdido. El aviso desaparecia sin dejar rastro y la
+   * persona veia que al pulsar no pasaba nada. El proveedor, en cambio,
+   * esta por encima y sobrevive.
+   */
+  const [bloqueoAcceso, setBloqueoAcceso] = useState(null);
+
+  // Identidad estable: el contexto memoriza su valor, y una funcion
+  // nueva en cada render lo invalidaria y volveria a renderizar a todos
+  // los que lo consumen, que en esta aplicacion son casi todos.
+  const limpiarBloqueo = useCallback(() => setBloqueoAcceso(null), []);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState({});
   const [socket, setSocket] = useState(null);
@@ -236,6 +252,7 @@ const useAuth = () => {
 
   const handleLogin = async (userData) => {
     setLoading(true);
+    setBloqueoAcceso(null);
 
     try {
       const { data } = await api.post("/auth/login", userData);
@@ -330,7 +347,11 @@ Entre em contato com o Suporte para mais informações! `);
         "ERR_TRIAL_EXPIRED"
       ];
       if (bloqueos.includes(codigo)) {
+        setBloqueoAcceso(codigo);
         setLoading(false);
+        // Se sigue lanzando para que quien llame pueda reaccionar, pero
+        // lo que se PINTA sale del estado de arriba: la pantalla que
+        // recogeria este throw puede haberse desmontado ya.
         throw codigo;
       }
       toastError(err);
@@ -383,6 +404,8 @@ Entre em contato com o Suporte para mais informações! `);
 
   return {
     isAuth,
+    bloqueoAcceso,
+    limpiarBloqueo,
     user,
     loading,
     handleLogin,

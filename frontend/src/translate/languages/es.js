@@ -4,8 +4,12 @@ const messages = {
       signup: {
         title: "Registro",
         toasts: {
+          pending:
+            "¡Solicitud enviada! Queda pendiente de aprobación; te avisaremos por correo cuando podamos activarla.",
           success:
             "¡El usuario ha sido creado satisfactoriamente! ¡Ahora inicia sesión!",
+          disabled:
+            "El registro de nuevas empresas está desactivado en este momento.",
           fail: "Error creando el usuario. Verifica la data reportada.",
         },
         form: {

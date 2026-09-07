@@ -152,9 +152,23 @@ const SignUp = () => {
 
     const handleSignUp = async values => {
         try {
-            await openApi.post("/auth/signup", values);
+            const { data } = await openApi.post("/auth/signup", values);
+
+            // Si la instalacion exige aprobacion, la empresa nace
+            // PENDIENTE y todavia no puede entrar. Se comprueba por el
+            // valor que devuelve el servidor y no por el ajuste, porque
+            // lo que importa es lo que de verdad se guardo.
+            if (data?.approvalStatus === "pending") {
+                // Ni mensaje de bienvenida ni intento de entrar: lo uno
+                // prometeria un acceso que no hay, y lo otro fallaria a
+                // proposito y dejaria dos avisos que se contradicen.
+                toast.success(i18n.t("signup.toasts.pending"));
+                history.push("/login");
+                return;
+            }
+
             toast.success(i18n.t("signup.toasts.success"));
-            
+
             // Login automático após cadastro bem-sucedido
             try {
                 await handleLogin({
