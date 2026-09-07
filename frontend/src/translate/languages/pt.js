@@ -2,6 +2,14 @@ const messages = {
   pt: {
     translations: {
       signup: {
+        plan: {
+          users: "{{n}} usuários",
+          connections: "{{n}} conexões",
+          queues: "{{n}} filas",
+          trial: "{{n}} dias de teste",
+          loading: "Carregando planos…",
+          none: "Não há planos disponíveis no momento.",
+        },
         title: "Cadastre-se",
         toasts: {
           pending:
@@ -17,6 +25,7 @@ const messages = {
           password: "Senha",
           company: "Nome da Organização",
           phone: "Whatsapp (DDD + NÚMERO)",
+          plan: "Plano",
         },
         buttons: {
           submit: "Cadastrar",
@@ -2511,6 +2520,7 @@ const messages = {
         ERR_WAPP_INVALID_CONTACT: "Este não é um número de Whatsapp válido.",
         ERR_WAPP_DOWNLOAD_MEDIA:
           "Não foi possível baixar mídia do WhatsApp. Verifique a página de conexões.",
+        ERR_INVALID_PLAN: "O plano escolhido não está disponível. Escolha um da lista e tente novamente.",
         ERR_COMPANY_PENDING: "Seu cadastro está aguardando aprovação. Avisaremos assim que sua conta for aprovada.",
         ERR_COMPANY_REJECTED: "Seu cadastro não foi aprovado.",
         ERR_COMPANY_SUSPENDED: "Sua conta está suspensa. Entre em contato com o administrador.",

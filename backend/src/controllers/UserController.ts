@@ -141,8 +141,25 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
   let plan = null;
   if (planId) {
     plan = await Plan.findByPk(planId, {
-      attributes: ["id", "name", "trial", "trialDays"]
+      attributes: ["id", "name", "trial", "trialDays", "isPublic"]
     });
+  }
+
+  // Desde el registro publico solo se aceptan planes OFRECIDOS.
+  //
+  // El desplegable ya muestra unicamente los marcados como publicos,
+  // pero eso es una comodidad de la pantalla, no una defensa: la
+  // peticion se puede hacer a mano con cualquier identificador. Sin esta
+  // comprobacion, quien quisiera podia darse de alta en un plan que no
+  // esta a la venta.
+  //
+  // De paso cubre el caso de no mandar plan: mas abajo se lee
+  // plan.trial, que con plan nulo reventaba con un error 500 en vez de
+  // decir que faltaba el plan.
+  if (esRegistroPublico && !companyUser) {
+    if (!plan || (plan as any).isPublic !== true) {
+      throw new AppError("ERR_INVALID_PLAN", 400);
+    }
   }
 
   if (!companyUser) {

@@ -2,6 +2,14 @@ const messages = {
   es: {
     translations: {
       signup: {
+        plan: {
+          users: "{{n}} usuarios",
+          connections: "{{n}} conexiones",
+          queues: "{{n}} colas",
+          trial: "{{n}} días de prueba",
+          loading: "Cargando planes…",
+          none: "No hay planes disponibles en este momento.",
+        },
         title: "Registro",
         toasts: {
           pending:
@@ -18,6 +26,7 @@ const messages = {
           password: "Contraseña",
           company: "Nombre de la Empresa",
           phone: "Whatsapp (COD + NÚMERO)",
+          plan: "Plan",
         },
         buttons: {
           submit: "Regístrate",
@@ -2449,6 +2458,7 @@ const messages = {
         ERR_WAPP_INVALID_CONTACT: "Este no es un número de whatsapp válido.",
         ERR_WAPP_DOWNLOAD_MEDIA:
           "No se pudieron descargar los medios de WhatsApp. Verifique la página de conexiones.",
+        ERR_INVALID_PLAN: "El plan elegido no está disponible. Vuelve a intentarlo eligiendo uno de la lista.",
         ERR_COMPANY_PENDING: "Tu solicitud de registro está pendiente de aprobación. Te avisaremos cuando tu cuenta haya sido aprobada.",
         ERR_COMPANY_REJECTED: "Tu solicitud de registro no fue aprobada.",
         ERR_COMPANY_SUSPENDED: "Tu cuenta se encuentra suspendida. Contacta con el administrador.",

@@ -2,6 +2,14 @@ const messages = {
   en: {
     translations: {
       signup: {
+        plan: {
+          users: "{{n}} users",
+          connections: "{{n}} connections",
+          queues: "{{n}} queues",
+          trial: "{{n}}-day trial",
+          loading: "Loading plans…",
+          none: "No plans are available right now.",
+        },
         title: "Sign Up",
         toasts: {
           pending:
@@ -17,6 +25,7 @@ const messages = {
           password: "Password",
           company: "Organization Name",
           phone: "WhatsApp (Area Code + Number)",
+          plan: "Plan",
         },
         buttons: {
           submit: "Register",
@@ -2462,6 +2471,7 @@ const messages = {
         ERR_WAPP_INVALID_CONTACT: "This is not a valid whatsapp number.",
         ERR_WAPP_DOWNLOAD_MEDIA:
           "Could not download media from WhatsApp. Check connections page.",
+        ERR_INVALID_PLAN: "The selected plan is not available. Please pick one from the list and try again.",
         ERR_COMPANY_PENDING: "Your registration is pending approval. We will let you know once your account has been approved.",
         ERR_COMPANY_REJECTED: "Your registration request was not approved.",
         ERR_COMPANY_SUSPENDED: "Your account is suspended. Please contact the administrator.",

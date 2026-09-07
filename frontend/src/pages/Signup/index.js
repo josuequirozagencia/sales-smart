@@ -23,6 +23,8 @@ import { i18n } from "../../translate/i18n";
 import { FormControl } from "@material-ui/core";
 import { InputLabel, MenuItem, Select } from "@material-ui/core";
 import CircularProgress from "@material-ui/core/CircularProgress";
+import FormHelperText from "@material-ui/core/FormHelperText";
+import { formatCurrency } from "../../utils/currencyUtils";
 
 import { openApi } from "../../services/api";
 import toastError from "../../errors/toastError";
@@ -46,7 +48,11 @@ const useStyles = makeStyles(theme => ({
     // Container específico para signup - forçar centralização
     containerSignup: {
         padding: "16px !important",
-        maxWidth: "500px !important", // Signup é um pouco maior que login
+        // min() y no 500px a secas: el contenedor es un elemento flex con
+        // flex:none, asi que no encoge por su cuenta, y en un movil de 375
+        // px la tarjeta se salia 62 px por cada lado. max-width si acota a
+        // un elemento flex aunque no pueda encoger.
+        maxWidth: "min(500px, 100%) !important", // Signup é um pouco maior que login
         width: "auto !important",
         margin: "0 auto !important",
         position: "relative !important",
@@ -64,7 +70,7 @@ const useStyles = makeStyles(theme => ({
         backgroundColor: theme.palette.background.paper,
         borderRadius: theme.shape.borderRadius,
         boxShadow: theme.shadows[3],
-        maxWidth: "480px !important",
+        maxWidth: "min(480px, 100%) !important",
         width: "100% !important",
         margin: "0 auto !important",
     },
@@ -81,6 +87,42 @@ const useStyles = makeStyles(theme => ({
     },
 }));
 
+/**
+ * Nombre y precio: lo que se ve en el campo YA cerrado.
+ *
+ * El resumen completo no cabe de una linea y el navegador lo cortaba a
+ * media palabra, asi que el detalle se reserva para el desplegable, donde
+ * hay sitio.
+ */
+const resumenCorto = (plan) =>
+    `${plan.name} — ${formatCurrency(plan.amount)}`;
+
+/**
+ * Descripcion completa, para las opciones del desplegable.
+ *
+ * Nombre, precio y los tres limites que de verdad condicionan la
+ * decision. El importe se formatea con el helper que ya usa el resto de
+ * la aplicacion, para que el registro y la pantalla de planes no muestren
+ * la misma cifra de dos maneras.
+ */
+const resumenDePlan = (plan) => {
+    const partes = [resumenCorto(plan)];
+
+    const limites = [];
+    if (plan.users) limites.push(i18n.t("signup.plan.users", { n: plan.users }));
+    if (plan.connections) limites.push(i18n.t("signup.plan.connections", { n: plan.connections }));
+    if (plan.queues) limites.push(i18n.t("signup.plan.queues", { n: plan.queues }));
+    if (limites.length) partes.push(limites.join(" · "));
+
+    // Los dias de prueba solo se anuncian si el plan es de prueba: en uno
+    // de pago el campo existe igual y valdria cero.
+    if (plan.trial && plan.trialDays) {
+        partes.push(i18n.t("signup.plan.trial", { n: plan.trialDays }));
+    }
+
+    return partes.join("  |  ");
+};
+
 const UserSchema = Yup.object().shape({
     name: Yup.string()
         .min(2, "Too Short!")
@@ -93,6 +135,10 @@ const UserSchema = Yup.object().shape({
     password: Yup.string().min(5, "Too Short!").max(50, "Too Long!"),
     email: Yup.string().email("Invalid email").required("Required"),
     phone: Yup.string().required("Required"),
+    // Obligatorio, aunque venga preseleccionado: si la instalacion se
+    // queda sin planes publicos, enviar sin plan crearia una empresa que
+    // el servidor no sabe a que acogerse.
+    planId: Yup.string().required("Required"),
 });
 
 const SignUp = () => {
@@ -208,7 +254,7 @@ const SignUp = () => {
                 className={classes.containerSignup}
                 style={{
                     // Backup inline styles para forçar centralização
-                    maxWidth: '500px',
+                    maxWidth: 'min(500px, 100%)',
                     width: 'auto',
                     margin: '0 auto',
                     padding: '16px',
@@ -330,7 +376,50 @@ const SignUp = () => {
                                         />
                                     </Grid> */}
 
-                                    {/* Campo de plano removido - será selecionado automaticamente */}
+                                    {/* Plan.
+                                        Solo se ofrecen los marcados como
+                                        publicos en la pantalla de Planes;
+                                        esa lista ya la filtra el servidor. */}
+                                    <Grid item xs={12}>
+                                        <FormControl
+                                            variant="outlined"
+                                            fullWidth
+                                            error={touched.planId && Boolean(errors.planId)}
+                                        >
+                                            <InputLabel id="planId-label">
+                                                {i18n.t("signup.form.plan")}
+                                            </InputLabel>
+                                            <Field
+                                                as={Select}
+                                                labelId="planId-label"
+                                                id="planId"
+                                                name="planId"
+                                                label={i18n.t("signup.form.plan")}
+                                                disabled={loading || plans.length === 0}
+                                                renderValue={(id) => {
+                                                    const elegido = plans.find((x) => x.id === id);
+                                                    return elegido ? resumenCorto(elegido) : "";
+                                                }}
+                                            >
+                                                {plans.map((plan) => (
+                                                    <MenuItem key={plan.id} value={plan.id}>
+                                                        {resumenDePlan(plan)}
+                                                    </MenuItem>
+                                                ))}
+                                            </Field>
+                                            <FormHelperText>
+                                                {loading && (
+                                                    <>
+                                                        <CircularProgress size={12} style={{ marginRight: 6 }} />
+                                                        {i18n.t("signup.plan.loading")}
+                                                    </>
+                                                )}
+                                                {/* Sin planes publicos no hay nada que elegir. Se dice,
+                                                    en vez de dejar un desplegable vacio sin explicacion. */}
+                                                {!loading && plans.length === 0 && i18n.t("signup.plan.none")}
+                                            </FormHelperText>
+                                        </FormControl>
+                                    </Grid>
 
                                 </Grid>
                                 <Button
