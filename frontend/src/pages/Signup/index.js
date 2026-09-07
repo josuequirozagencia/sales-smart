@@ -94,8 +94,8 @@ const useStyles = makeStyles(theme => ({
  * media palabra, asi que el detalle se reserva para el desplegable, donde
  * hay sitio.
  */
-const resumenCorto = (plan) =>
-    `${plan.name} — ${formatCurrency(plan.amount)}`;
+const resumenCorto = (plan, moneda) =>
+    `${plan.name} — ${formatCurrency(plan.amount, moneda)}`;
 
 /**
  * Descripcion completa, para las opciones del desplegable.
@@ -105,8 +105,8 @@ const resumenCorto = (plan) =>
  * la aplicacion, para que el registro y la pantalla de planes no muestren
  * la misma cifra de dos maneras.
  */
-const resumenDePlan = (plan) => {
-    const partes = [resumenCorto(plan)];
+const resumenDePlan = (plan, moneda) => {
+    const partes = [resumenCorto(plan, moneda)];
 
     const limites = [];
     if (plan.users) limites.push(i18n.t("signup.plan.users", { n: plan.users }));
@@ -147,6 +147,14 @@ const SignUp = () => {
     const { handleLogin } = useContext(AuthContext);
     const { getPlanList } = usePlans()
     const [plans, setPlans] = useState([])
+    // Moneda de la instalacion.
+    //
+    // Se pide AQUI y no se confia en la que ya haya aplicado el arranque:
+    // esta pantalla la ve alguien que llega por primera vez, sin nada
+    // guardado, y si se pintara antes de que llegue esa lectura mostraria
+    // el precio en la moneda por defecto. Un precio equivocado en la
+    // primera pantalla que ve un cliente no es un detalle.
+    const [moneda, setMoneda] = useState(null);
     const [loading, setLoading] = useState(false);
     const { getPublicSetting } = useSettings();
 
@@ -162,6 +170,15 @@ const SignUp = () => {
     const [user, setUser] = useState(initialState);
 
     useEffect(() => {
+        getPublicSetting("currency")
+            .then((code) => {
+                if (code) setMoneda(code);
+            })
+            .catch(() => {
+                // Sin respuesta se deja en null y formatCurrency usa la
+                // que ya estuviera aplicada. Mejor eso que no pintar nada.
+            });
+
         getPublicSetting("userCreation")
             .then((data) => {
                 if (data === "disabled") {
@@ -398,12 +415,12 @@ const SignUp = () => {
                                                 disabled={loading || plans.length === 0}
                                                 renderValue={(id) => {
                                                     const elegido = plans.find((x) => x.id === id);
-                                                    return elegido ? resumenCorto(elegido) : "";
+                                                    return elegido ? resumenCorto(elegido, moneda) : "";
                                                 }}
                                             >
                                                 {plans.map((plan) => (
                                                     <MenuItem key={plan.id} value={plan.id}>
-                                                        {resumenDePlan(plan)}
+                                                        {resumenDePlan(plan, moneda)}
                                                     </MenuItem>
                                                 ))}
                                             </Field>

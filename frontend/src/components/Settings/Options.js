@@ -8,6 +8,7 @@ import Select from "@material-ui/core/Select";
 import FormHelperText from "@material-ui/core/FormHelperText";
 
 import useSettings from "../../hooks/useSettings";
+import { CURRENCIES, applyInstallationCurrency } from "../../utils/currencyUtils";
 import { ToastContainer, toast } from 'react-toastify';
 import { makeStyles } from "@material-ui/core/styles";
 import { grey, blue } from "@material-ui/core/colors";
@@ -87,6 +88,10 @@ export default function Options(props) {
   const [supportNote, setSupportNote] = useState("");
   const [loadingSupport, setLoadingSupport] = useState(false);
   const [loadingUserCreation, setLoadingUserCreation] = useState(false);
+  // Moneda de la instalacion. Gobierna lo que se muestra en el registro
+  // publico y en el resto de pantallas que pintan importes.
+  const [currency, setCurrency] = useState("BRL");
+  const [loadingCurrency, setLoadingCurrency] = useState(false);
 
   const [SendGreetingAccepted, setSendGreetingAccepted] = useState("enabled");
   const [loadingSendGreetingAccepted, setLoadingSendGreetingAccepted] = useState(false);
@@ -227,6 +232,9 @@ const [loadingCopyContactPrefix, setLoadingCopyContactPrefix] = useState(false);
       const aprobPar = oldSettings.find((s) => s.key === "requireApproval");
       if (aprobPar) setRequireApproval(aprobPar.value);
 
+      const monedaPar = oldSettings.find((s) => s.key === "currency");
+      if (monedaPar && monedaPar.value) setCurrency(monedaPar.value);
+
       const sEmail = oldSettings.find((s) => s.key === "supportEmail");
       if (sEmail) setSupportEmail(sEmail.value || "");
 
@@ -307,6 +315,17 @@ const [loadingCopyContactPrefix, setLoadingCopyContactPrefix] = useState(false);
       if (key === "copyContactPrefix") setCopyContactPrefix(value);
     }
   }, [settings]);
+
+  async function handleChangeCurrency(value) {
+    setCurrency(value);
+    setLoadingCurrency(true);
+    await updateUserCreation({ key: "currency", value });
+    // Se aplica en el acto ademas de guardarla: si no, quien acaba de
+    // cambiarla seguiria viendo la anterior hasta recargar, y parece que
+    // no se ha guardado.
+    applyInstallationCurrency(value);
+    setLoadingCurrency(false);
+  }
 
   async function handleChangeRequireApproval(value) {
     setRequireApproval(value);
@@ -743,6 +762,35 @@ async function handleCopyContactPrefix(value) {
                 {loadingRequireApproval
                   ? i18n.t("settings.settings.options.updating")
                   : i18n.t("settings.settings.options.requireApprovalHelp")}
+              </FormHelperText>
+            </FormControl>
+          </Grid>
+          : null}
+
+        {/* MONEDA DE LA INSTALACION */}
+        {isSuper() ?
+          <Grid xs={12} sm={6} md={4} item>
+            <FormControl className={classes.selectContainer}>
+              <InputLabel id="Currency-label">
+                {i18n.t("settings.settings.options.currency")}
+              </InputLabel>
+              <Select
+                labelId="Currency-label"
+                value={currency}
+                onChange={async (e) => {
+                  handleChangeCurrency(e.target.value);
+                }}
+              >
+                {CURRENCIES.map((m) => (
+                  <MenuItem key={m.code} value={m.code}>
+                    {`${m.symbol}  ${m.name} (${m.code})`}
+                  </MenuItem>
+                ))}
+              </Select>
+              <FormHelperText>
+                {loadingCurrency
+                  ? i18n.t("settings.settings.options.updating")
+                  : i18n.t("settings.settings.options.currencyHelp")}
               </FormHelperText>
             </FormControl>
           </Grid>

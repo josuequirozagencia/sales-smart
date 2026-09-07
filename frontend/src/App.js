@@ -18,6 +18,7 @@ import defaultLogoLight from "./assets/logo.png";
 import defaultLogoDark from "./assets/logo-black.png";
 import defaultLogoFavicon from "./assets/favicon.ico";
 import useSettings from "./hooks/useSettings";
+import { applyInstallationCurrency } from "./utils/currencyUtils";
 import tokens, { onColor } from "./theme/tokens";
 
 import "./styles/animations.css";
@@ -747,6 +748,17 @@ const App = () => {
       .catch((error) => {
         console.log("Error reading setting", error);
         setAppName("Multi100");
+      });
+
+    // Moneda de la instalacion. Manda el servidor sobre lo que hubiera
+    // guardado el navegador; si falla la lectura no se toca nada y se
+    // sigue con la ultima conocida.
+    getPublicSetting("currency")
+      .then((code) => {
+        applyInstallationCurrency(code);
+      })
+      .catch((error) => {
+        console.log("Error reading setting", error);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

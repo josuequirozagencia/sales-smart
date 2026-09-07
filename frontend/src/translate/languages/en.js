@@ -2265,6 +2265,8 @@ const messages = {
             updating: "Updating...",
             requireApproval: "Require approval for new registrations",
           requireApprovalHelp: "When on, new companies stay pending until you approve them.",
+          currency: "System currency",
+          currencyHelp: "Used on the public sign-up page and everywhere amounts are shown.",
           supportEmail: "Support email",
           supportPhone: "Support phone",
           supportNote: "Support note",

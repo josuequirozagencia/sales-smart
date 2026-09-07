@@ -2308,6 +2308,8 @@ const messages = {
             updating: "Atualizando...",
             requireApproval: "Exigir aprovação para novos cadastros",
           requireApprovalHelp: "Quando ativo, novas empresas ficam pendentes até você aprová-las.",
+          currency: "Moeda do sistema",
+          currencyHelp: "Usada no cadastro público e em todas as telas que exibem valores.",
           supportEmail: "E-mail de suporte",
           supportPhone: "Telefone de suporte",
           supportNote: "Nota de suporte",

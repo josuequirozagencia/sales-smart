@@ -138,6 +138,17 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     }
   }
 
+  // Moneda con la que nace la empresa. Se lee del mismo sitio que la mira
+  // la pantalla de registro, para que el precio que vio quien se dio de
+  // alta y el que queda guardado sean el mismo.
+  let monedaInstalacion = "BRL";
+  try {
+    const guardada = await CheckSettingsHelper("currency");
+    if (guardada) monedaInstalacion = guardada;
+  } catch (err) {
+    // Sin ajuste se mantiene el valor que habia antes de existir esto.
+  }
+
   let plan = null;
   if (planId) {
     plan = await Plan.findByPk(planId, {
@@ -185,6 +196,12 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
       approvalStatus: naceAprobada ? "approved" : "pending",
       dueDate: date,
       recurrence: "",
+      // Moneda heredada de la instalacion.
+      //
+      // Antes quedaba fija en real brasileno, asi que una empresa dada de
+      // alta en una instalacion que cobra en otra moneda nacia con la
+      // equivocada y su factura se mostraba en reales.
+      currency: monedaInstalacion,
       document: document ? document.replace(/\D/g, '') : "",
       paymentMethod: "",
       password: password,

@@ -23,6 +23,10 @@ const publicSettingsKeys = [
   // El registro consulta si hace falta aprobacion antes de que exista
   // empresa ni sesion, asi que tiene que poder leerse sin autenticar. No
   // es sensible: solo dice si las altas pasan por revision.
+  // La moneda se lee ANTES de entrar: el registro muestra el precio de
+  // los planes a quien todavia no tiene sesion. No es sensible, es
+  // justamente la cifra que se quiere ensenar.
+  "currency",
   "requireApproval",
   "supportEmail",
   "supportPhone",

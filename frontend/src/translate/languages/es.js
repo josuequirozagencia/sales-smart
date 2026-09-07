@@ -2250,6 +2250,8 @@ const messages = {
             updating: "Actualizando...",
             requireApproval: "Requerir aprobación para nuevos registros",
           requireApprovalHelp: "Si está activo, las empresas nuevas quedan pendientes hasta que las apruebes.",
+          currency: "Moneda del sistema",
+          currencyHelp: "Se usa en el registro público y en todas las pantallas que muestran importes.",
           supportEmail: "Correo de soporte",
           supportPhone: "Teléfono de soporte",
           supportNote: "Nota de soporte",
