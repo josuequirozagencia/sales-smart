@@ -64,3 +64,6 @@ desktop.ini
 !.vscode/settings.json.example
 *.swp
 .~*
+
+# Proyecto aparte, con su propio repositorio.
+/capa-comercial/
