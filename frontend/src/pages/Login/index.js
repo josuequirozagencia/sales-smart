@@ -266,7 +266,7 @@ const useStyles = makeStyles((theme) => ({
         borderColor: theme.palette.tokens.border.border,
       },
       "&:hover fieldset": {
-        borderColor: theme.palette.tokens.border.borderStrong,
+        borderColor: theme.palette.tokens.border.strong,
       },
       "&.Mui-focused fieldset": {
         borderColor: theme.palette.tokens.brand.primary,
