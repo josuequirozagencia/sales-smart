@@ -26,11 +26,46 @@ export type MotivoBloqueo =
   | "ERR_COMPANY_SUSPENDED"
   | "ERR_TRIAL_EXPIRED";
 
+/**
+ * Lleva una fecha de vencimiento a YYYY-MM-DD, venga como venga.
+ *
+ * Hace falta porque NO siempre es una cadena. Al crear la empresa se
+ * escribe como "2026-09-07", pero al leerla de la base Sequelize la
+ * devuelve como objeto Date, y entonces `String(fecha).slice(0, 10)` daba
+ * "Sun Sep 06" —el formato largo de JavaScript— que comparado con
+ * "2026-09-08" resulta MENOR nunca. El corte por prueba vencida no
+ * llegaba a actuar en ningun caso, y sin dar error: simplemente dejaba
+ * entrar.
+ *
+ * Ante un valor que no se sepa interpretar devuelve null, que aguas
+ * arriba significa "sin limite". Es la eleccion prudente: mejor un acceso
+ * de mas, que se corrige desde el panel, que dejar fuera a alguien por no
+ * entender su fecha.
+ */
+const aDiaISO = (valor: unknown): string | null => {
+  if (!valor) return null;
+
+  if (valor instanceof Date) {
+    return Number.isNaN(valor.getTime())
+      ? null
+      : valor.toISOString().slice(0, 10);
+  }
+
+  const texto = String(valor);
+  // "2026-09-07" y "2026-09-07T00:00:00.000Z" sirven los dos.
+  return /^\d{4}-\d{2}-\d{2}/.test(texto) ? texto.slice(0, 10) : null;
+};
+
 interface Entrada {
   /** Estado de aprobacion de la empresa. */
   approvalStatus?: string;
-  /** Fecha de vencimiento en formato YYYY-MM-DD, o nula si no caduca. */
-  dueDate?: string | null;
+  /**
+   * Fecha de vencimiento, o nula si no caduca.
+   *
+   * Se admite tanto Date como cadena porque llega de los dos sitios: del
+   * modelo (Date) y de datos ya normalizados (cadena).
+   */
+  dueDate?: string | Date | null;
   /** Si quien entra es superadministrador. */
   isSuper?: boolean;
   /**
@@ -75,12 +110,13 @@ export const evaluarAcceso = ({
   }
 
   // Solo las pruebas se cortan por fecha. Ver la nota de isTrial.
-  if (dueDate && isTrial) {
+  const vence = aDiaISO(dueDate);
+  if (vence && isTrial) {
     // Se comparan cadenas YYYY-MM-DD, que ordenan igual que las fechas y
     // no dependen de la zona horaria del servidor. Vence AL TERMINAR el
     // dia indicado: el ultimo dia todavia se puede entrar.
     const hoy = now.toISOString().slice(0, 10);
-    if (String(dueDate).slice(0, 10) < hoy) {
+    if (vence < hoy) {
       return "ERR_TRIAL_EXPIRED";
     }
   }
