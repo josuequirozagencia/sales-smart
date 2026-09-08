@@ -8,7 +8,7 @@ import {
   Box,
 } from '@material-ui/core';
 import { Language } from '@material-ui/icons';
-import { i18n } from '../../translate/i18n';
+import { i18n, soloIdioma, IDIOMA_POR_DEFECTO } from "../../translate/i18n";
 import useSettings from '../../hooks/useSettings';
 
 const useStyles = makeStyles((theme) => ({
@@ -100,6 +100,7 @@ const languages = [
   },
 ];
 
+
 const LanguageSelector = ({ variant = 'default' }) => {
   const classes = useStyles();
   const [currentLanguage, setCurrentLanguage] = useState(() => {
@@ -107,7 +108,7 @@ const LanguageSelector = ({ variant = 'default' }) => {
     // Verifica ambas as chaves do localStorage por compatibilidade
     const saved = localStorage.getItem('i18nextLng') || localStorage.getItem('language');
     console.log('🔍 LanguageSelector - Idioma inicial do localStorage:', saved);
-    return saved || '';
+    return soloIdioma(saved) || '';
   });
   const [availableLanguages, setAvailableLanguages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -150,6 +151,10 @@ const LanguageSelector = ({ variant = 'default' }) => {
           console.log('🔍 LanguageSelector - Nenhuma configuração de idiomas encontrada, usando padrão');
         }
         
+        // El ajuste guarda variantes como 'pt-BR'; la lista de este
+        // componente usa codigos base, asi que se reducen antes de nada.
+        if (Array.isArray(langs)) langs = langs.map(soloIdioma);
+
         // Garante que langs é um array válido
         if (Array.isArray(langs) && langs.length > 0) {
           setAvailableLanguages(langs);
@@ -159,10 +164,10 @@ const LanguageSelector = ({ variant = 'default' }) => {
           const savedLanguage = localStorage.getItem('i18nextLng') || localStorage.getItem('language');
           
           // Se tiver idioma salvo e ele está na lista, usa ele
-          if (savedLanguage && langs.includes(savedLanguage)) {
+          if (savedLanguage && langs.includes(soloIdioma(savedLanguage))) {
             console.log('🔍 LanguageSelector - Usando idioma salvo:', savedLanguage);
-            setCurrentLanguage(savedLanguage);
-            i18n.changeLanguage(savedLanguage);
+            setCurrentLanguage(soloIdioma(savedLanguage));
+            i18n.changeLanguage(soloIdioma(savedLanguage));
           }
           // Caso contrário, usa o primeiro disponível
           else {
@@ -175,7 +180,7 @@ const LanguageSelector = ({ variant = 'default' }) => {
         } else {
           // Fallback final
           setAvailableLanguages(['es', 'pt', 'en']);
-          const fallbackLang = localStorage.getItem('i18nextLng') || 'pt';
+          const fallbackLang = soloIdioma(localStorage.getItem('i18nextLng')) || IDIOMA_POR_DEFECTO;
           setCurrentLanguage(fallbackLang);
           i18n.changeLanguage(fallbackLang);
         }
@@ -185,7 +190,7 @@ const LanguageSelector = ({ variant = 'default' }) => {
         console.error('Erro ao buscar configurações de idiomas:', error);
         console.log('🔍 LanguageSelector - Usando idiomas padrão devido a erro');
         setAvailableLanguages(['es', 'pt', 'en']);
-        const fallbackLang = localStorage.getItem('i18nextLng') || 'pt';
+        const fallbackLang = soloIdioma(localStorage.getItem('i18nextLng')) || IDIOMA_POR_DEFECTO;
         setCurrentLanguage(fallbackLang);
         i18n.changeLanguage(fallbackLang);
         setIsLoading(false);
@@ -235,7 +240,14 @@ const LanguageSelector = ({ variant = 'default' }) => {
   };
 
   const getCurrentLanguage = () => {
-    return languages.find(lang => lang.code === currentLanguage) || languages[0];
+    // Se compara por el codigo base: con 'es-419' no habia coincidencia
+    // y caia en languages[0], que es portugues.
+    const base = soloIdioma(currentLanguage);
+    return (
+      languages.find(lang => lang.code === base) ||
+      languages.find(lang => lang.code === IDIOMA_POR_DEFECTO) ||
+      languages[0]
+    );
   };
 
   // Filtra apenas os idiomas disponíveis configurados pelo admin
@@ -256,7 +268,7 @@ const LanguageSelector = ({ variant = 'default' }) => {
     return (
       <FormControl size="small" className={classes.formControl}>
         <Select
-          value={currentLanguage}
+          value={soloIdioma(currentLanguage)}
           onChange={handleLanguageChange}
           className={classes.select}
           variant="standard"
@@ -278,7 +290,7 @@ const LanguageSelector = ({ variant = 'default' }) => {
   return (
     <FormControl className={classes.formControl} size="small">
       <Select
-        value={currentLanguage}
+        value={soloIdioma(currentLanguage)}
         onChange={handleLanguageChange}
         className={classes.select}
         variant="outlined"

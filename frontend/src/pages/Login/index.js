@@ -7,7 +7,7 @@ import Link from "@material-ui/core/Link";
 import Grid from "@material-ui/core/Grid";
 import { makeStyles, useTheme } from "@material-ui/core/styles";
 import Container from "@material-ui/core/Container";
-import { i18n } from "../../translate/i18n";
+import { i18n, soloIdioma, IDIOMA_POR_DEFECTO } from "../../translate/i18n";
 import { AuthContext } from "../../context/Auth/AuthContext";
 import ColorModeContext from "../../layout/themeContext";
 import useSettings from "../../hooks/useSettings";
@@ -29,7 +29,7 @@ import { getBackendUrl } from "../../config";
 const languageOptions = [
   { value: "pt-BR", label: "Português", icon: BRFlag },
   { value: "en", label: "English", icon: USFlag },
-  { value: "es", label: "Spanish", icon: ESFlag },
+  { value: "es", label: "Español", icon: ESFlag },
   { value: "ar", label: "عربي", icon: ARFlag },
 ];
 
@@ -471,8 +471,15 @@ const Login = () => {
       });
   }, []);
 
+  // Se compara por el idioma BASE. i18n.language conserva la variante
+  // del navegador —'es-419'—, que no coincide con el valor 'es' de la
+  // lista, y entonces caia en languageOptions[0], que es portugues: la
+  // interfaz salia en espanol pero el selector decia Portugues.
   const current =
-    languageOptions.find((opt) => opt.value === i18n.language) ||
+    languageOptions.find(
+      (opt) => soloIdioma(opt.value) === soloIdioma(i18n.language)
+    ) ||
+    languageOptions.find((opt) => soloIdioma(opt.value) === IDIOMA_POR_DEFECTO) ||
     languageOptions[0];
 
   const handleSelect = (opt) => {
@@ -554,7 +561,11 @@ const Login = () => {
           {open && (
             <div className={classes.languageOptions}>
               {languageOptions
-                .filter((opt) => enabledLanguages.includes(opt.value))
+                .filter((opt) =>
+                  enabledLanguages.some(
+                    (l) => soloIdioma(l) === soloIdioma(opt.value)
+                  )
+                )
                 .map((opt) => (
                   <button
                     key={opt.value}
