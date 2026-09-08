@@ -10,7 +10,8 @@ import {
   Divider,
   Typography,
   IconButton,
-  makeStyles
+  makeStyles,
+  useTheme
 } from "@material-ui/core";
 
 // Iconos en trazo del set propio del proyecto — ver components/Icons.
@@ -31,8 +32,6 @@ import VcardPreview from "../VcardPreview";
 import LocationPreview from "../LocationPreview";
 import ModalImageCors from "../ModalImageCors";
 import MessageOptionsMenu from "../MessageOptionsMenu";
-import whatsBackground from "../../assets/wa-background.png";
-import whatsBackgroundDark from "../../assets/wa-background-dark.png";
 import YouTubePreview from "../ModalYoutubeCors";
 import PdfPreview from "../PdfPreview";
 import { ReplyMessageContext } from "../../context/ReplyingMessage/ReplyingMessageContext";
@@ -43,6 +42,8 @@ import toastError from "../../errors/toastError";
 import { i18n } from "../../translate/i18n";
 import SelectMessageCheckbox from "./SelectMessageCheckbox";
 import useCompanySettings from "../../hooks/useSettings/companySettings";
+import useSettings from "../../hooks/useSettings";
+import { getBackendUrl } from "../../config";
 import { AuthContext } from "../../context/Auth/AuthContext";
 import { QueueSelectedContext } from "../../context/QueuesSelected/QueuesSelectedContext";
 import AudioModal from "../AudioModal";
@@ -108,8 +109,22 @@ const useStyles = makeStyles((theme) => ({
   },
 
   messagesList: {
-    backgroundImage: theme.mode === 'light' ? `url(${whatsBackground})` : `url(${whatsBackgroundDark})`,
-    backgroundColor: theme.mode === 'light' ? "transparent" : "#0b0b0d",
+    // Fondo del hilo.
+    //
+    // Antes llevaba fija la imagen de garabatos de WhatsApp. Ahora es una
+    // superficie del sistema, y el papel tapiz —si la empresa configura
+    // uno en Ajustes > Whitelabel— se aplica en linea desde el componente,
+    // porque makeStyles no puede leer un ajuste.
+    //
+    // El hilo va un peldano por DEBAJO de las burbujas. Se usa
+    // surfaceSecondary y no background porque, quitada la textura del papel
+    // tapiz, una burbuja blanca sobre un fondo casi blanco se quedaba en
+    // 1,05 de contraste: el borde solo se adivinaba por la sombra. Aun asi
+    // el peso lo lleva el filete de 1px de cada burbuja; entre dos tonos
+    // claros ninguna diferencia de luminancia llega a 3:1.
+    backgroundColor: theme.palette.tokens.surface.surfaceSecondary,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
     display: "flex",
     flexDirection: "column",
     flexGrow: 1,
@@ -142,10 +157,11 @@ const useStyles = makeStyles((theme) => ({
 
   // Burbuja del cliente.
   //
-  // Se conserva el codigo de color —claro el cliente, verde el asesor—
-  // porque es lo que permite saber quien habla sin leer, y cambiarlo
-  // obligaria a reaprender la pantalla. Lo que se moderniza es la
-  // geometria: radio, relleno, separacion y sombra.
+  // Se conserva el CODIGO de color —una superficie neutra el cliente, un
+  // tono de marca el asesor— porque es lo que permite saber quien habla
+  // sin leer. Lo que cambia son los valores: el verde de WhatsApp da paso
+  // a la escala de marca, y la geometria (radio, relleno, sombra) al
+  // sistema de diseno.
   messageLeft: {
     marginRight: 20,
     marginTop: 8,
@@ -167,8 +183,15 @@ const useStyles = makeStyles((theme) => ({
     },
 
     whiteSpace: "pre-wrap",
-    backgroundColor: theme.mode === 'light' ? "#ffffff" : "#202c33",
-    color: theme.mode === 'light' ? theme.palette.tokens.text.primary : "#ffffff",
+    // Burbuja recibida: la superficie del sistema. En claro ya era blanca;
+    // en oscuro era el #202c33 de WhatsApp y pasa al gris del sistema.
+    backgroundColor: theme.palette.tokens.surface.surface,
+    // El color del texto se calcula sobre el fondo, no se fija a mano.
+    color: theme.palette.tokens.onColor(theme.palette.tokens.surface.surface),
+    // Filete que define el borde. Es lo que separa la burbuja del hilo:
+    // entre dos tonos claros la luminancia no da para distinguirlos, y una
+    // linea de 1px se percibe como contorno aunque su contraste sea bajo.
+    border: `1px solid ${theme.palette.tokens.border.border}`,
     alignSelf: "flex-start",
     // Radio de 14px con la esquina de origen a 4: mantiene la punta que
     // indica quien habla, pero sin el angulo recto, que es lo que daba
@@ -188,7 +211,9 @@ const useStyles = makeStyles((theme) => ({
   quotedContainerLeft: {
     margin: "-3px -80px 6px -6px",
     overflow: "hidden",
-    backgroundColor: theme.mode === 'light' ? "#f0f0f0" : "#1d282f",
+    // Insercion de la cita dentro de la burbuja recibida: un peldano de
+    // superficie por debajo, en vez de los grises de WhatsApp.
+    backgroundColor: theme.palette.tokens.surface.surfaceSecondary,
     borderRadius: "7.5px",
     display: "flex",
     position: "relative",
@@ -231,8 +256,22 @@ const useStyles = makeStyles((theme) => ({
     },
 
     whiteSpace: "pre-wrap",
-    backgroundColor: theme.mode === 'light' ? "#dcf8c6" : "#005c4b",
-    color: theme.mode === 'light' ? theme.palette.tokens.text.primary : "#ffffff",
+    // Burbuja propia: un tono de la escala de MARCA, no el verde de
+    // WhatsApp (#dcf8c6 en claro, #005c4b en oscuro). Sigue distinguiendose
+    // de la recibida de un vistazo, pero con el color del producto.
+    backgroundColor: theme.mode === 'light'
+      ? theme.palette.tokens.brandScale[50]
+      : theme.palette.tokens.brandScale[900],
+    color: theme.palette.tokens.onColor(
+      theme.mode === 'light'
+        ? theme.palette.tokens.brandScale[50]
+        : theme.palette.tokens.brandScale[900]
+    ),
+    // Mismo criterio que la burbuja recibida, con un paso de la escala de
+    // marca para que el contorno pertenezca a la misma familia de color.
+    border: `1px solid ${theme.mode === 'light'
+      ? theme.palette.tokens.brandScale[100]
+      : theme.palette.tokens.brandScale[700]}`,
     alignSelf: "flex-end",
     borderTopLeftRadius: 14,
     borderTopRightRadius: 14,
@@ -276,7 +315,12 @@ const useStyles = makeStyles((theme) => ({
   quotedContainerRight: {
     margin: "-3px -80px 6px -6px",
     overflowY: "hidden",
-    backgroundColor: theme.mode === 'light' ? "#cfe9ba" : "#025144",
+    // Esta cita va DENTRO de la burbuja propia, que ya es de marca: se usa
+    // un paso mas de la misma escala para que se distinga sin salirse de
+    // la familia de color. Antes eran los verdes de WhatsApp.
+    backgroundColor: theme.mode === 'light'
+      ? theme.palette.tokens.brandScale[100]
+      : theme.palette.tokens.brandScale[700],
     borderRadius: "7.5px",
     display: "flex",
     position: "relative",
@@ -502,6 +546,13 @@ const MessagesList = ({
 
   const currentTicketId = useRef(ticketId);
   const { getAll } = useCompanySettings();
+  // Papel tapiz del hilo, opcional. Se sube en Ajustes > Whitelabel y se
+  // guarda como chatBackgroundLight / chatBackgroundDark. Vacio significa
+  // sin imagen: la superficie lisa del sistema, que es lo que se ve por
+  // defecto desde que se quito la de WhatsApp.
+  const [papelTapiz, setPapelTapiz] = useState("");
+  const theme = useTheme();
+  const { getPublicSetting } = useSettings();
   const [dragActive, setDragActive] = useState(false);
   const [dragTimeout, setDragTimeout] = useState(null);
 
@@ -518,6 +569,36 @@ const MessagesList = ({
   const { showSelectMessageCheckbox } = useContext(ForwardMessageContext);
   const { user, socket } = useContext(AuthContext);
   const companyId = user.companyId;
+
+  // Papel tapiz configurado por la empresa, si lo hay.
+  //
+  // Se pide una clave distinta por modo para que un fondo pensado para el
+  // modo claro no se quede pegado en el oscuro. Si la lectura falla no se
+  // pone imagen y queda la superficie lisa: un fondo es adorno, y no puede
+  // dejar el hilo sin pintar.
+  useEffect(() => {
+    const clave =
+      theme.mode === "light" ? "chatBackgroundLight" : "chatBackgroundDark";
+    let vigente = true;
+
+    // Se pasa la empresa: sin ella el ajuste se lee de la empresa 1, y
+    // todas verian el papel tapiz de la instalacion anfitriona en vez del
+    // suyo.
+    getPublicSetting(clave, companyId)
+      .then((fichero) => {
+        if (!vigente) return;
+        setPapelTapiz(fichero ? `${getBackendUrl()}/public/${fichero}` : "");
+      })
+      .catch(() => {
+        if (vigente) setPapelTapiz("");
+      });
+
+    // Evita escribir en un componente ya desmontado si la peticion tarda.
+    return () => {
+      vigente = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [theme.mode, companyId]);
 
   useEffect(() => {
     async function fetchData() {
@@ -1378,7 +1459,10 @@ const shouldBlurMessages = ticketStatus === "pending" && user.allowSeeMessagesIn
   onScroll={handleScroll}
   style={{
     filter: shouldBlurMessages ? "blur(4px)" : "none",
-    pointerEvents: shouldBlurMessages ? "none" : "auto"
+    pointerEvents: shouldBlurMessages ? "none" : "auto",
+    // Sin papel tapiz configurado no se pone imagen: manda el color de
+    // fondo que define la clase.
+    ...(papelTapiz ? { backgroundImage: `url(${papelTapiz})` } : {})
   }}
 >
   {messagesList.length > 0 ? renderMessages() : []}

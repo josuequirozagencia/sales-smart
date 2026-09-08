@@ -122,21 +122,34 @@ export const storeLogo = async (
   const file = req.file as Express.Multer.File;
   const { mode }: LogoRequest = req.body;
   const { companyId } = req.user;
-  const validModes = [
-    "Light",
-    "Dark",
-    "Favicon",
-    "BackgroundLight",
-    "BackgroundDark"
-  ];
 
-  if (validModes.indexOf(mode) === -1) {
+  // Cada modo dice en que ajuste se guarda la imagen.
+  //
+  // Antes la clave se componia como `appLogo${mode}`. Se pasa a un mapa
+  // explicito por dos motivos: las claves que ya existian se conservan
+  // EXACTAMENTE —quien las lee no se entera del cambio— y las nuevas
+  // pueden llamarse por lo que son. Un fondo de chat guardado como
+  // "appLogoChatBackgroundLight" habria confundido a quien mirase la
+  // tabla de ajustes dentro de unos meses.
+  const CLAVES_POR_MODO: { [modo: string]: string } = {
+    Light: "appLogoLight",
+    Dark: "appLogoDark",
+    Favicon: "appLogoFavicon",
+    BackgroundLight: "appLogoBackgroundLight",
+    BackgroundDark: "appLogoBackgroundDark",
+    // Papel tapiz de la ventana de conversacion, por modo claro y oscuro.
+    ChatBackgroundLight: "chatBackgroundLight",
+    ChatBackgroundDark: "chatBackgroundDark"
+  };
+
+  const clave = CLAVES_POR_MODO[mode];
+  if (!clave) {
     return res.status(406);
   }
 
   if (file && file.mimetype.startsWith("image/")) {
     const setting = await UpdateSettingService({
-      key: `appLogo${mode}`,
+      key: clave,
       value: file.filename,
       companyId
     });

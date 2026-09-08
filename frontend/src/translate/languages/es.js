@@ -2771,6 +2771,8 @@ const messages = {
         favicon: "Favicon",
         backgroundLight: "Imagen de Fondo (Tema Claro)",
         backgroundDark: "Imagen de Fondo (Tema Oscuro)",
+        chatBackgroundLight: "Papel tapiz del chat (Tema Claro)",
+        chatBackgroundDark: "Papel tapiz del chat (Tema Oscuro)",
         preview: "Vista Previa",
         delete: "Eliminar",
         upload: "Subir",

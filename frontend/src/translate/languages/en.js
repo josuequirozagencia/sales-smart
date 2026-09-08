@@ -2772,6 +2772,8 @@ const messages = {
         favicon: "Favicon",
         backgroundLight: "Background Image (Light Theme)",
         backgroundDark: "Background Image (Dark Theme)",
+        chatBackgroundLight: "Chat wallpaper (Light Theme)",
+        chatBackgroundDark: "Chat wallpaper (Dark Theme)",
         preview: "Preview",
         delete: "Delete",
         upload: "Upload",

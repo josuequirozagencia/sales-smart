@@ -2833,6 +2833,8 @@ whitelabel: {
         favicon: "Favicon",
         backgroundLight: "Imagem de Fundo (Tema Claro)",
         backgroundDark: "Imagem de Fundo (Tema Escuro)",
+        chatBackgroundLight: "Papel de parede do chat (Tema Claro)",
+        chatBackgroundDark: "Papel de parede do chat (Tema Escuro)",
         preview: "Visualizar",
         delete: "Excluir",
         upload: "Enviar",

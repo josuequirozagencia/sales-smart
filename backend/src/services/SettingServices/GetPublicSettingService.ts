@@ -16,6 +16,11 @@ const publicSettingsKeys = [
   "enabledLanguages",
   "appLogoBackgroundLight",
   "appLogoBackgroundDark",
+  // Papel tapiz de la ventana de conversacion. Se lee igual que los otros
+  // fondos de marca; el valor es solo el nombre de un fichero decorativo,
+  // nada sensible.
+  "chatBackgroundLight",
+  "chatBackgroundDark",
   // Datos de soporte. Se muestran ANTES de entrar —por ejemplo al avisar
   // de que la prueba vencio— cuando aun no se sabe de que empresa es quien
   // mira, asi que tienen que ser legibles sin sesion. No son secretos: son
