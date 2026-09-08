@@ -99,13 +99,16 @@ const useStyles = makeStyles((theme) => ({
     cursor: "unset",
   },
   queueTag: {
-    background: "#FCFCFC",
-    color: "#000",
-    marginRight: 1,
-    padding: 1,
-    fontWeight: "bold",
-    borderRadius: 3,
-    fontSize: "0.5em",
+    // El fondo casi blanco y el texto negro estaban fijos: en modo oscuro
+    // era una pastilla blanca que saltaba a la vista sin motivo.
+    background: theme.palette.tokens.surface.surfaceSecondary,
+    color: theme.palette.tokens.text.secondary,
+    marginRight: theme.palette.tokens.space.xs,
+    padding: "2px 6px",
+    fontWeight: 600,
+    borderRadius: theme.palette.tokens.radius.sm,
+    // 0.5em daban 7px reales, por debajo de cualquier tamano legible.
+    fontSize: "0.6875rem",
     whiteSpace: "nowrap",
   },
   noTicketsDiv: {
@@ -133,8 +136,12 @@ const useStyles = makeStyles((theme) => ({
     lineHeight: "1.4",
   },
   connectionTag: {
-    background: "green",
-    color: "#FFF",
+    // Eran la palabra "green" de CSS y blanco fijo. El verde del sistema
+    // con onColor() encima da 5.42 en vez de los 2.98 de antes.
+    background: theme.palette.tokens.semantic.success.fill,
+    color: theme.palette.tokens.onColor(
+      theme.palette.tokens.semantic.success.fill
+    ),
     marginRight: 1,
     // 0.6em herdava do body2 (14px), dando 8.4px reais — metade do texto
     // normal. Numa lista onde se passa o dia, era ilegivel. 0.6875rem = 11px,
@@ -159,9 +166,15 @@ const useStyles = makeStyles((theme) => ({
   contactNameWrapper: {
     display: "flex",
     justifyContent: "space-between",
-    marginLeft: "5px",
-    fontWeight: "bold",
-    color: theme.mode === "light" ? "black" : "white",
+    alignItems: "baseline",
+    gap: theme.palette.tokens.space.sm,
+    marginLeft: theme.palette.tokens.space.xs,
+    // 700 en vez de "bold": el nombre es el ancla de la fila y conviene
+    // fijar el peso, no dejarlo a lo que interprete cada tipografia.
+    fontWeight: 700,
+    // Era negro y blanco literales. El token se adapta al modo y respeta
+    // el contraste que ya esta medido en el sistema.
+    color: theme.palette.tokens.text.primary,
   },
 
   lastMessageTime: {
@@ -170,7 +183,13 @@ const useStyles = makeStyles((theme) => ({
     position: "relative",
     top: -30,
     marginRight: "1px",
-    color: theme.mode === "light" ? "black" : grey[400],
+    // La hora es dato de apoyo, no titular: baja al gris atenuado y a 11px.
+    // En claro estaba en negro puro, al mismo peso visual que el nombre.
+    color: theme.palette.tokens.text.muted,
+    fontSize: "0.6875rem",
+    // Cifras de ancho fijo: sin esto la lista "baila" al pasar de 09:59 a
+    // 10:00, porque el 1 ocupa menos que el 0 en la mayoria de tipografias.
+    fontVariantNumeric: "tabular-nums",
   },
 
   lastMessageTimeUnread: {
@@ -186,6 +205,8 @@ const useStyles = makeStyles((theme) => ({
     color: theme.mode === "light" ? green[800] : green[400],
     fontWeight: 600,
     marginRight: "1px",
+    fontSize: "0.6875rem",
+    fontVariantNumeric: "tabular-nums",
   },
 
   closedBadge: {
