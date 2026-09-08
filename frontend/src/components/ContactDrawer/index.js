@@ -22,7 +22,6 @@ import {
   BlockIcon,
   LockOpenIcon,
 } from "../Icons";
-import Avatar from '@material-ui/core/Avatar';
 import formatSerializedId from '../../utils/formatSerializedId';
 import { i18n } from "../../translate/i18n";
 import ModalImageCors from "../ModalImageCors";
@@ -54,6 +53,7 @@ import {
 } from "@material-ui/core";
 import { ContactForm } from "../ContactForm";
 import ContactModal from "../ContactModal";
+import ContactAvatar from "../ContactAvatar";
 import SaleModal from "../SaleModal";
 import AppointmentModal from "../AppointmentModal";
 import { ContactNotes } from "../ContactNotes";
@@ -640,13 +640,18 @@ const fetchGroupParticipants = async () => {
 									) : null
 								}
 							>
-								<Avatar 
-									src={participant.profilePicUrl} 
-									alt={participant.name}
+								{/* El participante trae la foto en profilePicUrl, no en
+								    urlPicture, asi que se adapta al nombre que espera
+								    ContactAvatar. */}
+								<ContactAvatar
+									contact={{
+										id: participant.id,
+										name: participant.name,
+										urlPicture: participant.profilePicUrl,
+									}}
+									size={45}
 									className={classes.participantAvatar}
-								>
-									{participant.name?.charAt(0)?.toUpperCase()}
-								</Avatar>
+								/>
 							</Badge>
 						</ListItemAvatar>
 						<ListItemText
@@ -977,14 +982,20 @@ const fetchGroupParticipants = async () => {
 					<div className={classes.profileSection}>
 						<Paper square variant="outlined" className={classes.contactHeader}>
 							{/* Avatar redondo e menor - CLICÁVEL */}
-							<Avatar 
-								src={contact?.urlPicture} 
-								alt={contact.name}
+							{/* Mismo tratamiento que en la lista de conversaciones: sin
+							    foto, circulo de color con las iniciales, y el color es
+							    siempre el mismo para el mismo contacto. Antes era una
+							    sola letra sobre el gris de serie de MUI.
+
+							    El tamano va explicito —80, el que ya tenia la clase—
+							    porque el estilo en linea del componente gana a la
+							    clase y si no lo encogeria. */}
+							<ContactAvatar
+								contact={contact}
+								size={80}
 								className={classes.contactAvatar}
 								onClick={handleImageClick}
-							>
-								{contact.name?.charAt(0)?.toUpperCase()}
-							</Avatar>
+							/>
 							
 							<CardHeader
 								className={classes.contactCardHeader}

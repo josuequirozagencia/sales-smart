@@ -346,6 +346,75 @@ export const shadow = {
   lg: "0 12px 32px rgba(15, 23, 42, 0.12)",
 };
 
+// ---------------------------------------------------------------------------
+// AVATARES SIN FOTO
+// ---------------------------------------------------------------------------
+// Cuando un contacto no tiene foto se pinta un circulo de color con sus
+// iniciales. El color NO es aleatorio ni depende del orden de la lista: sale
+// de un valor estable del contacto, asi que el mismo contacto se ve del mismo
+// color en la lista, en el panel y en cualquier otro sitio. Un avatar que
+// cambia de color al recargar deja de servir para reconocer a alguien de un
+// vistazo, que es justamente para lo que esta.
+//
+// Ninguno es morado: compiten con el color de marca y se confundirian con los
+// elementos interactivos. Todos llevan blanco encima con holgura sobre 4.5,
+// pero el texto se decide igual con onColor() por si esta paleta cambia.
+export const avatarPalette = [
+  "#0f766e", // teal
+  "#1d4ed8", // azul
+  "#b91c1c", // rojo
+  "#a16207", // ambar oscuro
+  "#15803d", // verde
+  "#0e7490", // cian
+  "#9d174d", // frambuesa
+  "#475569", // pizarra
+];
+
+/**
+ * Elige un color de la paleta a partir de una semilla estable.
+ *
+ * Se usa el id del contacto cuando se tiene —no cambia aunque lo renombren—
+ * y el nombre como respaldo. El reparto es un hash sencillo: no hace falta
+ * que sea uniforme, solo que sea SIEMPRE el mismo para la misma entrada.
+ */
+export function avatarColor(semilla) {
+  const texto = String(semilla == null ? "" : semilla);
+  if (!texto) return avatarPalette[0];
+
+  let acumulado = 0;
+  for (let i = 0; i < texto.length; i += 1) {
+    // El desplazamiento evita que dos nombres con las mismas letras en
+    // distinto orden caigan en el mismo color.
+    acumulado = (acumulado * 31 + texto.charCodeAt(i)) % 100000;
+  }
+  return avatarPalette[acumulado % avatarPalette.length];
+}
+
+/**
+ * Iniciales de un nombre: dos letras cuando hay nombre y apellido, y una
+ * sola —o dos de la misma palabra— cuando solo hay una.
+ *
+ * Se descartan las particulas ("de", "del", "da", "van"...) porque un
+ * "Maria de la Cruz" con iniciales "MD" no dice nada.
+ */
+const PARTICULAS = ["de", "del", "da", "das", "do", "dos", "la", "las", "los",
+  "van", "von", "y", "e"];
+
+export function avatarInitials(nombre) {
+  const palabras = String(nombre || "")
+    .trim()
+    .split(/\s+/)
+    .filter(p => p && !PARTICULAS.includes(p.toLowerCase()));
+
+  if (palabras.length === 0) return "?";
+  if (palabras.length === 1) {
+    // Una sola palabra: dos letras si las tiene, para no dejar un circulo
+    // casi vacio.
+    return palabras[0].slice(0, 2).toUpperCase();
+  }
+  return (palabras[0][0] + palabras[palabras.length - 1][0]).toUpperCase();
+}
+
 export default {
   neutral,
   primaryDefault,

@@ -17,6 +17,7 @@ import { i18n } from "../../translate/i18n";
 import api from "../../services/api";
 import ButtonWithSpinner from "../ButtonWithSpinner";
 import MarkdownWrapper from "../MarkdownWrapper";
+import ContactAvatar from "../ContactAvatar";
 import { List, Tooltip } from "@material-ui/core";
 import { AuthContext } from "../../context/Auth/AuthContext";
 import { TicketsContext } from "../../context/Tickets/TicketsContext";
@@ -36,7 +37,6 @@ import { Done, HighlightOff, Replay, SwapHoriz } from "@material-ui/icons";
 import VisibilityIcon from "@material-ui/icons/Visibility"; // Ícone de spy
 import useCompanySettings from "../../hooks/useSettings/companySettings";
 import {
-  Avatar,
   Badge,
   ListItemAvatar,
   ListItem,
@@ -693,13 +693,13 @@ const TicketListItemCustom = ({ setTabOpen, ticket }) => {
           />
         )}
         <ListItemAvatar style={{ marginLeft: "-15px" }}>
-          <Avatar
-            style={{
-              width: "50px",
-              height: "50px",
-              borderRadius: "50%",
-            }}
-            src={ticket?.contact?.urlPicture || undefined}
+          {/* Sin foto sale un circulo de color con las iniciales, y no el
+              icono generico de persona que pintaba MUI: era el mismo para
+              todos los contactos, asi que no ayudaba a distinguirlos. El
+              color va por contacto y es siempre el mismo. */}
+          <ContactAvatar
+            contact={ticket?.contact}
+            size={50}
             className={classes.clickableAvatar}
             onClick={handleImageClick}
           />
