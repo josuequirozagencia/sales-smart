@@ -1,6 +1,15 @@
 const messages = {
   es: {
     translations: {
+      ticketInfo: {
+        copyPhone: "Copiar teléfono",
+        quickMessages: "Respuestas rápidas",
+        phonecopied: "¡Teléfono copiado al portapapeles!",
+        noPhone: "No hay teléfono para copiar",
+        invalidPhoneFormat: "El formato del teléfono no es válido",
+        copyError: "No se pudo copiar el teléfono",
+        noContact: "(sin contacto)",
+      },
       signup: {
         plan: {
           users: "{{n}} usuarios",
@@ -2336,6 +2345,7 @@ const messages = {
           ratingTitle: "Elegir menú de evaluación",
           notMessage: "No hay mensaje seleccionado",
           buttons: {
+            back: "Volver",
             return: "Devolver",
             resolve: "Resolver",
             reopen: "Reabrir",
@@ -2359,6 +2369,32 @@ const messages = {
         privateMessage: "Mensaje Privada",
       },
       contactDrawer: {
+        kanbanStage: "Etapa Kanban",
+        info: {
+          title: "Detalles",
+          phone: "Teléfono",
+          channel: "Canal",
+          owner: "Responsable",
+          status: "Estado",
+          queue: "Fila",
+          lastMessage: "Último mensaje",
+          unassigned: "Sin asignar",
+          change: "Cambiar",
+        },
+        status: {
+          open: "Abierto",
+          pending: "Pendiente",
+          closed: "Cerrado",
+          group: "Grupo",
+        },
+        actions: {
+          sale: "Venta",
+          appointment: "Agendar",
+          edit: "Editar",
+          note: "Nota",
+          block: "Bloquear",
+          unblock: "Desbloquear",
+        },
         header: "Detalles del contacto",
         buttons: {
           edit: "Editar contacto",

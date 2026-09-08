@@ -1,6 +1,15 @@
 const messages = {
   en: {
     translations: {
+      ticketInfo: {
+        copyPhone: "Copy phone number",
+        quickMessages: "Quick replies",
+        phonecopied: "Phone number copied to clipboard!",
+        noPhone: "No phone number to copy",
+        invalidPhoneFormat: "The phone number format is not valid",
+        copyError: "Could not copy the phone number",
+        noContact: "(no contact)",
+      },
       signup: {
         plan: {
           users: "{{n}} users",
@@ -2348,6 +2357,7 @@ const messages = {
           notMessage: "No message selected",
           amount: "Prospecting Value",
           buttons: {
+            back: "Back",
             return: "Return",
             resolve: "Resolve",
             reopen: "Reopen",
@@ -2371,6 +2381,32 @@ const messages = {
         privateMessage: "Private Message",
       },
       contactDrawer: {
+        kanbanStage: "Kanban stage",
+        info: {
+          title: "Details",
+          phone: "Phone",
+          channel: "Channel",
+          owner: "Owner",
+          status: "Status",
+          queue: "Queue",
+          lastMessage: "Last message",
+          unassigned: "Unassigned",
+          change: "Change",
+        },
+        status: {
+          open: "Open",
+          pending: "Pending",
+          closed: "Closed",
+          group: "Group",
+        },
+        actions: {
+          sale: "Sale",
+          appointment: "Schedule",
+          edit: "Edit",
+          note: "Note",
+          block: "Block",
+          unblock: "Unblock",
+        },
         header: "Contact Details",
         buttons: {
           edit: "Edit Contact",

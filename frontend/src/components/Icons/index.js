@@ -380,3 +380,45 @@ export const Visibility = mk(
     <circle cx="12" cy="12" r="3" {...stroke} />
   </>
 );
+
+// Acciones de la cabecera del chat. Son las que ya existian ahi con
+// iconos rellenos de Material-UI; aqui estan redibujadas en trazo para
+// que la barra no mezcle dos lenguajes graficos.
+export const ArrowBack = mk(
+  <>
+    <path d="M19 12H5" {...stroke} />
+    <path d="m12 19-7-7 7-7" {...stroke} />
+  </>
+);
+export const Undo = mk(
+  <>
+    <path d="m9 14-5-5 5-5" {...stroke} />
+    <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" {...stroke} />
+  </>
+);
+export const ContentCopy = mk(
+  <>
+    <rect x="9" y="9" width="13" height="13" rx="2" {...stroke} />
+    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" {...stroke} />
+  </>
+);
+export const Bolt = mk(
+  <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z" {...stroke} />
+);
+export const Wallet = mk(
+  <>
+    <path d="M3 7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2" {...stroke} />
+    <rect x="3" y="7" width="18" height="12" rx="2" {...stroke} />
+    <path d="M21 11h-4a2 2 0 0 0 0 4h4" {...stroke} />
+  </>
+);
+
+// Nombres con sufijo Icon, que es como los importan los ficheros que ya
+// existian. Ver la nota del bloque de alias de mas arriba.
+export const ArrowBackIcon = ArrowBack;
+export const UndoIcon = Undo;
+export const FileCopyIcon = ContentCopy;
+export const FlashOnIcon = Bolt;
+export const AccountBalanceWalletIcon = Wallet;
+export const SwapHorizOutlined = SwapHoriz;
+export const HighlightOffIcon = HighlightOff;

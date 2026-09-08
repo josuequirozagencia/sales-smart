@@ -76,6 +76,12 @@ const Ticket = () => {
   // arrancando cerrado para no robarle espacio al chat. Se calcula una
   // sola vez al montar, no se fuerza a cada cambio de tamaño de ventana.
   const wideScreen = useMediaQuery(theme.breakpoints.up("lg"), { noSsr: true });
+  // Por debajo de 960px el panel de contacto deja de ser una columna y pasa
+  // a superponerse sobre el chat. Con 320px fijos empujando, un movil de 400
+  // dejaba el hilo en unos 50px: tecnicamente abierto e inservible. Este si
+  // reevalua al redimensionar, a diferencia del calculo de arriba, que solo
+  // decide el estado inicial.
+  const panelSuperpuesto = useMediaQuery(theme.breakpoints.down("sm"));
 
   const [drawerOpen, setDrawerOpen] = useState(wideScreen);
   const [loading, setLoading] = useState(true);
@@ -223,7 +229,14 @@ const Ticket = () => {
         variant="outlined"
         elevation={0}
         className={clsx(classes.mainWrapper, {
-          [classes.mainWrapperShift]: drawerOpen,
+          // Cuando el panel se superpone no hay que recolocar el chat: el
+          // margen negativo se queda, y el panel pasa por encima.
+          // En superpuesto se aplica SIEMPRE, este abierto o no. mainWrapper
+          // lleva un marginRight de -320 para hacer sitio al panel acoplado;
+          // si se deja puesto, el contenedor mide 320px mas que la ventana y
+          // el panel, que se posiciona contra su borde derecho, cae fuera de
+          // la pantalla. La clase lo devuelve a 0.
+          [classes.mainWrapperShift]: panelSuperpuesto || drawerOpen,
         })}
       >
         {/* <div id="TicketHeader"> */}
@@ -282,6 +295,7 @@ const Ticket = () => {
         contact={contact}
         loading={loading}
         ticket={ticket}
+        superpuesto={panelSuperpuesto}
       />
 
     </div>

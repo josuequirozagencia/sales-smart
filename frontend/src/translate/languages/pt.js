@@ -33,6 +33,8 @@ const messages = {
         },
       },
       ticketInfo: {
+        invalidPhoneFormat: "O formato do telefone não é válido",
+        noContact: "(sem contato)",
         copyPhone: "Copiar telefone",
         quickMessages: "Respostas rápidas",
         phonecopied: "Telefone copiado para área de transferência!",
@@ -2395,6 +2397,7 @@ const messages = {
           notMessage: "Nenhuma mensagem selecionada",
           amount: "Valor de prospecção",
           buttons: {
+            back: "Voltar",
             return: "Retornar",
             resolve: "Resolver",
             reopen: "Reabrir",
@@ -2420,6 +2423,32 @@ const messages = {
         privateMessage: "Mensagem Privada",
       },
       contactDrawer: {
+        kanbanStage: "Etapa Kanban",
+        info: {
+          title: "Detalhes",
+          phone: "Telefone",
+          channel: "Canal",
+          owner: "Responsável",
+          status: "Status",
+          queue: "Fila",
+          lastMessage: "Última mensagem",
+          unassigned: "Sem atribuição",
+          change: "Alterar",
+        },
+        status: {
+          open: "Aberto",
+          pending: "Pendente",
+          closed: "Fechado",
+          group: "Grupo",
+        },
+        actions: {
+          sale: "Venda",
+          appointment: "Agendar",
+          edit: "Editar",
+          note: "Nota",
+          block: "Bloquear",
+          unblock: "Desbloquear",
+        },
         header: "Dados do contato",
         buttons: {
           edit: "Editar contato",

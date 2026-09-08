@@ -7,14 +7,21 @@ import { IconButton, Menu, CircularProgress } from "@material-ui/core";
 import {
   DeviceHubOutlined,
   History,
-  MoreVert,
   PictureAsPdf,
+} from "@material-ui/icons";
+// Los iconos que se ven en la barra del chat salen del set propio: en
+// trazo y del mismo grosor que el resto de la seccion. Los tres de arriba
+// se quedan porque solo aparecen en codigo comentado.
+import {
+  MoreVert,
   Replay,
   SwapHorizOutlined,
-  AccountBalanceWallet,
-  FileCopy as FileCopyIcon,
-  FlashOn,
-} from "@material-ui/icons";
+  AccountBalanceWalletIcon as AccountBalanceWallet,
+  FileCopyIcon,
+  FlashOnIcon as FlashOn,
+  HighlightOffIcon,
+  UndoIcon,
+} from "../Icons";
 import { v4 as uuidv4 } from "uuid";
 
 import { i18n } from "../../translate/i18n";
@@ -38,8 +45,7 @@ import TransferTicketModalCustom from "../TransferTicketModalCustom";
 import AcceptTicketWithouSelectQueue from "../AcceptTicketWithoutQueueModal";
 
 //icones
-import HighlightOffIcon from "@material-ui/icons/HighlightOff";
-import UndoIcon from "@material-ui/icons/Undo";
+// (HighlightOff y Undo ahora vienen del set propio, arriba.)
 
 import ScheduleModal from "../ScheduleModal";
 import MenuItem from "@material-ui/core/MenuItem";
@@ -815,29 +821,33 @@ const TicketActionButtonsCustom = ({
                 </Tooltip>
               </IconButton>
 
-              <IconButton className={classes.bottomButtonVisibilityIcon}>
+              {/* El onClick colgaba del icono y no del boton, asi que la
+                  mitad del area pulsable —el relleno del IconButton— no
+                  hacia nada. Lo mismo pasaba en devolver y transferir. */}
+              <IconButton
+                className={classes.bottomButtonVisibilityIcon}
+                onClick={handleClickResolver}
+              >
                 <Tooltip title={i18n.t("messagesList.header.buttons.resolve")}>
-                  <HighlightOffIcon onClick={handleClickResolver} />
+                  <HighlightOffIcon />
                 </Tooltip>
               </IconButton>
 
-              <IconButton className={classes.bottomButtonVisibilityIcon}>
+              <IconButton
+                className={classes.bottomButtonVisibilityIcon}
+                onClick={(e) => handleUpdateTicketStatus(e, "pending", null)}
+              >
                 <Tooltip title={i18n.t("tickets.buttons.returnQueue")}>
-                  <UndoIcon
-                    // color="primary"
-                    onClick={(e) =>
-                      handleUpdateTicketStatus(e, "pending", null)
-                    }
-                  />
+                  <UndoIcon />
                 </Tooltip>
               </IconButton>
 
-              <IconButton className={classes.bottomButtonVisibilityIcon}>
-                <Tooltip title="Transferir Ticket">
-                  <SwapHorizOutlined
-                    // color="primary"
-                    onClick={handleOpenTransferModal}
-                  />
+              <IconButton
+                className={classes.bottomButtonVisibilityIcon}
+                onClick={handleOpenTransferModal}
+              >
+                <Tooltip title={i18n.t("ticketOptionsMenu.transfer")}>
+                  <SwapHorizOutlined />
                 </Tooltip>
               </IconButton>
 
@@ -938,7 +948,7 @@ const TicketActionButtonsCustom = ({
           color="inherit"
           style={{ paddingHorizontal: 3, paddingTop: 10 }}
         >
-          <MoreVert style={{ fontSize: 16, padding: 0 }} />
+          <MoreVert />
         </IconButton>
         <Menu
           id="menu-appbar"
