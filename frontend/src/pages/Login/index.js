@@ -64,8 +64,13 @@ const useStyles = makeStyles((theme) => ({
     margin: "0",
     boxSizing: "border-box",
     overflow: "hidden", // Corrigido: removido auto que causava rolagem
-    // Background com tom de azul
-    background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #60a5fa 100%)",
+    // Fondo con el color de MARCA, no un azul fijo.
+    //
+    // Se deriva del primario configurado en Ajustes > Whitelabel, asi que
+    // una empresa que cambie su color ve tambien cambiar esta pantalla. El
+    // sistema de tokens solo ofrece oscurecer, de ahi que el degradado vaya
+    // del tono activo al primario en vez de abrir hacia un tono claro.
+    background: `linear-gradient(135deg, ${theme.palette.tokens.brand.primaryActive} 0%, ${theme.palette.tokens.brand.primary} 100%)`,
     position: "relative",
     
     // Padrão de pontos no fundo
@@ -168,7 +173,10 @@ const useStyles = makeStyles((theme) => ({
 
   avatar: {
     margin: theme.spacing(1),
-    backgroundColor: "#3b82f6",
+    backgroundColor: theme.palette.tokens.brand.primary,
+    // El icono de dentro se calcula sobre el fondo, no se fija blanco: si
+    // una empresa elige un primario claro, el blanco desapareceria.
+    color: theme.palette.tokens.brand.onPrimary,
   },
 
   form: {
@@ -178,20 +186,21 @@ const useStyles = makeStyles((theme) => ({
 
   submit: {
     margin: theme.spacing(3, 0, 2),
-    background: "linear-gradient(45deg, #3b82f6, #1e40af)",
+    background: `linear-gradient(45deg, ${theme.palette.tokens.brand.primary}, ${theme.palette.tokens.brand.primaryActive})`,
     color: "white",
     borderRadius: "12px",
     padding: "12px 0",
     fontSize: "16px",
     fontWeight: 600,
     textTransform: "none",
-    boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)",
+    // Sombra del sistema, no una tintada con el azul que ya no existe.
+    boxShadow: theme.palette.tokens.shadow.md,
     border: "none",
     transition: "all 0.3s ease",
     "&:hover": {
-      background: "linear-gradient(45deg, #2563eb, #1d4ed8)",
+      background: `linear-gradient(45deg, ${theme.palette.tokens.brand.primaryHover}, ${theme.palette.tokens.brand.primaryActive})`,
       transform: "translateY(-2px)",
-      boxShadow: "0 6px 20px rgba(59, 130, 246, 0.4)",
+      boxShadow: theme.palette.tokens.shadow.lg,
     },
     "&:active": {
       transform: "translateY(0)",
@@ -242,7 +251,9 @@ const useStyles = makeStyles((theme) => ({
       },
       "&.Mui-focused": {
         backgroundColor: "rgba(255, 255, 255, 1)",
-        boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)",
+        // Halo de foco en el color de marca, con la opacidad en el propio
+        // borde: es lo que senala donde se esta escribiendo.
+        boxShadow: `0 0 0 3px ${theme.palette.tokens.brand.primary}22`,
       },
       "& input": {
         color: "#1f2937", // Garante que o texto do input seja escuro
@@ -252,13 +263,13 @@ const useStyles = makeStyles((theme) => ({
         },
       },
       "& fieldset": {
-        borderColor: "rgba(59, 130, 246, 0.2)",
+        borderColor: theme.palette.tokens.border.border,
       },
       "&:hover fieldset": {
-        borderColor: "rgba(59, 130, 246, 0.4)",
+        borderColor: theme.palette.tokens.border.borderStrong,
       },
       "&.Mui-focused fieldset": {
-        borderColor: "#3b82f6",
+        borderColor: theme.palette.tokens.brand.primary,
         borderWidth: "2px",
       },
     },
@@ -266,7 +277,7 @@ const useStyles = makeStyles((theme) => ({
       color: "#6b7280",
       fontWeight: 500,
       "&.Mui-focused": {
-        color: "#3b82f6",
+        color: theme.palette.tokens.brand.onSurface,
       },
     },
   },
@@ -293,12 +304,12 @@ const useStyles = makeStyles((theme) => ({
 
   // Link de registro
   registerLink: {
-    color: "#3b82f6",
+    color: theme.palette.tokens.brand.onSurface,
     textDecoration: "none",
     fontWeight: 600,
     transition: "all 0.3s ease",
     "&:hover": {
-      color: "#2563eb",
+      color: theme.palette.tokens.brand.primaryHover,
       textDecoration: "underline",
     },
   },
@@ -351,8 +362,8 @@ const useStyles = makeStyles((theme) => ({
     cursor: "pointer",
     transition: "all 0.2s ease",
     "&:hover": {
-      background: "rgba(59, 130, 246, 0.1)",
-      color: "#3b82f6",
+      background: theme.palette.tokens.surface.surfaceSecondary,
+      color: theme.palette.tokens.brand.onSurface,
     },
   },
 
@@ -489,22 +500,37 @@ const Login = () => {
     window.location.reload();
   };
 
-    let finalBackground;
+  // Fondo de la pantalla.
+  //
+  // Si la empresa subio una imagen en Ajustes > Whitelabel, manda esa. Si
+  // no, un degradado con el color de MARCA, que antes era un azul fijo sin
+  // relacion con el color configurado.
+  //
+  // El respaldo anterior era `theme.palette.light`, que NO es un color sino
+  // un objeto {main}: String() lo convertia en "[object Object]", un valor
+  // de CSS invalido que el navegador descartaba. El fondo acababa siendo el
+  // que hubiera debajo, y nadie se enteraba porque no da error.
+  const degradadoDeMarca =
+    `linear-gradient(135deg, ${theme.palette.tokens.brand.primaryActive} 0%, ` +
+    `${theme.palette.tokens.brand.primary} 100%)`;
+
+  let finalBackground;
   if (mode === "light") {
-    if (backgroundLight) {
-      finalBackground = `url(${backgroundLight})`;
-    } else {
-      finalBackground = theme.palette.light || "#f5f5f5";
-    }
+    finalBackground = backgroundLight
+      ? `url(${backgroundLight})`
+      : degradadoDeMarca;
   } else {
-    if (backgroundDark) {
-      finalBackground = `url(${backgroundDark})`;
-    } else {
-      finalBackground = theme.palette.dark || "#303030";
-    }
+    finalBackground = backgroundDark
+      ? `url(${backgroundDark})`
+      : degradadoDeMarca;
   }
 
-  finalBackground = String(finalBackground || "#f5f5f5");
+  finalBackground = String(finalBackground || degradadoDeMarca);
+
+  // Tanto una imagen como un degradado se pintan con backgroundImage; solo
+  // un color plano iria en backgroundColor, y ya no queda ninguno.
+  const fondoEsImagen =
+    finalBackground.includes("url(") || finalBackground.includes("gradient(");
 
 
   return (
@@ -525,16 +551,8 @@ const Login = () => {
           margin: "0 !important",
           boxSizing: "border-box !important",
           overflow: "auto !important",
-          backgroundColor:
-            typeof finalBackground === "string" &&
-            finalBackground.includes("url(")
-              ? "transparent"
-              : finalBackground,
-          backgroundImage:
-            typeof finalBackground === "string" &&
-            finalBackground.includes("url(")
-              ? finalBackground
-              : "none",
+          backgroundColor: fondoEsImagen ? "transparent" : finalBackground,
+          backgroundImage: fondoEsImagen ? finalBackground : "none",
           backgroundRepeat: "no-repeat !important",
           backgroundSize: "cover !important",
           backgroundPosition: "center !important",
