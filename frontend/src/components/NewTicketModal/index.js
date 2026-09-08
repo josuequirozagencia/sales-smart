@@ -336,7 +336,7 @@ const NewTicketModal = ({ modalOpen, onClose, initialContact }) => {
                 }}
               >
                 {user.queues?.length > 0 &&
-                  user.queues.map((queue, key) => (
+                  (user.queues || []).map((queue, key) => (
                     <MenuItem dense key={key} value={queue.id}>
                       <ListItemText primary={queue.name} />
                     </MenuItem>

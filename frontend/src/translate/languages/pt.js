@@ -2546,6 +2546,7 @@ const messages = {
         },
       },
       backendErrors: {
+        ERR_NO_SERVER_RESPONSE: "Não foi possível contatar o servidor. Verifique se o serviço está ativo e tente novamente.",
         ERR_NO_OTHER_WHATSAPP: "Deve haver pelo menos um WhatsApp padrão.",
         ERR_NO_DEF_WAPP_FOUND:
           "Nenhum WhatsApp padrão encontrado. Verifique a página de conexões.",

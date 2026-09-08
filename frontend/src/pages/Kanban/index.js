@@ -50,7 +50,7 @@ const Kanban = () => {
   const [lanes, setLanes] = useState([]);
   const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-  const queueIds = user.queues.map(queue => queue.UserQueue.queueId);
+  const queueIds = (user.queues || []).map(queue => queue.UserQueue.queueId);
 
   const [sortOrder, setSortOrder] = useState(() => {
     return localStorage.getItem('sortOrder') || 'ticketNumber';

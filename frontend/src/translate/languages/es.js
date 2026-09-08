@@ -2490,6 +2490,7 @@ const messages = {
         },
       },
       backendErrors: {
+        ERR_NO_SERVER_RESPONSE: "No se pudo contactar con el servidor. Comprueba que el servicio esté encendido e inténtalo de nuevo.",
         ERR_NO_OTHER_WHATSAPP:
           "Debe haber al menos una conexión de WhatsApp predeterminada.",
         ERR_NO_DEF_WAPP_FOUND:

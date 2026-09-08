@@ -2503,6 +2503,7 @@ const messages = {
         },
       },
       backendErrors: {
+        ERR_NO_SERVER_RESPONSE: "Could not reach the server. Check that the service is running and try again.",
         ERR_NO_OTHER_WHATSAPP:
           "There must be at lest one default WhatsApp connection.",
         ERR_NO_DEF_WAPP_FOUND:

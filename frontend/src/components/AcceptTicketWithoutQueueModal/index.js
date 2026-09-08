@@ -206,7 +206,7 @@ const AcceptTicketWithouSelectQueue = ({
               label={i18n.t("ticketsList.acceptModal.queue")}
             >
               <MenuItem value={""}>&nbsp;</MenuItem>
-              {user.queues.map((queue) => (
+              {(user.queues || []).map((queue) => (
                 <MenuItem key={queue.id} value={queue.id}>
                   {queue.name}
                 </MenuItem>

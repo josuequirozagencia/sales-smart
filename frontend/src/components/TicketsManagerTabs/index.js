@@ -402,7 +402,11 @@ const TicketsManagerTabs = () => {
   const [pendingCount, setPendingCount] = useState(0);
   const [groupingCount, setGroupingCount] = useState(0);
 
-  const userQueueIds = user.queues.map((q) => q.id);
+  // user llega vacio mientras el contexto de autenticacion resuelve la
+  // sesion. Sin la guarda, un token caducado tumbaba la pantalla entera
+  // con "Cannot read properties of undefined (reading 'map')" antes de
+  // que llegara el 401 que redirige al login.
+  const userQueueIds = (user.queues || []).map((q) => q.id);
   const [selectedQueueIds, setSelectedQueueIds] = useState(userQueueIds || []);
   const [selectedTags, setSelectedTags] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);

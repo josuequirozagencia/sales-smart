@@ -45,7 +45,16 @@ const useAuth = () => {
       const token = localStorage.getItem("token");
       if (token) {
         config.headers["Authorization"] = `Bearer ${JSON.parse(token)}`;
-        setIsAuth(true);
+        // Tener un token guardado no es estar autenticado: aqui habia un
+        // setIsAuth(true) que se disparaba con la simple presencia de la
+        // cadena en localStorage, antes de que nadie la hubiera validado.
+        // Con el backend caido o la sesion caducada, eso dejaba isAuth en
+        // true y loading en false con user={} y socket=null, y Route
+        // montaba las pantallas privadas igual. La primera que leia
+        // user.queues.map o socket.emit se llevaba por delante el arbol
+        // entero de React y la pagina quedaba en blanco con el overlay de
+        // error. isAuth lo ponen ahora solo el login y el refresco, que
+        // rellenan user antes.
       }
       return config;
     },
@@ -131,6 +140,15 @@ const useAuth = () => {
           setIsAuth(true);
           setUser(data.user || data);
         } catch (err) {
+          // Si el refresco no sale adelante —sesion caducada, o el backend
+          // sin responder— la sesion no sirve. Se deja constancia explicita
+          // en vez de continuar con un estado a medias: la persona acaba en
+          // el login, que es donde puede hacer algo.
+          //
+          // El token se conserva a proposito: si el fallo fue de red y no de
+          // credenciales, borrarlo obligaria a entrar de nuevo por un corte
+          // pasajero.
+          setIsAuth(false);
           toastError(err);
         }
       }
