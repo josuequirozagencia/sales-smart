@@ -1,6 +1,47 @@
 const messages = {
   es: {
     translations: {
+      ghlWorkflow: {
+        title: "Inscribir en un flujo de GoHighLevel",
+        empty: "No hay flujos disponibles",
+        manualSource: "Lista anotada a mano: no se pudo leer del API de GoHighLevel.",
+        enrolled: "Contacto inscrito en el flujo",
+        close: "Cerrar",
+      },
+      goHighLevel: {
+        title: "GoHighLevel",
+        save: "Guardar",
+        cancel: "Cancelar",
+        saved: "Configuración guardada",
+        copied: "URL copiada",
+        connection: {
+          title: "Credenciales",
+          help: "El Private Integration Token se crea en GoHighLevel, en Settings > Private Integrations, con los permisos conversations/message.write y contacts.write. Se guarda cifrado y no vuelve a mostrarse.",
+          token: "Private Integration Token",
+          tokenSaved: "Ya hay uno guardado — escribe solo si quieres cambiarlo",
+          locationId: "Location ID",
+          active: "Canal activo",
+        },
+        webhook: {
+          title: "URL del webhook",
+          help: "Pega esta dirección en GoHighLevel, en Settings > Integrations > Webhooks o en una acción \"Webhook\" de un Workflow, para el evento de mensaje entrante. GoHighLevel no tiene API para crear esa suscripción, así que este paso es manual y se hace una sola vez.",
+          copy: "Copiar",
+        },
+        templates: {
+          title: "Plantillas de WhatsApp",
+          help: "GoHighLevel no permite leer las plantillas por API. Anota aquí las que ya están aprobadas por Meta dentro de GoHighLevel, con el mismo nombre exacto: esta lista es un espejo, no valida nada.",
+          add: "Añadir plantilla",
+          name: "Nombre",
+          language: "Idioma",
+          body: "Texto",
+          empty: "Todavía no hay plantillas anotadas",
+          dialogTitle: "Plantilla",
+        },
+        errors: {
+          locationRequired: "Falta el Location ID",
+          templateRequired: "El nombre y el texto son obligatorios",
+        },
+      },
       ticketInfo: {
         copyPhone: "Copiar teléfono",
         quickMessages: "Respuestas rápidas",
@@ -1362,6 +1403,7 @@ const messages = {
       },
       mainDrawer: {
         listItems: {
+          goHighLevel: "GoHighLevel",
           dashboard: "Dashboard",
           connections: "Conexiones",
           chatsTempoReal: "Panel de Asistencia",
@@ -2388,6 +2430,7 @@ const messages = {
           group: "Grupo",
         },
         actions: {
+          workflow: "Flujo GHL",
           sale: "Venta",
           appointment: "Agendar",
           edit: "Editar",

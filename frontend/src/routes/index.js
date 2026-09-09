@@ -29,6 +29,7 @@ const Loading = () => (
 const Dashboard = lazy(() => import("../pages/Dashboard/"));
 const TicketResponsiveContainer = lazy(() => import("../pages/TicketResponsiveContainer"));
 const Connections = lazy(() => import("../pages/Connections/"));
+const GoHighLevel = lazy(() => import("../pages/GoHighLevel/"));
 const Settings = lazy(() => import("../pages/Settings/"));
 const Financeiro = lazy(() => import("../pages/Financeiro/"));
 const Users = lazy(() => import("../pages/Users"));
@@ -130,6 +131,12 @@ const Routes = () => {
                   exact
                   path="/connections"
                   component={Connections}
+                  isPrivate
+                />
+                <Route
+                  exact
+                  path="/gohighlevel"
+                  component={GoHighLevel}
                   isPrivate
                 />
                 <Route

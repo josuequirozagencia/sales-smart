@@ -40,6 +40,7 @@ import {
   SignalCellular4Bar,
   CropFree,
   DeleteOutline,
+  DeviceHub,
   Facebook,
   Instagram,
   WhatsApp,
@@ -155,6 +156,10 @@ const IconChannel = (channel) => {
       return <WhatsApp style={{ color: "#25d366" }} />;
     case "whatsapp_oficial":
       return <WhatsApp style={{ color: "#25d366" }} />;
+    // GoHighLevel no tiene marca propia en el set de Material. Se usa un
+    // icono neutro de conexion y el color de marca de la plataforma.
+    case "ghl":
+      return <DeviceHub style={{ color: "#2dd4bf" }} />;
     default:
       return "error";
   }
@@ -865,6 +870,22 @@ const Connections = () => {
                                 }}
                               />
                               {i18n.t("connections.whatsappOfficial")}
+                            </MenuItem>
+                            {/* GOHIGHLEVEL */}
+                            <MenuItem
+                              onClick={() => {
+                                handleOpenWhatsAppModal("ghl");
+                                popupState.close();
+                              }}
+                            >
+                              <DeviceHub
+                                fontSize="small"
+                                style={{
+                                  marginRight: "10px",
+                                  color: "#2dd4bf",
+                                }}
+                              />
+                              GoHighLevel
                             </MenuItem>
                             {/* FACEBOOK */}
                             <FacebookLogin

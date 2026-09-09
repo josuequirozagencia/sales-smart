@@ -1,6 +1,47 @@
 const messages = {
   pt: {
     translations: {
+      ghlWorkflow: {
+        title: "Inscrever em um fluxo do GoHighLevel",
+        empty: "Não há fluxos disponíveis",
+        manualSource: "Lista anotada manualmente: não foi possível ler da API do GoHighLevel.",
+        enrolled: "Contato inscrito no fluxo",
+        close: "Fechar",
+      },
+      goHighLevel: {
+        title: "GoHighLevel",
+        save: "Salvar",
+        cancel: "Cancelar",
+        saved: "Configuração salva",
+        copied: "URL copiada",
+        connection: {
+          title: "Credenciais",
+          help: "O Private Integration Token é criado no GoHighLevel em Settings > Private Integrations, com os escopos conversations/message.write e contacts.write. É guardado criptografado e não volta a ser exibido.",
+          token: "Private Integration Token",
+          tokenSaved: "Já existe um salvo — digite apenas para trocá-lo",
+          locationId: "Location ID",
+          active: "Canal ativo",
+        },
+        webhook: {
+          title: "URL do webhook",
+          help: "Cole este endereço no GoHighLevel em Settings > Integrations > Webhooks, ou em uma ação \"Webhook\" de um Workflow, para o evento de mensagem recebida. O GoHighLevel não tem API para criar essa assinatura, então este passo é manual e feito uma única vez.",
+          copy: "Copiar",
+        },
+        templates: {
+          title: "Modelos de WhatsApp",
+          help: "O GoHighLevel não permite ler os modelos pela API. Anote aqui os que já estão aprovados pela Meta dentro do GoHighLevel, com o mesmo nome exato: esta lista é um espelho, não valida nada.",
+          add: "Adicionar modelo",
+          name: "Nome",
+          language: "Idioma",
+          body: "Texto",
+          empty: "Ainda não há modelos anotados",
+          dialogTitle: "Modelo",
+        },
+        errors: {
+          locationRequired: "Falta o Location ID",
+          templateRequired: "Nome e texto são obrigatórios",
+        },
+      },
       signup: {
         plan: {
           users: "{{n}} usuários",
@@ -1264,6 +1305,7 @@ const messages = {
       },
       mainDrawer: {
         listItems: {
+          goHighLevel: "GoHighLevel",
           dashboard: "Dashboard",
           connections: "Conexões",
           chatsTempoReal: "Painel",
@@ -2442,6 +2484,7 @@ const messages = {
           group: "Grupo",
         },
         actions: {
+          workflow: "Fluxo GHL",
           sale: "Venda",
           appointment: "Agendar",
           edit: "Editar",

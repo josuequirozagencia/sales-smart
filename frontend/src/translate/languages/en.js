@@ -1,6 +1,47 @@
 const messages = {
   en: {
     translations: {
+      ghlWorkflow: {
+        title: "Enroll in a GoHighLevel workflow",
+        empty: "No workflows available",
+        manualSource: "Manually recorded list: the GoHighLevel API could not be read.",
+        enrolled: "Contact enrolled in the workflow",
+        close: "Close",
+      },
+      goHighLevel: {
+        title: "GoHighLevel",
+        save: "Save",
+        cancel: "Cancel",
+        saved: "Settings saved",
+        copied: "URL copied",
+        connection: {
+          title: "Credentials",
+          help: "Create the Private Integration Token in GoHighLevel under Settings > Private Integrations, with the conversations/message.write and contacts.write scopes. It is stored encrypted and never shown again.",
+          token: "Private Integration Token",
+          tokenSaved: "One is already stored — type only to replace it",
+          locationId: "Location ID",
+          active: "Channel active",
+        },
+        webhook: {
+          title: "Webhook URL",
+          help: "Paste this address into GoHighLevel under Settings > Integrations > Webhooks, or into a Workflow \"Webhook\" action, for the inbound message event. GoHighLevel has no API to create that subscription, so this step is manual and done once.",
+          copy: "Copy",
+        },
+        templates: {
+          title: "WhatsApp templates",
+          help: "GoHighLevel does not expose templates through its API. Record here the ones already approved by Meta inside GoHighLevel, using the exact same name: this list is a mirror, it validates nothing.",
+          add: "Add template",
+          name: "Name",
+          language: "Language",
+          body: "Body",
+          empty: "No templates recorded yet",
+          dialogTitle: "Template",
+        },
+        errors: {
+          locationRequired: "Location ID is missing",
+          templateRequired: "Name and body are required",
+        },
+      },
       ticketInfo: {
         copyPhone: "Copy phone number",
         quickMessages: "Quick replies",
@@ -1253,6 +1294,7 @@ const messages = {
       },
       mainDrawer: {
         listItems: {
+          goHighLevel: "GoHighLevel",
           dashboard: "Dashboard",
           connections: "Connections",
           chatsTempoReal: "Real-Time Panel",
@@ -2400,6 +2442,7 @@ const messages = {
           group: "Group",
         },
         actions: {
+          workflow: "GHL flow",
           sale: "Sale",
           appointment: "Schedule",
           edit: "Edit",

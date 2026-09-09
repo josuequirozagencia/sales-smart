@@ -22,6 +22,7 @@ import {
   ClearIcon,
   BlockIcon,
   LockOpenIcon,
+  AccountTree,
 } from "../Icons";
 import formatSerializedId from '../../utils/formatSerializedId';
 import { i18n } from "../../translate/i18n";
@@ -74,6 +75,7 @@ import toastError from "../../errors/toastError";
 import api from "../../services/api";
 import { toast } from "react-toastify";
 import { TagsKanbanContainer } from "../TagsKanbanContainer";
+import GhlWorkflowModal from "../GhlWorkflowModal";
 // El mismo modal que usan la lista y las acciones del ticket: cambiar de
 // responsable ya existe, aqui solo se le da otra puerta de entrada.
 import TransferTicketModalCustom from "../TransferTicketModalCustom";
@@ -587,6 +589,7 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading, supe
 	const [saleModalOpen, setSaleModalOpen] = useState(false);
 	const [appointmentModalOpen, setAppointmentModalOpen] = useState(false);
 	const [transferModalOpen, setTransferModalOpen] = useState(false);
+	const [flujoModalOpen, setFlujoModalOpen] = useState(false);
 	const [blockingContact, setBlockingContact] = useState(contact.active);
 	const [openForm, setOpenForm] = useState(false);
 	const [tabValue, setTabValue] = useState(0);
@@ -1341,6 +1344,17 @@ const fetchGroupParticipants = async () => {
 										{i18n.t("contactDrawer.actions.note")}
 									</span>
 								</ButtonBase>
+								{ticket?.channel === "ghl" && (
+									<ButtonBase
+										className={classes.actionCard}
+										onClick={() => setFlujoModalOpen(true)}
+									>
+										<AccountTree fontSize="small" />
+										<span className={classes.actionCardLabel}>
+											{i18n.t("contactDrawer.actions.workflow")}
+										</span>
+									</ButtonBase>
+								)}
 								<ButtonBase
 									className={classes.actionCard}
 									disabled={loading}
@@ -1595,6 +1609,11 @@ const fetchGroupParticipants = async () => {
 											open={appointmentModalOpen}
 											onClose={() => setAppointmentModalOpen(false)}
 											contact={contact}
+											ticket={ticket}
+										/>
+										<GhlWorkflowModal
+											open={flujoModalOpen}
+											onClose={() => setFlujoModalOpen(false)}
 											ticket={ticket}
 										/>
 										<TransferTicketModalCustom

@@ -1044,13 +1044,21 @@ useEffect(() => {
               }
               perform={"drawer-admin-items:view"}
               yes={() => (
-                <ListItemLink
-                  to="/connections"
-                  primary={i18n.t("mainDrawer.listItems.connections")}
-                  icon={<SyncAltIcon />}
-                  showBadge={connectionWarning}
-                  tooltip={collapsed}
-                />
+                <>
+                  <ListItemLink
+                    to="/connections"
+                    primary={i18n.t("mainDrawer.listItems.connections")}
+                    icon={<SyncAltIcon />}
+                    showBadge={connectionWarning}
+                    tooltip={collapsed}
+                  />
+                  <ListItemLink
+                    to="/gohighlevel"
+                    primary={i18n.t("mainDrawer.listItems.goHighLevel")}
+                    icon={<SyncAltIcon />}
+                    tooltip={collapsed}
+                  />
+                </>
               )}
             />
             {user.super && (
