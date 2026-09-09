@@ -65,6 +65,8 @@ import QueueState from "../models/QueueStates";
 import TicketFinalizationReason from "../models/TicketFinalizationReason";
 import PresetWebhookModel from "../models/PresetWebhook";
 import WhatsappLidMap from "../models/WhatsapplidMap";
+import GhlTemplate from "../models/GhlTemplate";
+import GhlConfig from "../models/GhlConfig";
 
 // eslint-disable-next-line
 const dbConfig = require("../config/database");
@@ -106,6 +108,8 @@ const models = [
   Chatbot,
   DialogChatBots,
   QueueIntegrations,
+  GhlTemplate,
+  GhlConfig,
   Invoices,
   Subscriptions,
   ApiUsages,

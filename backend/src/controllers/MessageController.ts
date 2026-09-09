@@ -23,6 +23,7 @@ import CreateMessageService from "../services/MessageServices/CreateMessageServi
 
 import { sendFacebookMessageMedia } from "../services/FacebookServices/sendFacebookMessageMedia";
 import { sendFacebookMessage } from "../services/FacebookServices/sendFacebookMessage";
+import SendGhlMessage from "../services/GhlServices/SendGhlMessage";
 
 import ShowPlanCompanyService from "../services/CompanyService/ShowPlanCompanyService";
 import ListMessagesServiceAll from "../services/MessageServices/ListMessagesServiceAll";
@@ -220,6 +221,16 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
             })
           }
 
+          // Canal GHL: con adjunto. El archivo ya esta subido a public/,
+          // asi que a GHL se le pasa la URL para que se lo descargue.
+          if (ticket.channel === "ghl") {
+            await SendGhlMessage({
+              body: Array.isArray(body) ? body[index] : body,
+              ticket,
+              media
+            });
+          }
+
           if (["facebook", "instagram"].includes(ticket.channel)) {
             try {
               const sentMedia = await sendFacebookMessageMedia({
@@ -260,6 +271,11 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
         await SendWhatsAppOficialMessage({
           body, ticket, quotedMsg, type: !isNil(vCard) ? 'contacts' : 'text', media: null, vCard
         })
+      } else if (ticket.channel === "ghl" && isPrivate === "false") {
+        // Canal GHL: en vez de salir a Meta, el mensaje va a la API de
+        // GoHighLevel, que es quien lo entrega y quien dispara alli las
+        // automatizaciones de "mensaje saliente".
+        await SendGhlMessage({ body, ticket });
       } else if (isPrivate === "true") {
         const messageData = {
           wid: `PVT${ticket.updatedAt.toString().replace(' ', '')}`,

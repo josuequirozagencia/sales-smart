@@ -121,6 +121,11 @@ class Contact extends Model<Contact> {
   @Column
   lgpdAcceptedAt: Date;
 
+  // Identificador del contacto en GoHighLevel. Nulo salvo que el
+  // contacto venga de ese canal. Ver la migracion 20260908120000.
+  @Column
+  ghlContactId: string;
+
   @Column
   pictureUpdated: boolean;
 

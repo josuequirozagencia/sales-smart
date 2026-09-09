@@ -51,6 +51,7 @@ import flowDefaultRoutes from "./flowDefaultRoutes";
 import webHook from "./webHookRoutes";
 import flowBuilder from "./flowBuilderRoutes";
 import flowCampaignRoutes from "./flowCampaignRoutes";
+import ghlRoutes from "./ghlRoutes";
 
 import ChatController from "../controllers/ChatController";
 
@@ -58,6 +59,15 @@ const routes = Router();
 
 routes.use(userRoutes);
 routes.use("/auth", authRoutes);
+
+// GoHighLevel va ARRIBA a proposito.
+//
+// ticketFinalizationReasonRoutes hace .use(isAuth) SIN ruta y esta
+// montado en la raiz, asi que todo lo que se registre despues de el pasa
+// primero por isAuth. Es lo que hace que este servidor responda 401 a
+// rutas que no existen. El webhook de GHL es publico —GHL no puede
+// presentar el JWT— y desde abajo devolvia 401 sin llegar a ejecutarse.
+routes.use(ghlRoutes);
 routes.use("/api/messages", apiRoutes);
 routes.use(settingRoutes);
 routes.use(contactRoutes);

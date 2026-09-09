@@ -12,6 +12,8 @@ import SimpleListService from "../services/TagServices/SimpleListService";
 import SyncTagService from "../services/TagServices/SyncTagsService";
 import KanbanListService from "../services/TagServices/KanbanListService";
 import ContactTag from "../models/ContactTag";
+import Contact from "../models/Contact";
+import { sincronizarEtiquetasContacto } from "../services/GhlServices/SyncGhlTags";
 
 type IndexQuery = {
   searchParam?: string;
@@ -162,6 +164,11 @@ export const removeContactTag = async (
       contactId
     }
   });
+
+  // Espejo hacia GHL. Sin await y sin propagar: si el contacto no es de
+  // ese canal o la empresa no lo tiene, el servicio lo ignora solo.
+  const contacto = await Contact.findByPk(contactId);
+  sincronizarEtiquetasContacto(contacto, [Number(tagId)], "remove").catch(() => {});
 
   const tag = await ShowService(tagId);
 

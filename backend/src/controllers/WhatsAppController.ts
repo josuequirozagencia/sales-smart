@@ -255,6 +255,15 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
   if (["whatsapp"].includes(whatsapp.channel)) {
     StartWhatsAppSession(whatsapp, companyId);
   }
+
+  // GoHighLevel no abre sesion: la entrega la hace su API con el Private
+  // Integration Token de la empresa, que se configura aparte. La conexion
+  // nace conectada porque no hay nada que emparejar; si el token falta, el
+  // primer envio lo dira con ERR_GHL_NO_CONFIGURADO.
+  if (whatsapp.channel === "ghl") {
+    whatsapp.status = "CONNECTED";
+    await whatsapp.save();
+  }
   const io = getIO();
   io.of(String(companyId)).emit(`company-${companyId}-whatsapp`, {
     action: "update",
