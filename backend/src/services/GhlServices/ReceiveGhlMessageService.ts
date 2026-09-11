@@ -26,10 +26,10 @@ export const CANAL = "ghl";
 /**
  * Lo que interesa del evento de GHL.
  *
- * El formato exacto varia segun se configure desde Settings > Webhooks o
- * desde una accion "Webhook" de un Workflow, asi que se leen varios
- * nombres posibles para cada dato en vez de atarse a uno. Lo que no se
- * reconozca se descarta arriba, no revienta.
+ * Llega desde la accion "Webhook" de un Workflow, cuyo cuerpo GHL no
+ * documenta campo a campo, asi que se leen varios nombres posibles para
+ * cada dato en vez de atarse a uno. Lo que no se reconozca se descarta
+ * arriba, no revienta.
  */
 export interface EventoGhl {
   type?: string;

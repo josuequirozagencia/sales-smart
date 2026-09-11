@@ -26,7 +26,7 @@ const messages = {
         webhook: {
           tagsHelp: "Para que las etiquetas que se pongan o quiten en GoHighLevel se reflejen aquí, crea un Workflow con el disparador «Contact Tag» y una acción «Webhook» a esta misma URL, con estos dos datos personalizados:",
           title: "URL del webhook",
-          help: "Pega esta dirección en GoHighLevel, en Settings > Integrations > Webhooks o en una acción \"Webhook\" de un Workflow, para el evento de mensaje entrante. GoHighLevel no tiene API para crear esa suscripción, así que este paso es manual y se hace una sola vez.",
+          help: "Pega esta dirección en GoHighLevel, en la acción «Webhook» de un Workflow con el disparador «Customer Replied», para los mensajes entrantes. Con un Private Integration Token no hay otra vía: la suscripción a eventos es exclusiva de las apps del Marketplace, y GoHighLevel no tiene API para crearla. Se hace una sola vez.",
           copy: "Copiar",
         },
         templates: {

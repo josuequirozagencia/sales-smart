@@ -26,7 +26,7 @@ const messages = {
         webhook: {
           tagsHelp: "To mirror tags added or removed in GoHighLevel, create a Workflow with the \"Contact Tag\" trigger and a \"Webhook\" action pointing to this same URL, with these two custom data items:",
           title: "Webhook URL",
-          help: "Paste this address into GoHighLevel under Settings > Integrations > Webhooks, or into a Workflow \"Webhook\" action, for the inbound message event. GoHighLevel has no API to create that subscription, so this step is manual and done once.",
+          help: "Paste this address into GoHighLevel, in the «Webhook» action of a Workflow with the «Customer Replied» trigger, for inbound messages. With a Private Integration Token there is no other way: event subscriptions are reserved for Marketplace apps, and GoHighLevel has no API to create them. It is done once.",
           copy: "Copy",
         },
         templates: {

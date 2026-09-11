@@ -57,12 +57,16 @@ forma:
 https://TU-DOMINIO/ghl/webhook/<companyId>/<secreto>
 ```
 
-En GHL, cualquiera de las dos vías sirve:
+En GHL, crea un **Workflow** con el disparador «Customer Replied» y una
+acción **Webhook** de tipo POST a esa URL. Las etiquetas necesitan otro
+Workflow, con el disparador «Contact Tag»: está explicado en «Etiquetas».
 
-- **Settings → Integrations → Webhooks**, para el evento de mensaje
-  entrante (*Conversation message*), o
-- un **Workflow** con el disparador «Customer Replied» y una acción
-  **Webhook** de tipo POST a esa URL.
+> **¿Por qué no basta con el token?** El token solo sirve en un sentido:
+> deja a Sales Smart llamar a GHL —responder, poner etiquetas, inscribir
+> en flujos—, pero no hace que GHL avise de lo que pasa allí. Esos avisos
+> son suscripciones a eventos, y con un Private Integration Token no se
+> pueden crear: son exclusivas de las apps OAuth del Marketplace. Lo que
+> sí puede avisar es un Workflow con la acción Webhook.
 
 > **El último tramo de la URL es un secreto.** Es lo único que impide que
 > un tercero meta mensajes falsos en la bandeja de la empresa. No lo

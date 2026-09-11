@@ -15,10 +15,12 @@ import logger from "../utils/logger";
  * cualquiera que supiera el identificador de una empresa podria meter
  * mensajes falsos en la bandeja de sus asesores.
  *
- * La URL se arma en la pantalla de configuracion y se pega a mano en GHL:
- * Settings > Integrations > Webhooks, o una accion "Webhook" dentro de un
- * Workflow. GHL no tiene API para crear esa suscripcion, asi que ese paso
- * no se automatiza.
+ * La URL se arma en la pantalla de configuracion y se pega a mano en GHL,
+ * en la accion "Webhook" de un Workflow: "Customer Replied" para los
+ * mensajes y "Contact Tag" para las etiquetas. Con un Private Integration
+ * Token no hay otra via —la suscripcion a eventos es de las apps del
+ * Marketplace— y GHL no tiene API para crearla, asi que ese paso no se
+ * automatiza.
  */
 
 /**

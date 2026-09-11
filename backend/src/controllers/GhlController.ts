@@ -41,8 +41,9 @@ export const show = async (req: Request, res: Response): Promise<Response> => {
 
   // La URL se arma aqui y no en el frontend para que quien configure no
   // tenga que componerla a mano. Este es el valor que hay que pegar en
-  // GHL: Settings > Integrations > Webhooks, o una accion "Webhook" de un
-  // Workflow. GHL no tiene API para crear esa suscripcion.
+  // GHL, en la accion "Webhook" de un Workflow. Con un Private Integration
+  // Token no hay otra via: la suscripcion a eventos es de las apps del
+  // Marketplace, y GHL no tiene API para crearla.
   const base = process.env.BACKEND_URL || "";
   const urlWebhook =
     config.conectado && (config as any).webhookSecret
