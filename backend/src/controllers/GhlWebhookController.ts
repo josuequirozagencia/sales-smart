@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
 import crypto from "crypto";
 import ReceiveGhlMessageService from "../services/GhlServices/ReceiveGhlMessageService";
+import ReceiveGhlTagEventService, {
+  esEventoDeEtiquetas
+} from "../services/GhlServices/ReceiveGhlTagEventService";
 import { buscarIntegracion } from "../services/GhlServices/GhlConfigService";
 import logger from "../utils/logger";
 
@@ -60,7 +63,18 @@ export const receive = async (
   // A GHL se le responde 200 cuanto antes y pase lo que pase: si se le
   // devuelve un error reintenta, y un evento que no sabemos tratar se
   // reintentaria para siempre. El procesamiento va aparte.
-  ReceiveGhlMessageService(empresa, req.body || {})
+  //
+  // La misma URL recibe mensajes y cambios de etiquetas: GHL solo deja
+  // pegar una direccion por Workflow y asi no hay que manejar dos. Un
+  // evento de etiquetas se reconoce por la marca que pone el Workflow
+  // (ghl_event = tag_update) o por el tipo ContactTagUpdate; todo lo demas
+  // sigue yendo a la entrada de mensajes, como hasta ahora.
+  const evento = req.body || {};
+  const tratar = esEventoDeEtiquetas(evento)
+    ? ReceiveGhlTagEventService(empresa, evento)
+    : ReceiveGhlMessageService(empresa, evento);
+
+  tratar
     .then(resultado => {
       if (!resultado.atendido) {
         logger.info(`[GHL] evento no procesado: ${resultado.motivo}`);

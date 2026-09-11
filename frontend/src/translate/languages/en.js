@@ -15,6 +15,7 @@ const messages = {
         saved: "Settings saved",
         copied: "URL copied",
         connection: {
+          queueHelp: "Tickets go into the connection's queue: pick it under Connections by editing the GoHighLevel connection. With a queue set, distribution among its agents works exactly as in any other channel.",
           title: "Credentials",
           help: "Create the Private Integration Token in GoHighLevel under Settings > Private Integrations, with the conversations/message.write and contacts.write scopes. It is stored encrypted and never shown again.",
           token: "Private Integration Token",
@@ -23,6 +24,7 @@ const messages = {
           active: "Channel active",
         },
         webhook: {
+          tagsHelp: "To mirror tags added or removed in GoHighLevel, create a Workflow with the \"Contact Tag\" trigger and a \"Webhook\" action pointing to this same URL, with these two custom data items:",
           title: "Webhook URL",
           help: "Paste this address into GoHighLevel under Settings > Integrations > Webhooks, or into a Workflow \"Webhook\" action, for the inbound message event. GoHighLevel has no API to create that subscription, so this step is manual and done once.",
           copy: "Copy",

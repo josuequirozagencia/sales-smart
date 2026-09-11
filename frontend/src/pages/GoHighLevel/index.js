@@ -201,6 +201,12 @@ const GoHighLevel = () => {
         <div className={classes.ayuda}>
           {i18n.t("goHighLevel.connection.help")}
         </div>
+        {/* La cola NO se elige aqui: es la de la conexion, como en el resto
+            de canales. Un segundo selector seria un segundo sitio para
+            configurar lo mismo. */}
+        <div className={classes.ayuda}>
+          {i18n.t("goHighLevel.connection.queueHelp")}
+        </div>
 
         <div className={classes.fila}>
           <TextField
@@ -275,6 +281,17 @@ const GoHighLevel = () => {
             <Button size="small" variant="outlined" onClick={copiar}>
               {i18n.t("goHighLevel.webhook.copy")}
             </Button>
+          </div>
+          <div className={classes.ayuda} style={{ marginTop: 16 }}>
+            {i18n.t("goHighLevel.webhook.tagsHelp")}
+          </div>
+          {/* Van fuera de las traducciones a proposito: son claves tecnicas
+              que hay que copiar tal cual, y las llaves de {{contact.id}}
+              las interpretaria i18next como una variable propia. */}
+          <div className={classes.url}>
+            {"ghl_event = tag_update"}
+            <br />
+            {"contact_id = {{contact.id}}"}
           </div>
         </Paper>
       )}

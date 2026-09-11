@@ -15,6 +15,7 @@ const messages = {
         saved: "Configuração salva",
         copied: "URL copiada",
         connection: {
+          queueHelp: "A fila em que os tickets entram é a da conexão: escolha em Conexões, editando a conexão GoHighLevel. Com a fila definida, a distribuição entre os atendentes é a mesma de qualquer outro canal.",
           title: "Credenciais",
           help: "O Private Integration Token é criado no GoHighLevel em Settings > Private Integrations, com os escopos conversations/message.write e contacts.write. É guardado criptografado e não volta a ser exibido.",
           token: "Private Integration Token",
@@ -23,6 +24,7 @@ const messages = {
           active: "Canal ativo",
         },
         webhook: {
+          tagsHelp: "Para refletir aqui as etiquetas adicionadas ou removidas no GoHighLevel, crie um Workflow com o gatilho «Contact Tag» e uma ação «Webhook» para esta mesma URL, com estes dois dados personalizados:",
           title: "URL do webhook",
           help: "Cole este endereço no GoHighLevel em Settings > Integrations > Webhooks, ou em uma ação \"Webhook\" de um Workflow, para o evento de mensagem recebida. O GoHighLevel não tem API para criar essa assinatura, então este passo é manual e feito uma única vez.",
           copy: "Copiar",

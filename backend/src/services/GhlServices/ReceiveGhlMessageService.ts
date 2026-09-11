@@ -255,6 +255,27 @@ const ReceiveGhlMessageService = async (
     settings
   );
 
+  // Cola de la conexion GHL (Conexiones > editar la conexion), la misma
+  // que usan el resto de canales. Con la cola puesta, el job de reparto
+  // de queues.ts (handleRandomUser) ya asigna el ticket a un asesor de
+  // esa cola: no filtra por canal.
+  //
+  // NO se pasa como queueId a FindOrCreateTicketService. Con un ticket
+  // existente, un queueId distinto del que ya tiene hace que ese servicio
+  // LANCE "Ticket em outro atendimento", y ademas lo sobrescribe sin
+  // condiciones: un ticket que un asesor transfirio a otra cola dejaria
+  // de recibir mensajes. Aqui se pone solo si el ticket aun no tiene
+  // cola, y eso arregla tambien los tickets de antes de este cambio.
+  //
+  // Con varias colas se toma la primera por orderQueue, que es el orden
+  // en que las devuelve ShowWhatsAppService. El menu de chatbot con el
+  // que otros canales dejan elegir cola exigiria enviar mensajes por GHL.
+  const colaDestino = whatsapp.queues?.[0]?.id || null;
+
+  if (!ticket.queueId && colaDestino) {
+    await ticket.update({ queueId: colaDestino });
+  }
+
   await FindOrCreateATicketTrakingService({
     ticketId: ticket.id,
     companyId,
