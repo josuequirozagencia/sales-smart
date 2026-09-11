@@ -30,6 +30,7 @@ import { i18n } from "../../translate/i18n";
 import TableRowSkeleton from "../../components/TableRowSkeleton";
 import CompanyModal from "../../components/CompaniesModal";
 import ConfirmationModal from "../../components/ConfirmationModal";
+import CloneCompanyConfigModal from "../../components/CloneCompanyConfigModal";
 import toastError from "../../errors/toastError";
 import { AuthContext } from "../../context/Auth/AuthContext";
 import { useDate } from "../../hooks/useDate";
@@ -112,6 +113,9 @@ const Companies = () => {
   const [historialDe, setHistorialDe] = useState(null);
   const [historial, setHistorial] = useState([]);
   const [cargandoHistorial, setCargandoHistorial] = useState(false);
+  // Clonado de configuracion entre empresas: solo superadministrador, que
+  // es el unico que llega a esta pantalla.
+  const [clonarAbierto, setClonarAbierto] = useState(false);
   const { dateToClient, datetimeToClient } = useDate();
 
   // const { getPlanCompany } = usePlans();
@@ -369,6 +373,10 @@ const Companies = () => {
         aria-labelledby="form-dialog-title"
         companyId={selectedCompany && selectedCompany.id}
       />
+      <CloneCompanyConfigModal
+        open={clonarAbierto}
+        onClose={() => setClonarAbierto(false)}
+      />
       <MainHeader>
         <Title>
           {i18n.t("compaies.title")} ({empresasVisibles.length})
@@ -388,6 +396,14 @@ const Companies = () => {
             </MenuItem>
           ))}
         </TextField>
+        <Button
+          variant="outlined"
+          color="primary"
+          style={{ marginLeft: 16 }}
+          onClick={() => setClonarAbierto(true)}
+        >
+          {i18n.t("cloneCompany.open")}
+        </Button>
         {/* <MainHeaderButtonsWrapper>
                     <TextField
                         placeholder={i18n.t("contacts.searchPlaceholder")}

@@ -9,6 +9,10 @@ companyRoutes.get("/companies/list", isAuth, CompanyController.list);
 companyRoutes.get("/companies", isAuth, CompanyController.index);
 companyRoutes.get("/companies/:id", isAuth, CompanyController.show);
 companyRoutes.post("/companies", isAuth, CompanyController.store);
+
+// Clonado de configuracion entre empresas. Solo superadministrador: el
+// controlador lo comprueba con el mismo guard que el resto de esta gestion.
+companyRoutes.post("/companies/clone-config", isAuth, CompanyController.cloneConfig);
 companyRoutes.put("/companies/:id", isAuth, CompanyController.update);
 
 // Revision de la solicitud. Antes de la ruta de horarios para que el

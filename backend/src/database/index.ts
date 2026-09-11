@@ -67,6 +67,7 @@ import PresetWebhookModel from "../models/PresetWebhook";
 import WhatsappLidMap from "../models/WhatsapplidMap";
 import GhlTemplate from "../models/GhlTemplate";
 import GhlConfig from "../models/GhlConfig";
+import CompanyConfigClone from "../models/CompanyConfigClone";
 
 // eslint-disable-next-line
 const dbConfig = require("../config/database");
@@ -110,6 +111,7 @@ const models = [
   QueueIntegrations,
   GhlTemplate,
   GhlConfig,
+  CompanyConfigClone,
   Invoices,
   Subscriptions,
   ApiUsages,

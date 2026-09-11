@@ -21,6 +21,7 @@ import FindAllCompaniesService from "../services/CompanyService/FindAllCompanies
 import ShowPlanCompanyService from "../services/CompanyService/ShowPlanCompanyService";
 import User from "../models/User";
 import ListCompaniesPlanService from "../services/CompanyService/ListCompaniesPlanService";
+import CloneCompanyConfigService from "../services/CompanyService/CloneCompanyConfigService";
 
 interface TokenPayload {
   id: string;
@@ -467,6 +468,34 @@ export const review = async (
   });
 
   return res.status(200).json(company);
+};
+
+/**
+ * Clona la configuracion de una empresa en otra ya creada.
+ *
+ * Solo el superadministrador, con el mismo guard que el resto de la
+ * gestion de empresas de este controlador. Que se copia, que no y por
+ * que: CloneCompanyConfigService y docs/CLONAR_EMPRESA.md.
+ */
+export const cloneConfig = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const requestUser = await User.findByPk(req.user.id);
+
+  if (requestUser?.super !== true) {
+    throw new AppError("ERR_NO_PERMISSION", 403);
+  }
+
+  const { sourceCompanyId, targetCompanyId } = req.body;
+
+  const resumen = await CloneCompanyConfigService({
+    sourceCompanyId: Number(sourceCompanyId),
+    targetCompanyId: Number(targetCompanyId),
+    userId: requestUser.id
+  });
+
+  return res.status(200).json(resumen);
 };
 
 /** Historial de la solicitud. Solo el superadministrador. */

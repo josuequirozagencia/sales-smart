@@ -1,6 +1,78 @@
 const messages = {
   es: {
     translations: {
+      cloneCompany: {
+        "open": "Clonar configuración",
+        "title": "Clonar la configuración de una empresa",
+        "help": "Copia la configuración de una empresa (origen) a otra ya creada (destino). Es aditivo: lo que la empresa destino ya tenga no se borra ni se sobrescribe, salvo sus ajustes generales y de cumpleaños. Cada par origen → destino solo se puede clonar una vez.",
+        "source": "Empresa origen",
+        "target": "Empresa destino",
+        "copies": "Se copia",
+        "notCopies": "No se copia",
+        "notesTitle": "A tener en cuenta",
+        "copiesList": [
+          "Etiquetas y columnas del Kanban, con su encadenado",
+          "Colas, su árbol de opciones y sus productos",
+          "El chatbot completo",
+          "Listas de ficheros, con sus archivos",
+          "Mensajes rápidos, con sus adjuntos",
+          "Prompts de IA, sin API key",
+          "Integraciones, sin credenciales y sin enlazar",
+          "Ajustes de la empresa y de cumpleaños",
+          "Ajustes de campaña y motivos de finalización",
+          "Presets de webhook propios y webhooks, con URL nueva y sin flujo"
+        ],
+        "notCopiesList": [
+          "Conexiones (WhatsApp, GoHighLevel, Google Calendar) y sus credenciales",
+          "Usuarios",
+          "Contactos, tickets, mensajes, campañas, ventas y citas",
+          "Anuncios",
+          "FlowBuilder y todo lo relacionado con flujos (segunda fase)"
+        ],
+        "notes": [
+          "Las integraciones y los prompts llegan sin credenciales: hay que poner las de la empresa destino.",
+          "Los mensajes rápidos personales pasan a generales; las plantillas oficiales de Meta no se copian.",
+          "Si la destino ya tiene una cola con el mismo nombre, la copia se llama «… (copia)». Una etiqueta con el mismo nombre se reutiliza."
+        ],
+        "confirm": "Clonar",
+        "cancel": "Cancelar",
+        "close": "Cerrar",
+        "cloning": "Clonando…",
+        "done": "Configuración clonada",
+        "result": {
+          "copied": "Copiado",
+          "existing": "Ya existía en destino (se dejó como estaba)",
+          "skipped": "No copiado por regla",
+          "files": "Archivos copiados",
+          "missingFiles": "Archivos que ya faltaban en origen",
+          "warnings": "Avisos"
+        },
+        "keys": {
+          "integraciones": "Integraciones",
+          "listasDeFicheros": "Listas de ficheros",
+          "archivosDeListas": "Archivos de las listas",
+          "etiquetas": "Etiquetas",
+          "colas": "Colas",
+          "opcionesDeCola": "Opciones de cola",
+          "productos": "Productos",
+          "nodosDeChatbot": "Nodos del chatbot",
+          "mensajesRapidos": "Mensajes rápidos",
+          "componentesDeRapidos": "Componentes de mensajes rápidos",
+          "prompts": "Prompts",
+          "ajustesDeEmpresa": "Ajustes de la empresa",
+          "ajustesDeCumpleanos": "Ajustes de cumpleaños",
+          "ajustesDeCampana": "Ajustes de campaña",
+          "motivosDeFinalizacion": "Motivos de finalización",
+          "presetsDeWebhook": "Presets de webhook",
+          "webhooks": "Webhooks",
+          "enlacesColaIntegracion": "Enlaces cola–integración (desconectados)",
+          "productosSinCola": "Productos sin cola",
+          "plantillasOficiales": "Plantillas oficiales de Meta",
+          "promptsSinCola": "Prompts sin cola",
+          "webhooksSinUsuarioEnDestino": "Webhooks sin usuario en destino",
+          "referenciasSinEquivalente": "Referencias sin equivalente (en blanco)"
+        }
+      },
       ghlWorkflow: {
         title: "Inscribir en un flujo de GoHighLevel",
         empty: "No hay flujos disponibles",
@@ -2535,6 +2607,10 @@ const messages = {
         },
       },
       backendErrors: {
+        ERR_CLONE_INVALID_COMPANIES: "Elige una empresa origen y una destino válidas.",
+        ERR_CLONE_SAME_COMPANY: "La empresa origen y la destino no pueden ser la misma.",
+        ERR_CLONE_COMPANY_NOT_FOUND: "La empresa origen o la destino no existe.",
+        ERR_CLONE_ALREADY_DONE: "Esta empresa ya se clonó desde esa misma origen. Repetirlo duplicaría toda la configuración.",
         ERR_NO_SERVER_RESPONSE: "No se pudo contactar con el servidor. Comprueba que el servicio esté encendido e inténtalo de nuevo.",
         ERR_NO_OTHER_WHATSAPP:
           "Debe haber al menos una conexión de WhatsApp predeterminada.",

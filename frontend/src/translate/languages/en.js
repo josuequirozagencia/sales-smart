@@ -1,6 +1,78 @@
 const messages = {
   en: {
     translations: {
+      cloneCompany: {
+        "open": "Clone settings",
+        "title": "Clone a company's settings",
+        "help": "Copies one company's settings (source) into another existing company (target). It is additive: whatever the target already has is neither deleted nor overwritten, except its general and birthday settings. Each source → target pair can only be cloned once.",
+        "source": "Source company",
+        "target": "Target company",
+        "copies": "Copied",
+        "notCopies": "Not copied",
+        "notesTitle": "Keep in mind",
+        "copiesList": [
+          "Tags and Kanban columns, with their chaining",
+          "Queues, their option tree and their products",
+          "The whole chatbot",
+          "File lists, with their files",
+          "Quick replies, with their attachments",
+          "AI prompts, without API key",
+          "Integrations, without credentials and unlinked",
+          "Company and birthday settings",
+          "Campaign settings and closing reasons",
+          "Company webhook presets and webhooks, with a new URL and no flow"
+        ],
+        "notCopiesList": [
+          "Connections (WhatsApp, GoHighLevel, Google Calendar) and their credentials",
+          "Users",
+          "Contacts, tickets, messages, campaigns, sales and appointments",
+          "Announcements",
+          "FlowBuilder and everything related to flows (second phase)"
+        ],
+        "notes": [
+          "Integrations and prompts arrive without credentials: the target company's own must be entered.",
+          "Personal quick replies become general; official Meta templates are not copied.",
+          "If the target already has a queue with the same name, the copy is named «… (copia)». A tag with the same name is reused."
+        ],
+        "confirm": "Clone",
+        "cancel": "Cancel",
+        "close": "Close",
+        "cloning": "Cloning…",
+        "done": "Settings cloned",
+        "result": {
+          "copied": "Copied",
+          "existing": "Already in target (left as it was)",
+          "skipped": "Not copied by rule",
+          "files": "Files copied",
+          "missingFiles": "Files already missing in source",
+          "warnings": "Warnings"
+        },
+        "keys": {
+          "integraciones": "Integrations",
+          "listasDeFicheros": "File lists",
+          "archivosDeListas": "Files in lists",
+          "etiquetas": "Tags",
+          "colas": "Queues",
+          "opcionesDeCola": "Queue options",
+          "productos": "Products",
+          "nodosDeChatbot": "Chatbot nodes",
+          "mensajesRapidos": "Quick replies",
+          "componentesDeRapidos": "Quick reply components",
+          "prompts": "Prompts",
+          "ajustesDeEmpresa": "Company settings",
+          "ajustesDeCumpleanos": "Birthday settings",
+          "ajustesDeCampana": "Campaign settings",
+          "motivosDeFinalizacion": "Closing reasons",
+          "presetsDeWebhook": "Webhook presets",
+          "webhooks": "Webhooks",
+          "enlacesColaIntegracion": "Queue–integration links (disconnected)",
+          "productosSinCola": "Products without queue",
+          "plantillasOficiales": "Official Meta templates",
+          "promptsSinCola": "Prompts without queue",
+          "webhooksSinUsuarioEnDestino": "Webhooks with no user in target",
+          "referenciasSinEquivalente": "References with no match (left empty)"
+        }
+      },
       ghlWorkflow: {
         title: "Enroll in a GoHighLevel workflow",
         empty: "No workflows available",
@@ -2548,6 +2620,10 @@ const messages = {
         },
       },
       backendErrors: {
+        ERR_CLONE_INVALID_COMPANIES: "Choose a valid source and target company.",
+        ERR_CLONE_SAME_COMPANY: "Source and target companies cannot be the same.",
+        ERR_CLONE_COMPANY_NOT_FOUND: "The source or target company does not exist.",
+        ERR_CLONE_ALREADY_DONE: "This company was already cloned from that same source. Doing it again would duplicate every setting.",
         ERR_NO_SERVER_RESPONSE: "Could not reach the server. Check that the service is running and try again.",
         ERR_NO_OTHER_WHATSAPP:
           "There must be at lest one default WhatsApp connection.",
