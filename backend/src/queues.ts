@@ -1678,15 +1678,36 @@ async function handleRandomUser() {
                     nextUserId !== undefined &&
                     (await findUserById(nextUserId, ticket.companyId)) > 0
                   ) {
-                    if (sendGreetingMessageOneQueues) {
-                      const ticketToSend = await ShowTicketService(
-                        ticket.id,
-                        ticket.companyId
-                      );
-                      await SendWhatsAppMessage({
-                        body: `\u200e *Assistente Virtual*:\nAguarde enquanto localizamos um atendente... Você será atendido em breve!`,
-                        ticket: ticketToSend
-                      });
+                    // El saludo de espera solo sabe salir por Baileys
+                    // (SendWhatsAppMessage). En cualquier otro canal —GHL, WhatsApp
+                    // oficial, Facebook, Instagram— no hay sesion de Baileys y getWbot
+                    // lanza ERR_WAPP_NOT_INITIALIZED; en WhatsApp normal pasa lo mismo si
+                    // la sesion esta caida.
+                    //
+                    // Como todo esto corre dentro de un map asincrono sin await, ese error
+                    // escapaba como rechazo no capturado y la asignacion de abajo no
+                    // llegaba a ejecutarse: el job elegia asesor, le gastaba los creditos
+                    // del reparto ponderado y el ticket se quedaba sin dueno para siempre,
+                    // reintentandolo cada dos minutos. Comprobado en local con un ticket
+                    // de GHL: con el saludo activado no se asignaba.
+                    //
+                    // Asignar es el trabajo de este job; el saludo es accesorio. Por eso
+                    // solo se intenta en WhatsApp, y si falla se anota y se asigna igual.
+                    if (sendGreetingMessageOneQueues && ticket.channel === "whatsapp") {
+                      try {
+                        const ticketToSend = await ShowTicketService(
+                          ticket.id,
+                          ticket.companyId
+                        );
+                        await SendWhatsAppMessage({
+                          body: `\u200e *Assistente Virtual*:\nAguarde enquanto localizamos um atendente... Você será atendido em breve!`,
+                          ticket: ticketToSend
+                        });
+                      } catch (errorSaludo) {
+                        logger.warn(
+                          `Saludo de reparto no enviado en el ticket ${ticket.id}: ${errorSaludo.message}. Se asigna igual.`
+                        );
+                      }
                     }
 
                     await UpdateTicketService({
