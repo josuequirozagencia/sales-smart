@@ -109,10 +109,89 @@ los mensajes (`receivedMessageWhatsAppOficial`), y el backend lo guarda en
 el Lead. Si el contacto vuelve a entrar por **otro** anuncio, se reemplaza
 por el clic nuevo: el anterior deja de atribuir a los 7 días.
 
-> **Despliegue:** el cambio de `api_oficial` es de dos archivos
-> (`webhook.service.ts` e `IWebsocket.interface.ts`). Hasta desplegarlo,
-> los Lead y Purchase de WhatsApp Oficial salen sin atribución, por la ruta
-> estándar.
+> **Despliegue:** hace falta desplegar `api_oficial` además del backend.
+> Hasta hacerlo, los Lead y Purchase de WhatsApp Oficial salen sin
+> atribución, por la ruta estándar. Ver [Despliegue](#despliegue).
+
+## Despliegue
+
+La atribución necesita **dos servicios**: el backend (motor, tablas, cola,
+pantalla) y `api_oficial` (reenvío del `referral`). Son independientes y
+compatibles en **cualquier orden**:
+
+- `api_oficial` nuevo con backend viejo: el backend ignora el campo
+  `referral`. Nada cambia.
+- Backend nuevo con `api_oficial` viejo: no llega `referral`; los eventos
+  salen por la ruta estándar, sin atribución.
+
+### `api_oficial`
+
+**Qué cambia:** `src/resources/v1/webhook/webhook.service.ts` e
+`src/@core/interfaces/IWebsocket.interface.ts` (reenvían seis campos del
+`referral` por el socket), su test `webhook.service.spec.ts`, y
+`package.json`, que fija `@types/amqplib` en **0.10.6**.
+
+Ese fijado es obligatorio para poder construir: `api_oficial` no tiene
+lockfile y `npm install` resuelve `^0.10.5` a 0.10.8, cuyos tipos cambiaron
+lo que devuelve `connect` y rompen `RabbitMq.service.ts`
+(`npm run build` falla con 3 errores). Pasa igual sin este cambio.
+
+**Sin migraciones** (no toca Prisma) **ni variables nuevas.** Sí tienen que
+cumplirse las que ya usa:
+
+| Variable (`api_oficial`) | Debe ser |
+| --- | --- |
+| `URL_BACKEND_MULT100` | URL pública del backend, la del socket |
+| `TOKEN_ADMIN` | **Igual** a `TOKEN_API_OFICIAL` del backend: es con lo que el backend reconoce el socket de `api_oficial` |
+| `DATABASE_LINK`, `REDIS_URI`, `RABBITMQ_URL`, `PORT` | Sin cambios |
+
+**Flujo manual (VPS con pm2, `api_oficial/README.md`):**
+
+```bash
+cd <ruta de api_oficial en el servidor>
+git fetch origin
+git checkout <commit o rama con el cambio>
+npm install
+npm run build
+pm2 restart api_oficial
+```
+
+No uses `install/restart.sh` tal cual: hace `git pull` de la rama que
+tenga el servidor y `pm2 restart all`, que reinicia **todos** los procesos
+pm2 de la máquina, backend incluido si comparte servidor.
+
+**Flujo Docker (`multiflow_deploy/deploy_fastalk.sh` y
+`Dockerfile_apioficial`):** reconstruir la imagen `multiflow_api_oficial`
+desde el código actualizado y recrear el contenedor. Ojo: el compose que
+genera ese script solo pasa `PORT` y `TOKEN_API_OFICIAL`, pero el código lee
+`TOKEN_ADMIN`, `URL_BACKEND_MULT100`, `DATABASE_LINK` y `REDIS_URI`: confirma
+que el contenedor de producción los tiene.
+
+**Vuelta atrás:** volver a desplegar la versión anterior de `api_oficial`.
+El backend sigue funcionando, sin atribución.
+
+### Backend y frontend
+
+Desplegar la rama con el motor, ejecutar las **3 migraciones**
+(`MetaConfigs`, `ContactAttributions`, `ConversionEventLogs`) y reiniciar el
+backend (registra la cola `MetaConversions` y los hooks). Construir el
+frontend (pantalla de Integraciones). Variables: ninguna obligatoria nueva;
+`META_GRAPH_VERSION` es opcional (por defecto `v20.0`). El token de Meta se
+cifra con `TOKEN_ENCRYPTION_KEY` o, si no existe, con `JWT_SECRET`: cambiar
+ese valor deja ilegibles los tokens guardados y hay que volver a pegarlos.
+
+### Antes de dar por buena la atribución en producción
+
+1. La conexión de WhatsApp Oficial tiene su **WABA ID** rellenado
+   (`waba_id`); sin él no hay atribución.
+2. El dataset está **vinculado a esa cuenta de WhatsApp Business**.
+3. La empresa tiene su configuración en **Configuración → Integraciones**,
+   con estado **Conectado**, y un **código de prueba** puesto.
+4. Desde un anuncio Click-to-WhatsApp real, escribir al número. Comprobar:
+   fila en `ContactAttributions` con `ctwaClid` y `wabaId`; fila `lead_…` en
+   `ConversionEventLogs` con `status = sent`, `route = business_messaging` y
+   `sentEventName = LeadSubmitted`; y el evento en «Probar eventos» de Meta.
+5. Quitar el código de prueba.
 
 ## Estados de un evento
 
