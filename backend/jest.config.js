@@ -79,7 +79,12 @@ module.exports = {
   // ],
 
   // A map from regular expressions to module names or to arrays of module names that allow to stub out resources with a single module
-  // moduleNameMapper: {},
+  // axios 1.x declara su build CommonJS en "exports", que Jest 27 no lee: sin
+  // esto carga index.js, que es ESM, y cualquier test que importe un servicio
+  // con axios revienta al parsear. Node si lo resuelve, asi que solo afecta a Jest.
+  moduleNameMapper: {
+    "^axios$": "axios/dist/node/axios.cjs"
+  },
 
   // An array of regexp pattern strings, matched against all module paths before considered 'visible' to the module loader
   // modulePathIgnorePatterns: [],
