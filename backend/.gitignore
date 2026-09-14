@@ -1,5 +1,6 @@
 node_modules
 public/*
+snapshots/*
 dist
 !public/.gitkeep
 .env

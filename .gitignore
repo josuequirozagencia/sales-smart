@@ -27,6 +27,8 @@ build/
 backend/public/*
 !backend/public/.gitkeep
 backend/uploads/*
+# Archivos de las instantaneas de configuracion (ver docs/INSTANTANEAS.md)
+backend/snapshots/*
 !backend/uploads/.gitkeep
 backend/private/*
 !backend/private/.gitkeep

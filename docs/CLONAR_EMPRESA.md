@@ -7,6 +7,9 @@ ajustes, sin rehacerlos a mano.
 
 Solo lo puede lanzar un **superadministrador**.
 
+Para guardar una configuración y cargarla más tarde, por partes y también
+desde el admin de cada empresa, ver [INSTANTANEAS.md](INSTANTANEAS.md).
+
 ## Cómo se usa
 
 1. Crea la empresa destino por el flujo normal (pantalla de **Empresas** o
@@ -152,7 +155,8 @@ apuntando a una fila de la empresa origen.
 
 | Ruta | Qué es |
 | --- | --- |
-| `backend/src/services/CompanyService/CloneCompanyConfigService.ts` | Toda la lógica |
+| `backend/src/services/ConfigPackageService/motor.ts` | El motor: captura y aplicación de cada tipo, compartido con duplicar e instantáneas |
+| `backend/src/services/CompanyService/CloneCompanyConfigService.ts` | Clonado: valida, captura y aplica en una transacción, y registra |
 | `backend/src/controllers/CompanyController.ts` (`cloneConfig`) | Endpoint, con el guard de superadministrador |
 | `backend/src/models/CompanyConfigClone.ts` | Registro de clonados |
 | `backend/src/services/CompanyService/DuplicateCompanyService.ts` | Duplicar: crea la empresa y su admin y clona, en una transacción |

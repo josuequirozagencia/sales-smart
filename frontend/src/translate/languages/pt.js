@@ -1,6 +1,122 @@
 const messages = {
   pt: {
     translations: {
+      snapshots: {
+        "tab": "Instantâneos",
+        "help": "Um instantâneo guarda a configuração de uma empresa como está naquele momento, com seus arquivos, para carregá-la depois em outras empresas. É guardado sem credenciais nem chaves de IA. Os admins de cada empresa podem carregá-los na sua.",
+        "helpAdmin": "Carregue na sua empresa a configuração de um instantâneo: etiquetas, filas, chatbot, respostas rápidas… Ela é somada ao que você já tem, sem apagar nada.",
+        "createButton": "Criar instantâneo",
+        "loadButton": "Carregar",
+        "deleteButton": "Excluir",
+        "empty": "Ainda não há instantâneos.",
+        "modulesCount": "{{count}} funções",
+        "needs": "Precisa de: {{deps}}.",
+        "notesTitle": "Observações",
+        "table": {
+          "name": "Nome",
+          "source": "Empresa de origem",
+          "modules": "Funções",
+          "createdAt": "Criado"
+        },
+        "deleteTitle": "Excluir «{{name}}»",
+        "deleteMessage": "O instantâneo e seus arquivos são apagados. O que já foi carregado nas empresas continua como está.",
+        "deleted": "Instantâneo excluído",
+        "createModal": {
+          "title": "Criar instantâneo de configuração",
+          "help": "Escolha a empresa que serve de modelo e quais funções empacotar. O instantâneo fica congelado: se depois você alterar ou apagar essa empresa, o instantâneo não muda.",
+          "source": "Empresa de origem",
+          "name": "Nome",
+          "namePlaceholder": "Ex.: Academia v1",
+          "description": "Descrição (opcional)",
+          "modulesTitle": "Funções empacotadas",
+          "notes": [
+            "Não são guardadas credenciais de integrações, chaves de IA nem fluxos de webhooks.",
+            "Nem conexões, usuários, contatos, tickets ou FlowBuilder.",
+            "Respostas rápidas pessoais são guardadas como gerais, e os modelos oficiais da Meta não são guardados."
+          ],
+          "confirm": "Criar",
+          "creating": "Criando…",
+          "cancel": "Cancelar",
+          "close": "Fechar",
+          "done": "Instantâneo «{{name}}» criado",
+          "captured": "Conteúdo guardado",
+          "empty": "A empresa não tinha nada para guardar nessas funções.",
+          "missingFiles": "Arquivos que já faltavam na empresa"
+        },
+        "loadModal": {
+          "title": "Carregar «{{name}}»",
+          "helpSuper": "Escolha a empresa e quais funções carregar. Elas são somadas ao que a empresa já tem: nada é apagado, exceto as configurações gerais e de aniversário se você carregá-las.",
+          "helpAdmin": "Escolha quais funções carregar na sua empresa. Elas são somadas ao que você já tem: nada é apagado, exceto as configurações gerais e de aniversário se você carregá-las.",
+          "target": "Empresa destino",
+          "ownCompany": "É carregado na sua empresa: {{name}}",
+          "modulesTitle": "Funções a carregar",
+          "already": "já carregada",
+          "allLoaded": "Esta empresa já tem todas as funções do instantâneo carregadas.",
+          "notes": [
+            "Integrações e prompts chegam sem credenciais: é preciso colocar as da empresa.",
+            "Se a empresa já tiver uma fila com o mesmo nome, a cópia se chama «… (copia)». Uma etiqueta, motivo ou configuração de campanha com o mesmo nome é reutilizado.",
+            "Você pode carregar por partes: o que carregar depois se liga ao que já carregou."
+          ],
+          "confirm": "Carregar",
+          "loading": "Carregando…",
+          "cancel": "Cancelar",
+          "close": "Fechar",
+          "done": "Instantâneo «{{name}}» carregado",
+          "resultTitle": "Funções",
+          "loaded": "Carregado agora: {{list}}",
+          "skipped": "Já estava carregado: {{list}}"
+        },
+        "modules": {
+          "integraciones": {
+            "label": "Integrações",
+            "description": "Dialogflow, n8n, Typebot… sem credenciais e sem vínculo."
+          },
+          "archivos": {
+            "label": "Listas de arquivos",
+            "description": "Listas de arquivos com seus arquivos."
+          },
+          "etiquetas": {
+            "label": "Etiquetas e Kanban",
+            "description": "Etiquetas e colunas do Kanban, com seu encadeamento."
+          },
+          "colas": {
+            "label": "Filas",
+            "description": "Filas com sua árvore de opções e seus produtos."
+          },
+          "chatbot": {
+            "label": "Chatbot",
+            "description": "A árvore completa do chatbot das filas."
+          },
+          "mensajesRapidos": {
+            "label": "Respostas rápidas",
+            "description": "Com seus anexos."
+          },
+          "prompts": {
+            "label": "Prompts de IA",
+            "description": "Sem API key."
+          },
+          "ajustesEmpresa": {
+            "label": "Configurações da empresa",
+            "description": "Substitui as configurações gerais da empresa."
+          },
+          "cumpleanos": {
+            "label": "Configurações de aniversário",
+            "description": "Substitui as configurações de aniversário."
+          },
+          "campanas": {
+            "label": "Configurações de campanha",
+            "description": "Só as chaves que a empresa não tiver."
+          },
+          "motivos": {
+            "label": "Motivos de finalização",
+            "description": "Só os que a empresa não tiver."
+          },
+          "webhooks": {
+            "label": "Webhooks",
+            "description": "Com URL nova e sem fluxo vinculado."
+          }
+        }
+      },
       duplicateCompany: {
         "action": "Duplicar empresa",
         "title": "Duplicar «{{name}}»",
@@ -2709,6 +2825,12 @@ const messages = {
         },
       },
       backendErrors: {
+        ERR_SNAPSHOT_INVALID_NAME: "O nome do instantâneo deve ter pelo menos 2 caracteres.",
+        ERR_SNAPSHOT_NAME_IN_USE: "Já existe um instantâneo com esse nome.",
+        ERR_SNAPSHOT_INVALID_MODULES: "Escolha pelo menos uma função válida do instantâneo.",
+        ERR_SNAPSHOT_COMPANY_NOT_FOUND: "A empresa não existe.",
+        ERR_SNAPSHOT_NOT_FOUND: "O instantâneo não existe.",
+        ERR_SNAPSHOT_ALREADY_APPLIED: "Essas funções do instantâneo já estão carregadas nesta empresa.",
         ERR_DUPLICATE_INVALID_NAME: "O nome da empresa nova deve ter pelo menos 2 caracteres.",
         ERR_DUPLICATE_INVALID_EMAIL: "O email do admin não é válido.",
         ERR_DUPLICATE_INVALID_PASSWORD: "A senha do admin deve ter pelo menos 5 caracteres.",

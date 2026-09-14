@@ -32,6 +32,9 @@ import {
  * DuplicateCompanyService y docs/CLONAR_EMPRESA.md.
  */
 
+// Nombres y emails escritos por el usuario: i18n no los escapa, ya lo hace React.
+const SIN_ESCAPAR = { interpolation: { escapeValue: false } };
+
 const VACIO = { name: "", email: "", password: "", phone: "", document: "" };
 const EMAIL = /^\S+@\S+\.\S+$/;
 
@@ -91,7 +94,7 @@ const DuplicateCompanyModal = ({ open, onClose, company, onDuplicated }) => {
         email: valores.email.trim(),
       });
       setResultado(data);
-      toast.success(i18n.t("duplicateCompany.done", { name: data.empresa.name }));
+      toast.success(i18n.t("duplicateCompany.done", { name: data.empresa.name, ...SIN_ESCAPAR }));
       if (onDuplicated) onDuplicated(data);
     } catch (err) {
       toastError(err);
@@ -135,7 +138,7 @@ const DuplicateCompanyModal = ({ open, onClose, company, onDuplicated }) => {
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md" scroll="paper">
       <DialogTitle>
-        {i18n.t("duplicateCompany.title", { name: empresa.name })}
+        {i18n.t("duplicateCompany.title", { name: empresa.name, ...SIN_ESCAPAR })}
       </DialogTitle>
 
       <DialogContent dividers>
@@ -191,11 +194,12 @@ const DuplicateCompanyModal = ({ open, onClose, company, onDuplicated }) => {
           <>
             <BloqueLista
               className={classes.separado}
-              titulo={i18n.t("duplicateCompany.done", { name: resultado.empresa.name })}
+              titulo={i18n.t("duplicateCompany.done", { name: resultado.empresa.name, ...SIN_ESCAPAR })}
               items={[
                 i18n.t("duplicateCompany.created", {
                   id: resultado.empresa.id,
                   email: resultado.empresa.email,
+                  ...SIN_ESCAPAR,
                 }),
               ]}
             />

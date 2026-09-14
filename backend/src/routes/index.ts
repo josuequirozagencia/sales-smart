@@ -52,6 +52,7 @@ import webHook from "./webHookRoutes";
 import flowBuilder from "./flowBuilderRoutes";
 import flowCampaignRoutes from "./flowCampaignRoutes";
 import ghlRoutes from "./ghlRoutes";
+import configSnapshotRoutes from "./configSnapshotRoutes";
 
 import ChatController from "../controllers/ChatController";
 
@@ -78,6 +79,7 @@ routes.use(messageRoutes);
 routes.use(whatsappSessionRoutes);
 routes.use(queueRoutes);
 routes.use(companyRoutes);
+routes.use(configSnapshotRoutes);
 routes.use(planRoutes);
 routes.use(ticketNoteRoutes);
 routes.use(quickMessageRoutes);

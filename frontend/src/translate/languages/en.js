@@ -1,6 +1,122 @@
 const messages = {
   en: {
     translations: {
+      snapshots: {
+        "tab": "Snapshots",
+        "help": "A snapshot stores a company's settings exactly as they are at that moment, with their files, to load them later into other companies. It is stored without credentials or AI keys. Each company's admins can load them into their own company.",
+        "helpAdmin": "Load a snapshot's settings into your company: tags, queues, chatbot, quick replies… They are added to what you already have, nothing is deleted.",
+        "createButton": "Create snapshot",
+        "loadButton": "Load",
+        "deleteButton": "Delete",
+        "empty": "There are no snapshots yet.",
+        "modulesCount": "{{count}} features",
+        "needs": "Needs: {{deps}}.",
+        "notesTitle": "Keep in mind",
+        "table": {
+          "name": "Name",
+          "source": "Source company",
+          "modules": "Features",
+          "createdAt": "Created"
+        },
+        "deleteTitle": "Delete «{{name}}»",
+        "deleteMessage": "The snapshot and its files are deleted. Whatever was already loaded into companies stays as it is.",
+        "deleted": "Snapshot deleted",
+        "createModal": {
+          "title": "Create settings snapshot",
+          "help": "Choose the company that works as a template and which features to package. The snapshot is frozen: if you later change or delete that company, the snapshot does not change.",
+          "source": "Source company",
+          "name": "Name",
+          "namePlaceholder": "E.g.: Academy v1",
+          "description": "Description (optional)",
+          "modulesTitle": "Packaged features",
+          "notes": [
+            "Integration credentials, AI keys and webhook flows are not stored.",
+            "Neither are channels, users, contacts, tickets or FlowBuilder.",
+            "Personal quick replies are stored as general ones, and official Meta templates are not stored."
+          ],
+          "confirm": "Create",
+          "creating": "Creating…",
+          "cancel": "Cancel",
+          "close": "Close",
+          "done": "Snapshot «{{name}}» created",
+          "captured": "Stored content",
+          "empty": "The company had nothing to store in those features.",
+          "missingFiles": "Files already missing in the company"
+        },
+        "loadModal": {
+          "title": "Load «{{name}}»",
+          "helpSuper": "Choose the company and which features to load. They are added to what the company already has: nothing is deleted, except general and birthday settings if you load them.",
+          "helpAdmin": "Choose which features to load into your company. They are added to what you already have: nothing is deleted, except general and birthday settings if you load them.",
+          "target": "Target company",
+          "ownCompany": "It is loaded into your company: {{name}}",
+          "modulesTitle": "Features to load",
+          "already": "already loaded",
+          "allLoaded": "This company already has every feature of the snapshot loaded.",
+          "notes": [
+            "Integrations and prompts arrive without credentials: the company's own must be entered.",
+            "If the company already has a queue with the same name, the copy is named «… (copia)». A tag, closing reason or campaign setting with the same name is reused.",
+            "You can load in parts: what you load later links to what you loaded before."
+          ],
+          "confirm": "Load",
+          "loading": "Loading…",
+          "cancel": "Cancel",
+          "close": "Close",
+          "done": "Snapshot «{{name}}» loaded",
+          "resultTitle": "Features",
+          "loaded": "Loaded now: {{list}}",
+          "skipped": "Already loaded: {{list}}"
+        },
+        "modules": {
+          "integraciones": {
+            "label": "Integrations",
+            "description": "Dialogflow, n8n, Typebot… without credentials and unlinked."
+          },
+          "archivos": {
+            "label": "File lists",
+            "description": "File lists with their files."
+          },
+          "etiquetas": {
+            "label": "Tags and Kanban",
+            "description": "Tags and Kanban columns, with their chaining."
+          },
+          "colas": {
+            "label": "Queues",
+            "description": "Queues with their option tree and products."
+          },
+          "chatbot": {
+            "label": "Chatbot",
+            "description": "The whole chatbot tree of the queues."
+          },
+          "mensajesRapidos": {
+            "label": "Quick replies",
+            "description": "With their attachments."
+          },
+          "prompts": {
+            "label": "AI prompts",
+            "description": "Without API key."
+          },
+          "ajustesEmpresa": {
+            "label": "Company settings",
+            "description": "Replaces the company's general settings."
+          },
+          "cumpleanos": {
+            "label": "Birthday settings",
+            "description": "Replaces the birthday settings."
+          },
+          "campanas": {
+            "label": "Campaign settings",
+            "description": "Only the keys the company doesn't have."
+          },
+          "motivos": {
+            "label": "Closing reasons",
+            "description": "Only the ones the company doesn't have."
+          },
+          "webhooks": {
+            "label": "Webhooks",
+            "description": "With a new URL and no linked flow."
+          }
+        }
+      },
       duplicateCompany: {
         "action": "Duplicate company",
         "title": "Duplicate «{{name}}»",
@@ -2666,6 +2782,12 @@ const messages = {
         },
       },
       backendErrors: {
+        ERR_SNAPSHOT_INVALID_NAME: "The snapshot name must have at least 2 characters.",
+        ERR_SNAPSHOT_NAME_IN_USE: "A snapshot with that name already exists.",
+        ERR_SNAPSHOT_INVALID_MODULES: "Choose at least one valid feature of the snapshot.",
+        ERR_SNAPSHOT_COMPANY_NOT_FOUND: "The company does not exist.",
+        ERR_SNAPSHOT_NOT_FOUND: "The snapshot does not exist.",
+        ERR_SNAPSHOT_ALREADY_APPLIED: "Those snapshot features are already loaded in this company.",
         ERR_DUPLICATE_INVALID_NAME: "The new company name must have at least 2 characters.",
         ERR_DUPLICATE_INVALID_EMAIL: "The admin email is not valid.",
         ERR_DUPLICATE_INVALID_PASSWORD: "The admin password must have at least 5 characters.",

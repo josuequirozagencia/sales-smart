@@ -68,6 +68,8 @@ import WhatsappLidMap from "../models/WhatsapplidMap";
 import GhlTemplate from "../models/GhlTemplate";
 import GhlConfig from "../models/GhlConfig";
 import CompanyConfigClone from "../models/CompanyConfigClone";
+import ConfigSnapshot from "../models/ConfigSnapshot";
+import ConfigSnapshotApplication from "../models/ConfigSnapshotApplication";
 
 // eslint-disable-next-line
 const dbConfig = require("../config/database");
@@ -112,6 +114,8 @@ const models = [
   GhlTemplate,
   GhlConfig,
   CompanyConfigClone,
+  ConfigSnapshot,
+  ConfigSnapshotApplication,
   Invoices,
   Subscriptions,
   ApiUsages,
