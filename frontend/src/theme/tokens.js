@@ -191,6 +191,31 @@ export function onColor(background, options = {}) {
     : dark;
 }
 
+/**
+ * El mismo color, oscurecido lo justo para leerse sobre un fondo claro.
+ *
+ * El primario lo elige cada empresa en Whitelabel y puede ser tan claro
+ * que, usado como texto o borde sobre blanco, casi no se vea: #D3D1DC da
+ * 1,5. Se oscurece en pasos del 5 % hasta llegar al contraste pedido (4,5
+ * para texto; 3 para bordes y otros componentes, segun la WCAG). Un color
+ * que ya lo cumple sale igual, asi que una marca oscura no cambia.
+ *
+ * Solo para fondos claros: oscurecer no acerca al contraste sobre fondo
+ * oscuro.
+ *
+ * @param {string} color  color en formato "#rrggbb"
+ * @param {string} fondo  fondo claro en formato "#rrggbb"
+ * @param {number} minimo contraste minimo
+ * @returns {string} "#rrggbb"
+ */
+export function legibleSobre(color, fondo, minimo = 4.5) {
+  let actual = normalizeHex(color);
+  for (let i = 0; i < 60 && contrastRatio(actual, fondo) < minimo; i++) {
+    actual = darken(actual, 0.05);
+  }
+  return actual;
+}
+
 // ---------------------------------------------------------------------------
 // COLORES SEMÁNTICOS
 // ---------------------------------------------------------------------------
@@ -425,6 +450,7 @@ export default {
   normalizeHex,
   contrastRatio,
   onColor,
+  legibleSobre,
   primaryStates,
   darken,
   semantic,

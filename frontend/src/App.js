@@ -98,6 +98,21 @@ const App = () => {
           ? tokens.secondaryDefault
           : tokens.secondaryDefaultDark;
 
+      // El primario como TEXTO o BORDE sobre la superficie. Como lo elige
+      // cada empresa, puede ser muy claro: #D3D1DC da 1,5 sobre blanco y
+      // dejaba casi invisibles los botones con borde, las pestanas activas
+      // y los titulos. En claro se oscurece lo justo para llegar a 4,5
+      // (texto) o 3 (bordes); una marca que ya cumple sale igual. En oscuro
+      // se mantiene el nivel 300 de la marca, como hasta ahora.
+      const brandText =
+        mode === "light"
+          ? tokens.legibleSobre(brandPrimary, t.surface)
+          : tokens.brandScale[300];
+      const brandBorder =
+        mode === "light"
+          ? tokens.legibleSobre(brandPrimary, t.surface, 3)
+          : tokens.brandScale[300];
+
       return {
           // 19 componentes leem `theme.mode` para decidir cores, mas essa
           // chave nunca existiu no tema: no MUI v4 o correto é
@@ -221,10 +236,10 @@ const App = () => {
                 onPrimary: onColor(brandPrimary),
                 // El color de marca en un tono legible COMO TEXTO sobre la
                 // superficie del modo activo. El primario a secas no sirve
-                // para eso: el tono que lleva texto blanco encima es
-                // demasiado oscuro para leerse sobre fondo oscuro.
-                onSurface:
-                  mode === "light" ? brandPrimary : tokens.brandScale[300],
+                // para eso: en oscuro, el tono que lleva texto blanco encima
+                // es demasiado oscuro; en claro, un primario muy claro no se
+                // lee sobre blanco. Ver brandText.
+                onSurface: brandText,
                 secondary: brandSecondary,
                 secondaryHover: tokens.darken(brandSecondary, 0.08),
                 onSecondary: onColor(brandSecondary),
@@ -374,14 +389,17 @@ const App = () => {
                 borderColor: t.border,
               },
               // Mismo caso que MuiTypography: aqui el primario es texto, no
-              // relleno.
+              // relleno. El borde de serie es el primario al 50 %, que con un
+              // primario claro desaparece: se usa el tono de borde legible.
               textPrimary: {
-                color:
-                  mode === "light" ? brandPrimary : tokens.brandScale[300],
+                color: brandText,
               },
               outlinedPrimary: {
-                color:
-                  mode === "light" ? brandPrimary : tokens.brandScale[300],
+                color: brandText,
+                borderColor: brandBorder,
+                '&:hover': {
+                  borderColor: brandText,
+                },
               },
             },
 
@@ -423,34 +441,47 @@ const App = () => {
             // text.
             //
             // Se corrige aqui, en los dos sitios donde MUI aplica el primario
-            // como texto, en vez de perseguir cada componente: en claro no
-            // cambia nada, y en oscuro sube al nivel 300 de la marca, que da
-            // 6.25 sobre el fondo.
+            // como texto, en vez de perseguir cada componente: en claro se
+            // oscurece solo si hace falta (ver brandText), y en oscuro sube al
+            // nivel 300 de la marca, que da 6.25 sobre el fondo.
             MuiTypography: {
               colorPrimary: {
-                color:
-                  mode === "light"
-                    ? brandPrimary
-                    : tokens.brandScale[300],
+                color: brandText,
               },
             },
 
             // Pestanas. La etiqueta activa y la barra indicadora usan el
-            // violeta de marca, que como TEXTO sobre superficie oscura queda
-            // en 2,50. Aqui se corrigen todas las pestanas del CRM a la vez
-            // en lugar de pantalla por pantalla.
+            // primario como texto: brandText, legible en los dos modos. Aqui
+            // se corrigen todas las pestanas del CRM a la vez en lugar de
+            // pantalla por pantalla.
+            //
+            // Habia un segundo MuiTab mas abajo en este mismo objeto; al ser
+            // la misma clave, anulaba a este entero y la pestana activa
+            // volvia al primario crudo. Ahora es uno solo.
             MuiTab: {
+              root: {
+                textTransform: 'none',
+                fontWeight: 600,
+                letterSpacing: '0.025em',
+                borderRadius: '8px 8px 0 0',
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  backgroundColor: `${brandPrimary}08`,
+                },
+                // Tambien para las pestanas con textColor inherit.
+                '&.Mui-selected': {
+                  color: brandText,
+                },
+              },
               textColorPrimary: {
                 "&.Mui-selected": {
-                  color:
-                    mode === "light" ? brandPrimary : tokens.brandScale[300],
+                  color: brandText,
                 },
               },
             },
             MuiTabs: {
               indicator: {
-                backgroundColor:
-                  mode === "light" ? brandPrimary : tokens.brandScale[300],
+                backgroundColor: brandText,
               },
             },
 
@@ -556,29 +587,10 @@ const App = () => {
                   },
                   '&.Mui-focused': {
                     '& .MuiOutlinedInput-notchedOutline': {
-                      borderColor: mode === "light" ? primaryColorLight : primaryColorDark,
+                      borderColor: mode === "light" ? brandBorder : primaryColorDark,
                       borderWidth: 2,
                     }
                   }
-                }
-              }
-            },
-
-            // Tabs usando cor do tema
-            MuiTab: {
-              root: {
-                textTransform: 'none',
-                fontWeight: 600,
-                letterSpacing: '0.025em',
-                borderRadius: '8px 8px 0 0',
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  backgroundColor: mode === "light"
-                    ? `${primaryColorLight}08`
-                    : `${primaryColorDark}08`,
-                },
-                '&.Mui-selected': {
-                  color: mode === "light" ? primaryColorLight : primaryColorDark,
                 }
               }
             },
