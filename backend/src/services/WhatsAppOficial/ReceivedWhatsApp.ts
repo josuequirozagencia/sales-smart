@@ -12,6 +12,8 @@ import Message from "../../models/Message";
 import verifyMessageOficial from "./VerifyMessageOficial";
 import verifyQueueOficial from "./VerifyQueue";
 import ShowWhatsAppService from "../WhatsappService/ShowWhatsAppService";
+import { guardarAtribucion, ReferralMeta } from "../ConversionServices/ContactAttributionService";
+import { registrarLeadEntrante } from "../ConversionServices/ConversionService";
 
 const mimeToExtension: { [key: string]: string } = {
     'audio/aac': 'aac',
@@ -92,6 +94,12 @@ export interface IMessageReceived {
     file?: string;
     mimeType?: string;
     quoteMessageId?: string;
+    /**
+     * Anuncio Click-to-WhatsApp del que viene el mensaje, si viene de uno.
+     * Lo reenvia api_oficial desde el webhook de Meta; se guarda para
+     * atribuir conversiones (ver ContactAttributionService).
+     */
+    referral?: ReferralMeta;
 }
 
 export async function generateVCard(contact: any): Promise<string> {
@@ -137,8 +145,27 @@ export class ReceibedWhatsAppService {
 
 
 
+            let contactoNuevo = false;
             if (!contact) {
                 contact = await Contact.create({ name: nameContact, number: fromNumber, companyId, whatsappId: whatsapp.id });
+                contactoNuevo = true;
+            }
+
+            // Meta Conversions API. Primero la atribucion, si el mensaje viene de
+            // un anuncio, y despues el lead, para que el evento la encuentre.
+            // Ninguna de las dos lanza: el mensaje se procesa igual.
+            await guardarAtribucion({
+                companyId,
+                contactId: contact.id,
+                whatsapp: conexao,
+                referral: message?.referral,
+                recibidoEn: message?.timestamp
+            });
+            if (contactoNuevo) {
+                // Todo mensaje de este canal es entrante: lo manda el contacto.
+                registrarLeadEntrante(contact, {
+                    mensajeEn: message?.timestamp ? Number(message.timestamp) * 1000 : null
+                });
             }
 
             let fileName;

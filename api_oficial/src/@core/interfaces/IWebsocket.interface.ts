@@ -32,4 +32,19 @@ export interface IMessageReceived {
   mimeType?: string;
   idFile?: string;
   quoteMessageId?: string;
+  /** Anuncio Click-to-WhatsApp del que viene el mensaje, si viene de uno. */
+  referral?: IMessageReferral;
+}
+
+/**
+ * Lo que el CRM necesita del referral de Meta para atribuir conversiones.
+ * Sin las URLs de imagen y video: no se usan y engordarian cada mensaje.
+ */
+export interface IMessageReferral {
+  ctwa_clid?: string;
+  source_id?: string;
+  source_type?: string;
+  source_url?: string;
+  headline?: string;
+  media_type?: string;
 }

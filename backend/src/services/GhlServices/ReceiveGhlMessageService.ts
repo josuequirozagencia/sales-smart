@@ -7,6 +7,7 @@ import FindOrCreateTicketService from "../TicketServices/FindOrCreateTicketServi
 import FindOrCreateATicketTrakingService from "../TicketServices/FindOrCreateATicketTrakingService";
 import CreateMessageService from "../MessageServices/CreateMessageService";
 import logger from "../../utils/logger";
+import { registrarLeadEntrante } from "../ConversionServices/ConversionService";
 
 /**
  * Mensaje entrante de GoHighLevel.
@@ -220,6 +221,11 @@ const ReceiveGhlMessageService = async (
       whatsappId: whatsapp.id,
       ghlContactId: datos.contactIdGhl || null
     } as any);
+
+    // Meta Conversions API: aqui solo llegan mensajes entrantes (los
+    // salientes se descartan arriba), asi que un contacto nuevo escribio
+    // primero y es un lead. Solo encola; no espera ni lanza.
+    registrarLeadEntrante(contact);
   }
 
   // Se anota el identificador de GHL si el contacto ya existia sin el.

@@ -39,6 +39,7 @@ import { get } from "http";
 import { WebhookModel } from "../../models/Webhook";
 import { is } from "bluebird";
 import ShowTicketService from "../TicketServices/ShowTicketService";
+import { contactoCreadoDesde, registrarLeadEntrante } from "../ConversionServices/ConversionService";
 
 interface IMe {
   name: string;
@@ -516,7 +517,14 @@ export const handleMessage = async (
         msgContact = await profilePsid(senderPsid, token.facebookUserToken);
       }
 
+      const antesDeVerificarContacto = Date.now();
       const contact = await verifyContact(msgContact, token, companyId);
+
+      // Meta Conversions API: lead solo si ESTE mensaje entrante (no un eco
+      // de lo que envia la pagina) creo el contacto. Solo encola.
+      if (!fromMe && contactoCreadoDesde(contact, antesDeVerificarContacto)) {
+        registrarLeadEntrante(contact, { mensajeEn: webhookEvent.timestamp || null });
+      }
 
       const unreadCount = fromMe ? 0 : 1;
 

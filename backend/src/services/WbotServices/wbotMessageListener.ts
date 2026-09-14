@@ -100,6 +100,7 @@ import { handleOpenAiFlow } from "../IntegrationsServices/OpenAiService";
 import { IOpenAi } from "../../@types/openai";
 import WhatsappLidMap from "../../models/WhatsapplidMap";
 import { getJidOf } from "./getJidOf";
+import { contactoCreadoDesde, registrarLeadEntrante } from "../ConversionServices/ConversionService";
 import { verifyContact } from "./verifyContact";
 // import { verifyContact } from "./verifyContact";
 const os = require("os");
@@ -3419,7 +3420,17 @@ const handleMessage = async (
       groupContact = await verifyContact(msgGroupContact, wbot, companyId);
     }
 
+    const antesDeVerificarContacto = Date.now();
     const contact = await verifyContact(msgContact, wbot, companyId);
+
+    // Meta Conversions API: lead solo si ESTE mensaje, entrante y fuera de
+    // un grupo, creo el contacto. registrarLeadEntrante descarta ademas los
+    // mensajes viejos que llegan al importar el historial. Solo encola.
+    if (!msg.key.fromMe && !isGroup && contactoCreadoDesde(contact, antesDeVerificarContacto)) {
+      registrarLeadEntrante(contact, {
+        mensajeEn: getTimestampMessage(msg.messageTimestamp) * 1000
+      });
+    }
 
     let unreadMessages = 0;
 
