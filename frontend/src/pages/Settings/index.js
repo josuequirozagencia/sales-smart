@@ -9,6 +9,7 @@ import TabPanel from "../../components/TabPanel";
 import SchedulesForm from "../../components/SchedulesForm";
 import CompaniesManager from "../../components/CompaniesManager";
 import ConfigSnapshotsManager from "../../components/ConfigSnapshotsManager";
+import MetaConversionsSettings from "../../components/MetaConversionsSettings";
 import PlansManager from "../../components/PlansManager";
 import HelpsManager from "../../components/HelpsManager";
 import Options from "../../components/Settings/Options";
@@ -188,6 +189,9 @@ const SettingsCustom = () => {
               {(isSuper() || user.profile === "admin") ? (
                 <Tab label={i18n.t("snapshots.tab")} value={"snapshots"} />
               ) : null}
+              {user.profile === "admin" ? (
+                <Tab label={i18n.t("metaConversions.tab")} value={"integrations"} />
+              ) : null}
               {isSuper() ? (
                 <Tab label={i18n.t("settings.tabs.helps")} value={"helps"} />
               ) : null}
@@ -227,6 +231,16 @@ const SettingsCustom = () => {
                   name={"snapshots"}
                 >
                   <ConfigSnapshotsManager company={company} />
+                </TabPanel>
+              )}
+              {/* Integraciones > Meta: credenciales de la propia empresa, solo admin */}
+              {currentUser.profile === "admin" && (
+                <TabPanel
+                  className={classes.container}
+                  value={tab}
+                  name={"integrations"}
+                >
+                  <MetaConversionsSettings />
                 </TabPanel>
               )}
               

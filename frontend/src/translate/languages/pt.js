@@ -1,6 +1,48 @@
 const messages = {
   pt: {
     translations: {
+      metaConversions: {
+        "tab": "Integrações",
+        "title": "Meta · Conversions API",
+        "help": "Envia para a Meta os leads, agendamentos e vendas do CRM para que suas campanhas do Meta Ads otimizem com resultados reais, sem depender de cookies nem do seu site.",
+        "status": {
+          "not_configured": "Não configurado",
+          "unverified": "Não verificado",
+          "ok": "Conectado",
+          "error": "Erro"
+        },
+        "lastError": "Último erro: {{error}}",
+        "lastSuccess": "Último evento enviado: {{when}}",
+        "verified": "Credenciais verificadas: {{when}}",
+        "credentialsTitle": "Credenciais",
+        "credentialsHelp": "Salvas só para esta empresa. O token é guardado criptografado e não é mostrado de novo.",
+        "fields": {
+          "datasetId": "ID do conjunto de dados (Pixel)",
+          "datasetIdHelp": "Gerenciador de Eventos > Fontes de dados > seu conjunto de dados > ID.",
+          "token": "Token de acesso",
+          "tokenHelp": "Token de um usuário do sistema do Meta Business com acesso ao conjunto de dados.",
+          "tokenSaved": "Há um token salvo que termina em …{{last4}}. Deixe vazio para mantê-lo.",
+          "testEventCode": "Código de teste (opcional)",
+          "testEventCodeHelp": "De «Testar eventos». Enquanto estiver preenchido, os eventos NÃO contam para as campanhas: remova-o ao terminar os testes.",
+          "active": "Enviar eventos para a Meta"
+        },
+        "save": "Salvar",
+        "saved": "Configuração da Meta salva",
+        "savedWithError": "Salvo, mas a Meta recusou as credenciais: verifique o erro.",
+        "eventsTitle": "O que é enviado",
+        "events": [
+          "Lead: quando um contato novo escreve primeiro (WhatsApp, WhatsApp Oficial, Facebook, Instagram ou GHL). Se veio de um anúncio de WhatsApp nos últimos 7 dias, é enviado como LeadSubmitted, atribuído ao anúncio.",
+          "Schedule: quando um agendamento é criado pelo CRM.",
+          "Purchase: quando uma venda é registrada, com o total e a moeda da empresa. Atribuída ao anúncio de WhatsApp se o clique foi nos últimos 7 dias.",
+          "Sem anúncio, a Meta identifica o contato pelo telefone ou email, enviados criptografados. Se não tiver nenhum dos dois, o evento não é enviado."
+        ],
+        "requirementsTitle": "O que você precisa na Meta",
+        "requirements": [
+          "Um conjunto de dados no Gerenciador de Eventos. Para atribuir anúncios Click-to-WhatsApp, vinculado à conta do WhatsApp Business da sua conexão WhatsApp Oficial.",
+          "Um token de usuário do sistema com permissão nesse conjunto de dados.",
+          "A moeda correta nos dados da empresa: é a enviada com cada venda."
+        ]
+      },
       snapshots: {
         "tab": "Instantâneos",
         "help": "Um instantâneo guarda a configuração de uma empresa como está naquele momento, com seus arquivos, para carregá-la depois em outras empresas. É guardado sem credenciais nem chaves de IA. Os admins de cada empresa podem carregá-los na sua.",
@@ -2825,6 +2867,10 @@ const messages = {
         },
       },
       backendErrors: {
+        ERR_META_INVALID_DATASET: "O ID do conjunto de dados deve ser numérico.",
+        ERR_META_INVALID_TOKEN: "O token de acesso não é válido.",
+        ERR_META_INVALID_TEST_CODE: "O código de teste só aceita letras, números, hífens e sublinhados.",
+        ERR_META_TOKEN_REQUIRED: "Falta o token de acesso da Meta.",
         ERR_SNAPSHOT_INVALID_NAME: "O nome do instantâneo deve ter pelo menos 2 caracteres.",
         ERR_SNAPSHOT_NAME_IN_USE: "Já existe um instantâneo com esse nome.",
         ERR_SNAPSHOT_INVALID_MODULES: "Escolha pelo menos uma função válida do instantâneo.",

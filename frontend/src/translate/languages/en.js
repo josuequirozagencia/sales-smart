@@ -1,6 +1,48 @@
 const messages = {
   en: {
     translations: {
+      metaConversions: {
+        "tab": "Integrations",
+        "title": "Meta · Conversions API",
+        "help": "Sends the CRM's leads, appointments and sales to Meta so your Meta Ads campaigns optimize on real results, without relying on cookies or your website.",
+        "status": {
+          "not_configured": "Not configured",
+          "unverified": "Not verified",
+          "ok": "Connected",
+          "error": "Error"
+        },
+        "lastError": "Last error: {{error}}",
+        "lastSuccess": "Last event sent: {{when}}",
+        "verified": "Credentials verified: {{when}}",
+        "credentialsTitle": "Credentials",
+        "credentialsHelp": "Stored only for this company. The token is encrypted and never shown again.",
+        "fields": {
+          "datasetId": "Dataset (Pixel) ID",
+          "datasetIdHelp": "Events Manager > Data sources > your dataset > ID.",
+          "token": "Access token",
+          "tokenHelp": "Token of a Meta Business system user with access to the dataset.",
+          "tokenSaved": "A token ending in …{{last4}} is saved. Leave empty to keep it.",
+          "testEventCode": "Test event code (optional)",
+          "testEventCodeHelp": "From «Test events». While set, events do NOT count for campaigns: remove it when testing is done.",
+          "active": "Send events to Meta"
+        },
+        "save": "Save",
+        "saved": "Meta settings saved",
+        "savedWithError": "Saved, but Meta rejected the credentials: check the error.",
+        "eventsTitle": "What is sent",
+        "events": [
+          "Lead: when a new contact writes to you first (WhatsApp, WhatsApp Official, Facebook, Instagram or GHL). If they came from a WhatsApp ad in the last 7 days it is sent as LeadSubmitted, attributed to the ad.",
+          "Schedule: when an appointment is booked from the CRM.",
+          "Purchase: when a sale is recorded, with its total and the company's currency. Attributed to the WhatsApp ad if the click was in the last 7 days.",
+          "Without an ad, Meta identifies the contact by phone or email, sent hashed. If the contact has neither, the event is not sent."
+        ],
+        "requirementsTitle": "What you need in Meta",
+        "requirements": [
+          "A dataset in Events Manager. To attribute Click-to-WhatsApp ads, linked to the WhatsApp Business account of your WhatsApp Official connection.",
+          "A system user token with permission on that dataset.",
+          "The right currency in the company's data: it is sent with every sale."
+        ]
+      },
       snapshots: {
         "tab": "Snapshots",
         "help": "A snapshot stores a company's settings exactly as they are at that moment, with their files, to load them later into other companies. It is stored without credentials or AI keys. Each company's admins can load them into their own company.",
@@ -2782,6 +2824,10 @@ const messages = {
         },
       },
       backendErrors: {
+        ERR_META_INVALID_DATASET: "The dataset ID must be numeric.",
+        ERR_META_INVALID_TOKEN: "The access token is not valid.",
+        ERR_META_INVALID_TEST_CODE: "The test code only allows letters, numbers, hyphens and underscores.",
+        ERR_META_TOKEN_REQUIRED: "The Meta access token is missing.",
         ERR_SNAPSHOT_INVALID_NAME: "The snapshot name must have at least 2 characters.",
         ERR_SNAPSHOT_NAME_IN_USE: "A snapshot with that name already exists.",
         ERR_SNAPSHOT_INVALID_MODULES: "Choose at least one valid feature of the snapshot.",
