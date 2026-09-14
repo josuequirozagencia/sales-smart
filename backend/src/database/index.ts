@@ -70,6 +70,9 @@ import GhlConfig from "../models/GhlConfig";
 import CompanyConfigClone from "../models/CompanyConfigClone";
 import ConfigSnapshot from "../models/ConfigSnapshot";
 import ConfigSnapshotApplication from "../models/ConfigSnapshotApplication";
+import MetaConfig from "../models/MetaConfig";
+import ContactAttribution from "../models/ContactAttribution";
+import ConversionEventLog from "../models/ConversionEventLog";
 
 // eslint-disable-next-line
 const dbConfig = require("../config/database");
@@ -116,6 +119,9 @@ const models = [
   CompanyConfigClone,
   ConfigSnapshot,
   ConfigSnapshotApplication,
+  MetaConfig,
+  ContactAttribution,
+  ConversionEventLog,
   Invoices,
   Subscriptions,
   ApiUsages,

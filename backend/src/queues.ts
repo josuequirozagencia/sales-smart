@@ -66,6 +66,7 @@ import { getJidOf } from "./services/WbotServices/getJidOf";
 import RecurrenceService from "./services/CampaignService/RecurrenceService";
 import GoogleCalendarIntegration from "./models/GoogleCalendarIntegration";
 import { pullFromGoogle } from "./services/GoogleCalendarServices/PullService";
+import { procesarConversion } from "./services/ConversionServices/ProcessConversionJob";
 
 const connection = process.env.REDIS_URI || "";
 const limiterMax = process.env.REDIS_OPT_LIMITER_MAX || 1;
@@ -110,6 +111,11 @@ export const googleCalendarMonitor = new BullQueue(
   "GoogleCalendarMonitor",
   connection
 );
+
+// Envio de eventos a Meta Conversions API (Lead, Schedule, Purchase). Los
+// disparadores solo encolan; el envio y sus reintentos viven aqui, fuera del
+// camino de ventas, citas y contactos. Ver services/ConversionServices.
+export const metaConversionsQueue = new BullQueue("MetaConversions", connection);
 
 export const messageQueue = new BullQueue("MessageQueue", connection, {
   limiter: {
@@ -2274,6 +2280,14 @@ async function handleGoogleCalendarSync() {
   }
 }
 
+async function handleMetaConversion(job) {
+  // Lanza solo en errores transitorios, para que Bull reintente con backoff.
+  await procesarConversion(job.data.logId, {
+    attemptsMade: job.attemptsMade,
+    maxAttempts: job.opts?.attempts || 1
+  });
+}
+
 export async function startQueueProcess() {
   logger.info("Iniciando processamento de filas");
 
@@ -2296,6 +2310,8 @@ export async function startQueueProcess() {
   queueMonitor.process("VerifyQueueStatus", handleVerifyQueue);
 
   googleCalendarMonitor.process("SyncGoogleCalendar", handleGoogleCalendarSync);
+
+  metaConversionsQueue.process("Send", 3, handleMetaConversion);
 
   initializeBirthdayJobs();
 

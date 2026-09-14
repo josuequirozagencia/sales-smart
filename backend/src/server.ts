@@ -11,6 +11,12 @@ import BullQueue from './libs/queue';
 import { startQueueProcess } from "./queues";
 // import { ScheduledMessagesJob, ScheduleMessagesGenerateJob, ScheduleMessagesEnvioJob, ScheduleMessagesEnvioForaHorarioJob } from "./wbotScheduledMessages";
 
+import { registrarListenersDeConversion } from "./services/ConversionServices/ConversionService";
+
+// Disparadores de Meta Conversions API sobre ventas y citas: hooks de modelo,
+// para que ninguna logica de Meta viva en SaleServices ni AppointmentServices.
+registrarListenersDeConversion();
+
 const server = app.listen(process.env.PORT, async () => {
   const companies = await Company.findAll({
     where: { status: true },

@@ -53,6 +53,7 @@ import flowBuilder from "./flowBuilderRoutes";
 import flowCampaignRoutes from "./flowCampaignRoutes";
 import ghlRoutes from "./ghlRoutes";
 import configSnapshotRoutes from "./configSnapshotRoutes";
+import metaRoutes from "./metaRoutes";
 
 import ChatController from "../controllers/ChatController";
 
@@ -69,6 +70,7 @@ routes.use("/auth", authRoutes);
 // rutas que no existen. El webhook de GHL es publico —GHL no puede
 // presentar el JWT— y desde abajo devolvia 401 sin llegar a ejecutarse.
 routes.use(ghlRoutes);
+routes.use(metaRoutes);
 routes.use("/api/messages", apiRoutes);
 routes.use(settingRoutes);
 routes.use(contactRoutes);
