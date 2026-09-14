@@ -874,6 +874,43 @@ const CloneCompanyConfigService = async ({
     throw new AppError("ERR_CLONE_COMPANY_NOT_FOUND", 404);
   }
 
+  const archivosCreados: string[] = [];
+
+  try {
+    const resumen = await sequelize.transaction(t =>
+      clonarConfiguracion(t, origen, destino, archivosCreados, userId)
+    );
+
+    logger.info(
+      `[Clon] configuracion de la empresa ${origen} copiada a ${destino}: ${JSON.stringify(resumen.copiados)}`
+    );
+
+    return resumen;
+  } catch (err) {
+    // La transaccion ya se deshizo; los archivos, no.
+    borrarArchivosCopiados(archivosCreados);
+    throw err;
+  }
+};
+
+/**
+ * Nucleo del clonado, dentro de una transaccion que abre quien llama.
+ *
+ * Lo usan este servicio y DuplicateCompanyService, que crea la empresa
+ * destino y la clona en la MISMA transaccion para que un fallo no deje una
+ * empresa a medias. No valida las empresas: eso es cosa de quien llama.
+ *
+ * Cada archivo copiado se anota en `archivosCreados`. Si la transaccion
+ * falla, quien llama tiene que borrarlos con borrarArchivosCopiados: la base
+ * no puede deshacerlos.
+ */
+export const clonarConfiguracion = async (
+  t: Transaction,
+  origen: number,
+  destino: number,
+  archivosCreados: string[],
+  userId?: number
+): Promise<ResumenClon> => {
   const resumen: ResumenClon = {
     origen,
     destino,
@@ -883,94 +920,87 @@ const CloneCompanyConfigService = async ({
     archivos: { copiados: 0, ausentes: [] },
     avisos: []
   };
-  const archivosCreados: string[] = [];
+  const ctx: Contexto = {
+    t,
+    origen,
+    destino,
+    columnasPorTabla: new Map(),
+    archivosCreados,
+    resumen
+  };
 
-  try {
-    await sequelize.transaction(async t => {
-      const ctx: Contexto = {
-        t,
-        origen,
-        destino,
-        columnasPorTabla: new Map(),
-        archivosCreados,
-        resumen
-      };
-
-      // Un segundo clonado del mismo par se BLOQUEA: al ser aditivo,
-      // duplicaria todo. Se comprueba dentro de la transaccion, y el indice
-      // unico de la tabla cubre la carrera entre dos peticiones a la vez.
-      const previo = await CompanyConfigClone.findOne({
-        where: { sourceCompanyId: origen, targetCompanyId: destino },
-        transaction: t
-      });
-      if (previo) {
-        throw new AppError("ERR_CLONE_ALREADY_DONE", 409);
-      }
-
-      const mapas: Mapas = {
-        integraciones: new Map(),
-        ficheros: new Map(),
-        etiquetas: new Map(),
-        colas: new Map(),
-        opciones: new Map(),
-        chatbots: new Map(),
-        rapidos: new Map()
-      };
-      const creadas: Creadas = { etiquetas: [], opciones: [], chatbots: [] };
-
-      // El orden importa: cada paso usa los mapas de los anteriores.
-      await clonarIntegraciones(ctx, mapas);
-      await clonarFicheros(ctx, mapas);
-      await clonarEtiquetas(ctx, mapas, creadas);
-      await clonarColas(ctx, mapas);
-      await clonarOpcionesDeCola(ctx, mapas, creadas);
-      await clonarProductos(ctx, mapas);
-      await clonarChatbots(ctx, mapas, creadas);
-      await clonarMensajesRapidos(ctx, mapas);
-      await clonarPrompts(ctx, mapas);
-      await copiarFilaUnica(ctx, "CompaniesSettings", "ajustesDeEmpresa");
-      await copiarFilaUnica(ctx, "BirthdaySettings", "ajustesDeCumpleanos");
-      await clonarCatalogo(ctx, "CampaignSettings", "key", "ajustesDeCampana");
-      await clonarCatalogo(ctx, "TicketFinalizationReasons", "name", "motivosDeFinalizacion");
-      await clonarPresetWebhooks(ctx);
-      await clonarWebhooks(ctx);
-
-      // Segunda pasada.
-      await remapear(ctx, "Tags", creadas.etiquetas, {
-        nextLaneId: mapas.etiquetas,
-        rollbackLaneId: mapas.etiquetas
-      });
-      await remapear(ctx, "QueueOptions", creadas.opciones, { parentId: mapas.opciones });
-      await remapear(ctx, "Chatbots", creadas.chatbots, { chatbotId: mapas.chatbots });
-
-      await CompanyConfigClone.create(
-        {
-          sourceCompanyId: origen,
-          targetCompanyId: destino,
-          userId: userId || null,
-          summary: JSON.stringify(resumen)
-        } as any,
-        { transaction: t }
-      );
-    });
-  } catch (err) {
-    // La transaccion ya se deshizo; los archivos, no. Se borran aqui para
-    // que un fallo no deje adjuntos huerfanos en la carpeta de destino.
-    for (const archivo of archivosCreados) {
-      try {
-        fs.unlinkSync(archivo);
-      } catch (e) {
-        logger.warn(`[Clon] no se pudo borrar ${archivo} tras el fallo: ${e.message}`);
-      }
-    }
-    throw err;
+  // Un segundo clonado del mismo par se BLOQUEA: al ser aditivo, duplicaria
+  // todo. Se comprueba dentro de la transaccion, y el indice unico de la
+  // tabla cubre la carrera entre dos peticiones a la vez.
+  const previo = await CompanyConfigClone.findOne({
+    where: { sourceCompanyId: origen, targetCompanyId: destino },
+    transaction: t
+  });
+  if (previo) {
+    throw new AppError("ERR_CLONE_ALREADY_DONE", 409);
   }
 
-  logger.info(
-    `[Clon] configuracion de la empresa ${origen} copiada a ${destino}: ${JSON.stringify(resumen.copiados)}`
+  const mapas: Mapas = {
+    integraciones: new Map(),
+    ficheros: new Map(),
+    etiquetas: new Map(),
+    colas: new Map(),
+    opciones: new Map(),
+    chatbots: new Map(),
+    rapidos: new Map()
+  };
+  const creadas: Creadas = { etiquetas: [], opciones: [], chatbots: [] };
+
+  // El orden importa: cada paso usa los mapas de los anteriores.
+  await clonarIntegraciones(ctx, mapas);
+  await clonarFicheros(ctx, mapas);
+  await clonarEtiquetas(ctx, mapas, creadas);
+  await clonarColas(ctx, mapas);
+  await clonarOpcionesDeCola(ctx, mapas, creadas);
+  await clonarProductos(ctx, mapas);
+  await clonarChatbots(ctx, mapas, creadas);
+  await clonarMensajesRapidos(ctx, mapas);
+  await clonarPrompts(ctx, mapas);
+  await copiarFilaUnica(ctx, "CompaniesSettings", "ajustesDeEmpresa");
+  await copiarFilaUnica(ctx, "BirthdaySettings", "ajustesDeCumpleanos");
+  await clonarCatalogo(ctx, "CampaignSettings", "key", "ajustesDeCampana");
+  await clonarCatalogo(ctx, "TicketFinalizationReasons", "name", "motivosDeFinalizacion");
+  await clonarPresetWebhooks(ctx);
+  await clonarWebhooks(ctx);
+
+  // Segunda pasada.
+  await remapear(ctx, "Tags", creadas.etiquetas, {
+    nextLaneId: mapas.etiquetas,
+    rollbackLaneId: mapas.etiquetas
+  });
+  await remapear(ctx, "QueueOptions", creadas.opciones, { parentId: mapas.opciones });
+  await remapear(ctx, "Chatbots", creadas.chatbots, { chatbotId: mapas.chatbots });
+
+  await CompanyConfigClone.create(
+    {
+      sourceCompanyId: origen,
+      targetCompanyId: destino,
+      userId: userId || null,
+      summary: JSON.stringify(resumen)
+    } as any,
+    { transaction: t }
   );
 
   return resumen;
+};
+
+/**
+ * Borra los archivos que copio un clonado cuya transaccion fallo, para que
+ * no queden adjuntos huerfanos en la carpeta de destino.
+ */
+export const borrarArchivosCopiados = (archivos: string[]): void => {
+  for (const archivo of archivos) {
+    try {
+      fs.unlinkSync(archivo);
+    } catch (e) {
+      logger.warn(`[Clon] no se pudo borrar ${archivo} tras el fallo: ${e.message}`);
+    }
+  }
 };
 
 export default CloneCompanyConfigService;

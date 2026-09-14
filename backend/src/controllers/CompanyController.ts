@@ -22,6 +22,7 @@ import ShowPlanCompanyService from "../services/CompanyService/ShowPlanCompanySe
 import User from "../models/User";
 import ListCompaniesPlanService from "../services/CompanyService/ListCompaniesPlanService";
 import CloneCompanyConfigService from "../services/CompanyService/CloneCompanyConfigService";
+import DuplicateCompanyService from "../services/CompanyService/DuplicateCompanyService";
 
 interface TokenPayload {
   id: string;
@@ -496,6 +497,38 @@ export const cloneConfig = async (
   });
 
   return res.status(200).json(resumen);
+};
+
+/**
+ * Duplica una empresa: crea otra con su plan y su configuracion.
+ *
+ * Solo el superadministrador, con el mismo guard que el clonado. Que
+ * hereda y que no: DuplicateCompanyService y docs/CLONAR_EMPRESA.md.
+ */
+export const duplicate = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const requestUser = await User.findByPk(req.user.id);
+
+  if (requestUser?.super !== true) {
+    throw new AppError("ERR_NO_PERMISSION", 403);
+  }
+
+  const { id } = req.params;
+  const { name, email, password, phone, document } = req.body;
+
+  const resultado = await DuplicateCompanyService({
+    sourceCompanyId: Number(id),
+    name,
+    email,
+    password,
+    phone,
+    document,
+    userId: requestUser.id
+  });
+
+  return res.status(201).json(resultado);
 };
 
 /** Historial de la solicitud. Solo el superadministrador. */

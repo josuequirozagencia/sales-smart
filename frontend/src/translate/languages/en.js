@@ -1,6 +1,52 @@
 const messages = {
   en: {
     translations: {
+      duplicateCompany: {
+        "action": "Duplicate company",
+        "title": "Duplicate «{{name}}»",
+        "help": "Creates a new company with the same plan and the same settings as this one. It starts approved, with no customers or connections, and with a single user: the admin you define here.",
+        "fields": {
+          "name": "New company name",
+          "email": "Admin email",
+          "emailHelp": "Used to sign in. No other user can already have it.",
+          "password": "Admin password",
+          "passwordHelp": "At least 5 characters.",
+          "phone": "Phone",
+          "document": "Document"
+        },
+        "inheritsTitle": "Inherited from the original company",
+        "inherits": {
+          "plan": "Plan",
+          "dueDate": "Due date",
+          "currency": "Currency",
+          "invoice": "Generates invoices",
+          "active": "Active",
+          "yes": "Yes",
+          "no": "No"
+        },
+        "copiesTitle": "And copies its settings",
+        "notCopies": "Not copied",
+        "notCopiesList": [
+          "Connections (WhatsApp, GoHighLevel, Google Calendar) and their credentials",
+          "Users: the new company only has the admin from this form",
+          "Contacts, tickets, messages, campaigns, sales and appointments",
+          "Announcements",
+          "FlowBuilder and everything related to flows (second phase)",
+          "The original company's platform settings: payment gateways and whitelabel"
+        ],
+        "notesTitle": "Keep in mind",
+        "notes": [
+          "Integrations and prompts arrive without credentials: the new company's own must be entered.",
+          "Personal quick replies become general; official Meta templates are not copied.",
+          "If the new company pays another plan or has another due date, change it afterwards on this same screen."
+        ],
+        "confirm": "Duplicate",
+        "cancel": "Cancel",
+        "close": "Close",
+        "duplicating": "Duplicating…",
+        "done": "Company «{{name}}» created",
+        "created": "Its id is {{id}}. Its admin signs in with {{email}}."
+      },
       cloneCompany: {
         "open": "Clone settings",
         "title": "Clone a company's settings",
@@ -2620,6 +2666,11 @@ const messages = {
         },
       },
       backendErrors: {
+        ERR_DUPLICATE_INVALID_NAME: "The new company name must have at least 2 characters.",
+        ERR_DUPLICATE_INVALID_EMAIL: "The admin email is not valid.",
+        ERR_DUPLICATE_INVALID_PASSWORD: "The admin password must have at least 5 characters.",
+        ERR_DUPLICATE_NAME_IN_USE: "A company with that name already exists.",
+        ERR_DUPLICATE_EMAIL_IN_USE: "That email is already used by another user.",
         ERR_CLONE_INVALID_COMPANIES: "Choose a valid source and target company.",
         ERR_CLONE_SAME_COMPANY: "Source and target companies cannot be the same.",
         ERR_CLONE_COMPANY_NOT_FOUND: "The source or target company does not exist.",

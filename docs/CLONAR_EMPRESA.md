@@ -11,7 +11,7 @@ Solo lo puede lanzar un **superadministrador**.
 
 1. Crea la empresa destino por el flujo normal (pantalla de **Empresas** o
    registro).
-2. En **Empresas**, botón **Clonar configuración**.
+2. En **Empresas** o en **Configuración → Empresas**, botón **Clonar configuración**.
 3. Elige la empresa origen y la destino. El diálogo muestra qué se copia y
    qué no antes de confirmar.
 4. Al terminar muestra un resumen: lo copiado, lo que ya existía en destino
@@ -20,6 +20,32 @@ Solo lo puede lanzar un **superadministrador**.
 Por API: `POST /companies/clone-config` con
 `{ "sourceCompanyId": 3, "targetCompanyId": 7 }`, autenticado como
 superadministrador. Devuelve el mismo resumen.
+
+## Duplicar una empresa
+
+En **Configuración → Empresas**, cada fila tiene un botón **Duplicar**. Crea
+una empresa **nueva** a partir de esa, en un solo paso:
+
+- **Hereda** de la original: plan, estado, vencimiento y recurrencia,
+  generación de facturas, moneda, método de pago y horario de atención.
+- **Recibe** toda la configuración que copia el clonado (tabla de abajo).
+- **Se escribe en el modal**: nombre de la empresa nueva, email y contraseña
+  de su admin, teléfono y documento (propuestos con los de la original).
+
+Nace aprobada, sin clientes ni conexiones y con **un único usuario**: ese
+admin. Tampoco se copia la tabla `Settings` de la original, que en la
+empresa 1 guarda las claves de las pasarelas de pago y el whitelabel de toda
+la plataforma.
+
+Empresa, admin y configuración van en **una sola transacción**: si el
+clonado falla, la empresa tampoco se crea. El duplicado queda anotado en
+`CompanyConfigClones` como un clonado más, así que después no se puede
+volver a clonar la original sobre la copia.
+
+Por API: `POST /companies/:id/duplicate` con
+`{ "name", "email", "password", "phone", "document" }`, autenticado como
+superadministrador. Devuelve `{ empresa, clon }`, donde `clon` es el mismo
+resumen del clonado.
 
 ## Qué se copia
 
@@ -129,7 +155,10 @@ apuntando a una fila de la empresa origen.
 | `backend/src/services/CompanyService/CloneCompanyConfigService.ts` | Toda la lógica |
 | `backend/src/controllers/CompanyController.ts` (`cloneConfig`) | Endpoint, con el guard de superadministrador |
 | `backend/src/models/CompanyConfigClone.ts` | Registro de clonados |
-| `frontend/src/components/CloneCompanyConfigModal/` | Diálogo de la pantalla de Empresas |
+| `backend/src/services/CompanyService/DuplicateCompanyService.ts` | Duplicar: crea la empresa y su admin y clona, en una transacción |
+| `backend/src/controllers/CompanyController.ts` (`duplicate`) | Endpoint de duplicar, con el mismo guard |
+| `frontend/src/components/CloneCompanyConfigModal/` | Diálogo de clonar, en Empresas y en Configuración → Empresas; `comun.js` lo comparte con el de duplicar |
+| `frontend/src/components/DuplicateCompanyModal/` | Diálogo de duplicar, en Configuración → Empresas |
 
 ## Diagnóstico
 
@@ -140,3 +169,8 @@ apuntando a una fila de la empresa origen.
 | `ERR_CLONE_COMPANY_NOT_FOUND` | Alguna de las dos empresas no existe |
 | `ERR_CLONE_ALREADY_DONE` | Ese par ya se clonó; repetirlo duplicaría todo |
 | `ERR_CLONE_INVALID_COMPANIES` | Faltan los ids o no son números |
+| `ERR_DUPLICATE_INVALID_NAME` | El nombre de la empresa nueva tiene menos de 2 caracteres |
+| `ERR_DUPLICATE_INVALID_EMAIL` | El email del admin no es válido |
+| `ERR_DUPLICATE_INVALID_PASSWORD` | La contraseña del admin tiene menos de 5 caracteres |
+| `ERR_DUPLICATE_NAME_IN_USE` | Ya existe una empresa con ese nombre |
+| `ERR_DUPLICATE_EMAIL_IN_USE` | Ese email ya lo usa otro usuario, de cualquier empresa |

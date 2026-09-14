@@ -1,6 +1,52 @@
 const messages = {
   pt: {
     translations: {
+      duplicateCompany: {
+        "action": "Duplicar empresa",
+        "title": "Duplicar «{{name}}»",
+        "help": "Cria uma empresa nova com o mesmo plano e a mesma configuração desta. Ela nasce aprovada, sem clientes nem conexões, e com um único usuário: o admin que você definir aqui.",
+        "fields": {
+          "name": "Nome da empresa nova",
+          "email": "Email do admin",
+          "emailHelp": "É com ele que faz login. Nenhum outro usuário pode usá-lo.",
+          "password": "Senha do admin",
+          "passwordHelp": "Mínimo de 5 caracteres.",
+          "phone": "Telefone",
+          "document": "Documento"
+        },
+        "inheritsTitle": "Herda da empresa original",
+        "inherits": {
+          "plan": "Plano",
+          "dueDate": "Vencimento",
+          "currency": "Moeda",
+          "invoice": "Gera faturas",
+          "active": "Ativa",
+          "yes": "Sim",
+          "no": "Não"
+        },
+        "copiesTitle": "E copia sua configuração",
+        "notCopies": "Não é copiado",
+        "notCopiesList": [
+          "Conexões (WhatsApp, GoHighLevel, Google Calendar) e suas credenciais",
+          "Usuários: a empresa nova só tem o admin deste formulário",
+          "Contatos, tickets, mensagens, campanhas, vendas e agendamentos",
+          "Informativos",
+          "FlowBuilder e tudo relacionado a fluxos (segunda fase)",
+          "Configurações de plataforma da empresa original: gateways de pagamento e whitelabel"
+        ],
+        "notesTitle": "Observações",
+        "notes": [
+          "Integrações e prompts chegam sem credenciais: é preciso colocar as da empresa nova.",
+          "Respostas rápidas pessoais passam a gerais; os modelos oficiais da Meta não são copiados.",
+          "Se a empresa nova pagar outro plano ou vencer em outra data, altere depois nesta mesma tela."
+        ],
+        "confirm": "Duplicar",
+        "cancel": "Cancelar",
+        "close": "Fechar",
+        "duplicating": "Duplicando…",
+        "done": "Empresa «{{name}}» criada",
+        "created": "O id é {{id}}. O admin faz login com {{email}}."
+      },
       cloneCompany: {
         "open": "Clonar configuração",
         "title": "Clonar a configuração de uma empresa",
@@ -2663,6 +2709,11 @@ const messages = {
         },
       },
       backendErrors: {
+        ERR_DUPLICATE_INVALID_NAME: "O nome da empresa nova deve ter pelo menos 2 caracteres.",
+        ERR_DUPLICATE_INVALID_EMAIL: "O email do admin não é válido.",
+        ERR_DUPLICATE_INVALID_PASSWORD: "A senha do admin deve ter pelo menos 5 caracteres.",
+        ERR_DUPLICATE_NAME_IN_USE: "Já existe uma empresa com esse nome.",
+        ERR_DUPLICATE_EMAIL_IN_USE: "Esse email já é usado por outro usuário.",
         ERR_CLONE_INVALID_COMPANIES: "Escolha uma empresa origem e uma destino válidas.",
         ERR_CLONE_SAME_COMPANY: "A empresa origem e a destino não podem ser a mesma.",
         ERR_CLONE_COMPANY_NOT_FOUND: "A empresa origem ou a destino não existe.",
