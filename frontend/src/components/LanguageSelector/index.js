@@ -21,6 +21,9 @@ const useStyles = makeStyles((theme) => ({
   },
   select: {
     backgroundColor: theme.palette.background.paper,
+    // Con la barra superior clara en modo claro, blanco sobre blanco no tenia
+    // borde visible: el selector no parecia un control.
+    border: `1px solid ${theme.palette.divider}`,
     borderRadius: '8px',
     padding: '4px 8px',
     position: 'relative',

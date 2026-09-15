@@ -76,12 +76,12 @@ const useStyles = makeStyles((theme) => ({
     borderRadius: theme.palette.tokens.radius.md,
     marginBottom: 2,
     "&:hover": {
-      // Velo blanco muy tenue en vez de un cambio de color: funciona igual
-      // sobre cualquier tono oscuro y no compite con el estado activo.
-      backgroundColor: "rgba(255, 255, 255, 0.06)",
+      // Velo tenue en vez de un cambio de color: no compite con el estado
+      // activo. Sale de los tokens porque el menu sigue al modo claro/oscuro.
+      backgroundColor: theme.palette.tokens.sidebar.hover,
     },
     "&:hover $iconHoverActive": {
-      backgroundColor: "rgba(255, 255, 255, 0.10)",
+      backgroundColor: theme.palette.tokens.sidebar.iconHover,
       color: theme.palette.tokens.sidebar.textActive,
     },
     "&:hover $listItemText": {
@@ -125,8 +125,7 @@ const useStyles = makeStyles((theme) => ({
     borderRadius: "50%", // Mantém circular original
     height: 36, // Mantém tamanho original
     width: 36,  // Mantém tamanho original
-    // Mismo criterio: tonos sobre oscuro, no sobre el modo de la aplicacion.
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    backgroundColor: theme.palette.tokens.sidebar.iconBackground,
     color: theme.palette.tokens.sidebar.text,
     transition: "background-color 180ms ease, color 180ms ease",
     "&:hover, &.active": {

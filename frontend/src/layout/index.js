@@ -99,13 +99,13 @@ const useStyles = makeStyles((theme) => ({
     width: "100%",
   },
 
-  // Cabecera y barra lateral forman una sola pieza oscura alrededor del
-  // contenido claro. Antes la cabecera era un bloque del color de marca a
-  // plena saturacion, que es lo que daba el aspecto de plantilla antigua.
+  // Cabecera y barra lateral forman una sola pieza alrededor del contenido.
+  // Antes la cabecera era un bloque del color de marca a plena saturacion, que
+  // es lo que daba el aspecto de plantilla antigua.
   //
-  // Se eligio cromo oscuro y no cabecera clara por una razon concreta: hay
-  // varios "color: white" escritos en linea en el JSX de esta barra, y
-  // aclararla los dejaria invisibles. Asi el blanco sigue siendo correcto.
+  // Sus colores salen de tokens.sidebar y siguen al modo: claros en claro,
+  // oscuros en oscuro (hasta sep 2026 era oscura siempre). Por eso los iconos
+  // de la barra heredan el color (inherit) en vez de llevar blanco escrito.
   toolbar: {
     paddingRight: 24,
     // A 320px los siete botones de accion median 48px cada uno: 336px de
@@ -170,8 +170,8 @@ const useStyles = makeStyles((theme) => ({
     [theme.breakpoints.down("sm")]: {
       height: "48px",
     },
-    // Continua el bloque oscuro: si esta zona fuera clara, el logo quedaria
-    // en una isla blanca entre la cabecera y la navegacion.
+    // Mismo fondo que la cabecera y la navegacion: si fuera distinto, el logo
+    // quedaria en una isla entre las dos.
     backgroundColor: theme.palette.tokens.sidebar.background,
     borderBottom: `1px solid ${theme.palette.tokens.sidebar.border}`,
   },
@@ -203,7 +203,7 @@ const useStyles = makeStyles((theme) => ({
   title: {
     flexGrow: 1,
     fontSize: 14,
-    color: "white",
+    color: theme.palette.tokens.sidebar.textActive,
     fontWeight: 600,
     letterSpacing: "0.025em",
     // Se recorta antes de empujar a los botones fuera de la pantalla.
@@ -833,7 +833,7 @@ useEffect(() => {
             edge="start"
             variant="contained"
             aria-label="open drawer"
-            style={{ color: "white" }}
+            style={{ color: "inherit" }}
             onClick={() => setDrawerOpen(!drawerOpen)}
             // Solo se oculta en escritorio, donde la barra queda desplegada
             // y tiene su propio boton de cerrar a la vista. En movil debe
@@ -883,11 +883,11 @@ useEffect(() => {
           {/* Sin edge="start": ese margen de -12px es para el primer boton de la
               barra, y aqui, en medio, montaba el icono 10px sobre el selector de
               idioma (medido a 428px). */}
-          <IconButton onClick={colorMode.toggleColorMode}>
+          <IconButton onClick={colorMode.toggleColorMode} color="inherit">
             {theme.mode === "dark" ? (
-              <Brightness7Icon style={{ color: "white" }} />
+              <Brightness7Icon style={{ color: "inherit" }} />
             ) : (
-              <Brightness4Icon style={{ color: "white" }} />
+              <Brightness4Icon style={{ color: "inherit" }} />
             )}
           </IconButton>
 
@@ -898,7 +898,7 @@ useEffect(() => {
             aria-label={i18n.t("mainDrawer.appBar.refresh")}
             color="inherit"
           >
-            <CachedIcon style={{ color: "white" }} />
+            <CachedIcon style={{ color: "inherit" }} />
           </IconButton>
 
           {/* <DarkMode themeToggle={themeToggle} /> */}

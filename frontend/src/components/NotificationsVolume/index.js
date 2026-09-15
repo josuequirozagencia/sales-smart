@@ -27,7 +27,8 @@ const useStyles = makeStyles((theme) => ({
         boxShadow: "none !important",
     },
     icons: {
-        color: "#fff",
+        // Hereda el color de la barra superior, que sigue al modo claro/oscuro.
+        color: "inherit",
     },
     customBadge: {
         backgroundColor: "#f44336",

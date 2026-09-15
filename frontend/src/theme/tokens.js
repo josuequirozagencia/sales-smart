@@ -271,20 +271,27 @@ export const dark = {
 // ---------------------------------------------------------------------------
 // BARRA LATERAL
 // ---------------------------------------------------------------------------
-// La referencia trata la navegación como una pieza oscura y separada, no como
-// una franja del mismo color que el contenido.
+// Tokens de la barra lateral y de la barra superior, que comparten cromo.
 //
-// Se mantiene oscura en los dos modos a propósito: es lo que le da estructura
-// al producto, y alternarla haría que la aplicación pareciera dos productos
-// distintos según la hora del día.
+// Hasta el 15 sep 2026 eran oscuras en los dos modos, para dar estructura al
+// producto. Josue lo reviso en produccion: en modo claro esperaba verlas
+// claras, y el cromo oscuro hacia que el modo claro pareciera a medias. Ahora
+// siguen al modo; la separacion con el contenido la dan el borde y el fondo
+// del area de trabajo (neutral 50), no el contraste de color.
+//
+// hover, iconBackground e iconHover son los velos de los elementos del menu:
+// antes estaban escritos a mano en blanco, que sobre fondo claro no se ve.
 export const sidebar = {
   light: {
-    background: "#1a1130",
-    surface: "#241a3d",
-    border: "rgba(255, 255, 255, 0.08)",
-    text: "#cfc7e0",
-    textActive: "#ffffff",
-    textMuted: "#8f86a3"
+    background: neutral[0],
+    surface: neutral[100],
+    border: neutral[200],
+    text: neutral[600], // 7.58 sobre blanco
+    textActive: neutral[900], // 17.85
+    textMuted: neutral[500], // 4.76
+    hover: "rgba(15, 23, 42, 0.05)",
+    iconBackground: "rgba(15, 23, 42, 0.05)",
+    iconHover: "rgba(15, 23, 42, 0.09)",
   },
   dark: {
     background: "#150e26",
@@ -292,7 +299,10 @@ export const sidebar = {
     border: "rgba(255, 255, 255, 0.06)",
     text: "#c4bcd6",
     textActive: "#ffffff",
-    textMuted: "#857c99"
+    textMuted: "#857c99",
+    hover: "rgba(255, 255, 255, 0.06)",
+    iconBackground: "rgba(255, 255, 255, 0.06)",
+    iconHover: "rgba(255, 255, 255, 0.10)",
   }
 };
 

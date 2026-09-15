@@ -264,7 +264,7 @@ export default function ChatPopover(volume) {
         variant="contained"
         color={invisible ? "default" : "inherit"}
         onClick={handleClick}
-        style={{ color: "white" }}
+        style={{ color: "inherit" }}
         size="medium"
       >
         <Badge color="secondary" variant="dot" invisible={invisible}>
