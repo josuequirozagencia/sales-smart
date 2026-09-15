@@ -115,16 +115,34 @@ const useStyles = makeStyles((theme) => ({
     // retira el saludo, que es decorativo y no una funcion.
     [theme.breakpoints.down("xs")]: {
       paddingRight: 4,
-      paddingLeft: 4,
+      // 12 y no 4: el boton del menu lleva edge="start" (margen -12px) y con 4
+      // de relleno quedaba 8px fuera de la pantalla, medido a 428px.
+      paddingLeft: 12,
       "& .MuiIconButton-root": {
         padding: 6,
+      },
+      // En moviles grandes (iPhone Pro Max, 428px) sobraban 114px a la derecha:
+      // los botones van un poco mas holgados, mejores para el dedo.
+      "@media (min-width: 400px)": {
+        "& .MuiIconButton-root": {
+          padding: 8,
+        },
+      },
+      // Y en los mas estrechos se compactan, para que a 320px siga cabiendo todo.
+      "@media (max-width: 359.95px)": {
+        "& .MuiIconButton-root": {
+          padding: 4,
+        },
       },
       // El selector de idioma se queda solo con la bandera. Ocupaba 120px mas
       // 32 de margen: casi la mitad de una pantalla de 320. El control sigue
       // ahi y sigue desplegando, unicamente pierde la palabra "Español", que
       // la bandera ya comunica.
       "& .MuiFormControl-root": {
-        margin: "0 2px",
+        // margin-left auto: sin el saludo (oculto aqui) no quedaba nada que
+        // empujara las acciones, y se apinaban a la izquierda. Asi van a la
+        // derecha, como en escritorio.
+        margin: "0 2px 0 auto",
         minWidth: 0,
       },
       "& .MuiSelect-root .MuiTypography-root": {
@@ -862,7 +880,10 @@ useEffect(() => {
 
           <LanguageSelector variant="compact" />
 
-          <IconButton edge="start" onClick={colorMode.toggleColorMode}>
+          {/* Sin edge="start": ese margen de -12px es para el primer boton de la
+              barra, y aqui, en medio, montaba el icono 10px sobre el selector de
+              idioma (medido a 428px). */}
+          <IconButton onClick={colorMode.toggleColorMode}>
             {theme.mode === "dark" ? (
               <Brightness7Icon style={{ color: "white" }} />
             ) : (
