@@ -73,6 +73,9 @@ import ConfigSnapshotApplication from "../models/ConfigSnapshotApplication";
 import MetaConfig from "../models/MetaConfig";
 import ContactAttribution from "../models/ContactAttribution";
 import ConversionEventLog from "../models/ConversionEventLog";
+import AiAgent from "../models/AiAgent";
+import AiAgentChannel from "../models/AiAgentChannel";
+import AiAgentFollowUpJob from "../models/AiAgentFollowUpJob";
 
 // eslint-disable-next-line
 const dbConfig = require("../config/database");
@@ -122,6 +125,9 @@ const models = [
   MetaConfig,
   ContactAttribution,
   ConversionEventLog,
+  AiAgent,
+  AiAgentChannel,
+  AiAgentFollowUpJob,
   Invoices,
   Subscriptions,
   ApiUsages,

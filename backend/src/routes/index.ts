@@ -54,6 +54,7 @@ import flowCampaignRoutes from "./flowCampaignRoutes";
 import ghlRoutes from "./ghlRoutes";
 import configSnapshotRoutes from "./configSnapshotRoutes";
 import metaRoutes from "./metaRoutes";
+import aiAgentRoutes from "./aiAgentRoutes";
 
 import ChatController from "../controllers/ChatController";
 
@@ -71,6 +72,7 @@ routes.use("/auth", authRoutes);
 // presentar el JWT— y desde abajo devolvia 401 sin llegar a ejecutarse.
 routes.use(ghlRoutes);
 routes.use(metaRoutes);
+routes.use(aiAgentRoutes);
 routes.use("/api/messages", apiRoutes);
 routes.use(settingRoutes);
 routes.use(contactRoutes);
