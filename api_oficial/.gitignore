@@ -37,6 +37,10 @@ lerna-debug.log*
 yarn.lock
 # package-lock.json  <- versionado a proposito (reproducibilidad)
 
+# El .gitignore raiz ignora *.sql. Su excepcion lleva la ruta api_oficial/..., que no coincide
+# cuando `railway up ./api_oficial --path-as-root` sube esta carpeta como raiz: se repite aqui.
+!prisma/migrations/**/migration.sql
+
 postgres-data/
 redis-data/
 .env
