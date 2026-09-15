@@ -76,6 +76,7 @@ import ConversionEventLog from "../models/ConversionEventLog";
 import AiAgent from "../models/AiAgent";
 import AiAgentChannel from "../models/AiAgentChannel";
 import AiAgentFollowUpJob from "../models/AiAgentFollowUpJob";
+import AiAgentTicketState from "../models/AiAgentTicketState";
 
 // eslint-disable-next-line
 const dbConfig = require("../config/database");
@@ -128,6 +129,7 @@ const models = [
   AiAgent,
   AiAgentChannel,
   AiAgentFollowUpJob,
+  AiAgentTicketState,
   Invoices,
   Subscriptions,
   ApiUsages,

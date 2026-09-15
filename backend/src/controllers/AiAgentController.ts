@@ -11,6 +11,8 @@ import {
   agentesParaFlujos
 } from "../services/AiAgentServices/AiAgentService";
 import { extraerTextoDocumento } from "../services/AiAgentServices/ExtraerTextoDocumento";
+import { cambiarEstadoDesdeAsesor, estadoParaAsesor } from "../services/AiAgentServices/AtenderConAgente";
+import ShowTicketService from "../services/TicketServices/ShowTicketService";
 
 /**
  * Agentes IA de la empresa. De administrador, como Prompts y Meta. La empresa
@@ -84,4 +86,28 @@ export const extractKnowledge = async (req: Request, res: Response): Promise<Res
   return res
     .status(200)
     .json(await extraerTextoDocumento(archivo.buffer, archivo.originalname, archivo.mimetype));
+};
+
+const ticketIdDe = (req: Request): number => {
+  const id = Number(req.params.ticketId);
+  if (!Number.isInteger(id) || id < 1) throw new AppError("ERR_NO_TICKET_FOUND", 404);
+  return id;
+};
+
+/**
+ * Estado del agente IA en una conversacion (activo / pausado). Lo usa quien
+ * puede escribir en la conversacion, igual que el envio de mensajes: basta con
+ * ser de la empresa del ticket (ShowTicketService filtra por companyId).
+ */
+export const ticketState = async (req: Request, res: Response): Promise<Response> => {
+  const ticket = await ShowTicketService(ticketIdDe(req), req.user.companyId);
+  return res.status(200).json(await estadoParaAsesor(ticket));
+};
+
+/** Activar o pausar. Solo cambia el estado de la IA: nunca la asignacion. */
+export const updateTicketState = async (req: Request, res: Response): Promise<Response> => {
+  const { enabled } = req.body;
+  if (typeof enabled !== "boolean") throw new AppError("ERR_AI_AGENT_INVALID_STATE", 400);
+  const estado = await cambiarEstadoDesdeAsesor(ticketIdDe(req), req.user.companyId, enabled, Number(req.user.id));
+  return res.status(200).json(estado);
 };

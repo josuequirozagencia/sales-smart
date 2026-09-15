@@ -43,6 +43,7 @@ import ShowService from "../services/QuickMessageService/ShowService";
 import { IMetaMessageTemplateComponents, IMetaMessageTemplate } from "../libs/whatsAppOficial/IWhatsAppOficial.interfaces";
 import CheckContactNumber from "../services/WbotServices/CheckNumber";
 import TranscribeAudioMessageToText from "../services/MessageServices/TranscribeAudioMessageService";
+import { pausarPorMensajeHumano } from "../services/AiAgentServices/EstadoIaTicket";
 
 type IndexQuery = {
   pageNumber: string;
@@ -179,6 +180,13 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
 
   if (!ticket.whatsappId) {
     throw new AppError("Este ticket não possui conexão vinculada, provavelmente foi excluída a conexão.", 400);
+  }
+
+  // Agentes IA, prioridad humana: el mensaje del asesor pausa la IA de esta
+  // conversacion ANTES de enviarse, asi ninguna respuesta de IA en camino sale
+  // detras de el. No cambia la asignacion. Las notas internas no cuentan.
+  if (isPrivate !== "true") {
+    await pausarPorMensajeHumano(ticket, { userId: Number(req.user.id) });
   }
 
   SetTicketMessagesAsRead(ticket);
@@ -387,6 +395,9 @@ export const forwardMessage = async (
     companyId: createTicket.companyId
   });
 
+  // Agentes IA, prioridad humana (ver store).
+  await pausarPorMensajeHumano(createTicket, { userId: requestUser.id });
+
   let body = message.body;
   if (message.mediaType === 'conversation'
     || message.mediaType === 'extendedTextMessage'
@@ -593,6 +604,9 @@ export const storeTemplate = async (req: Request, res: Response): Promise<Respon
   const { companyId } = req.user;
 
   const ticket = await ShowTicketService(ticketId, companyId);
+
+  // Agentes IA, prioridad humana (ver store).
+  await pausarPorMensajeHumano(ticket, { userId: Number(req.user.id) });
 
   const template = await ShowService(templateId, companyId);
 

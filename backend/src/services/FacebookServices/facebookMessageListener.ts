@@ -22,6 +22,8 @@ import ListSettingsService from "../SettingServices/ListSettingsService";
 import { isNil, isNull, head } from "lodash";
 import FindOrCreateATicketTrakingService from "../TicketServices/FindOrCreateATicketTrakingService";
 import { handleMessageIntegration, handleRating, verifyRating } from "../WbotServices/wbotMessageListener";
+import { atenderMensajeEntrante } from "../AiAgentServices/AtenderConAgente";
+import { pausarPorMensajeHumano } from "../AiAgentServices/EstadoIaTicket";
 import CompaniesSettings from "../../models/CompaniesSettings";
 import { sendFacebookMessage } from "./sendFacebookMessage";
 import { Mutex } from "async-mutex";
@@ -826,6 +828,15 @@ export const handleMessage = async (
         await verifyMessageMedia(message, ticket, contact);
       } else {
         await verifyMessageFace(message, message.text, ticket, contact);
+      }
+
+      // Agentes IA: un mensaje escrito por una persona (bandeja de Meta) pausa la
+      // IA de la conversacion; uno del cliente lo atiende el agente si la IA
+      // esta activa y en horario. Si el agente no atiende, sigue lo de siempre.
+      if (fromMe) {
+        await pausarPorMensajeHumano(ticket, { wid: message.mid });
+      } else if (await atenderMensajeEntrante({ ticket, contact, wid: message.mid })) {
+        return;
       }
 
 

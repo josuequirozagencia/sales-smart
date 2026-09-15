@@ -2757,6 +2757,21 @@ const messages = {
           connection: "Connection",
         },
       },
+      aiAgentControl: {
+        label: "AI Agent",
+        active: "ACTIVE",
+        paused: "PAUSED",
+        activate: "Activate AI Agent",
+        pause: "Pause AI Agent",
+        keepsAssignment: "Only changes whether the AI replies. The conversation stays assigned to the same agent.",
+        disableBot: "The chatbot is disabled for this contact: the AI will not reply",
+        outOfSchedule: "Outside the agent's schedule: it will reply once it is back in schedule",
+        reasons: {
+          transfer: "The AI handed the conversation to a person",
+          human_message: "Paused because a person wrote",
+          manual: "Paused by an agent",
+        },
+      },
       ticketOptionsMenu: {
         contactInfo: {
           show: "Show contact details",
@@ -2830,6 +2845,9 @@ const messages = {
         },
       },
       backendErrors: {
+        ERR_AI_AGENT_NOT_ASSIGNED: "This connection has no AI Agent assigned.",
+        ERR_AI_AGENT_TICKET_CLOSED: "The conversation is closed.",
+        ERR_AI_AGENT_INVALID_STATE: "Invalid AI Agent state.",
         ERR_META_INVALID_DATASET: "The dataset ID must be numeric.",
         ERR_META_INVALID_TOKEN: "The access token is not valid.",
         ERR_META_INVALID_TEST_CODE: "The test code only allows letters, numbers, hyphens and underscores.",

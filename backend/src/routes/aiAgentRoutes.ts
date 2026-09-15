@@ -20,6 +20,8 @@ aiAgentRoutes.post(
   subidaDocumento.single("file"),
   AiAgentController.extractKnowledge
 );
+aiAgentRoutes.get("/ai-agents/tickets/:ticketId/state", isAuth, AiAgentController.ticketState);
+aiAgentRoutes.put("/ai-agents/tickets/:ticketId/state", isAuth, AiAgentController.updateTicketState);
 aiAgentRoutes.get("/ai-agents/:id", isAuth, AiAgentController.show);
 aiAgentRoutes.post("/ai-agents", isAuth, AiAgentController.store);
 aiAgentRoutes.put("/ai-agents/:id", isAuth, AiAgentController.update);

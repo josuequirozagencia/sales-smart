@@ -12,6 +12,7 @@ import MessageInput from "../MessageInput/";
 import TicketHeader from "../TicketHeader";
 import TicketInfo from "../TicketInfo";
 import TicketActionButtons from "../TicketActionButtonsCustom";
+import AiAgentTicketControl from "../AiAgentTicketControl";
 import MessagesList from "../MessagesList";
 import api from "../../services/api";
 import { ReplyMessageProvider } from "../../context/ReplyingMessage/ReplyingMessageContext";
@@ -286,6 +287,9 @@ const Ticket = () => {
         )}
         </TicketHeader>
         {/* </div> */}
+        {/* Agente IA activo o pausado en esta conversacion. Independiente de la
+            asignacion: solo aparece si la conexion tiene agente. */}
+        <AiAgentTicketControl ticket={ticket} contact={contact} />
         <Paper>
           <TagsContainer contact={contact} />
         </Paper>

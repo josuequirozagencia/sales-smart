@@ -37,6 +37,11 @@ export interface EntradaMotor {
   imagen?: Adjunto;
   audio?: Adjunto;
   nombreCliente?: string;
+  /**
+   * Instruccion para este mensaje concreto sin que el cliente haya escrito,
+   * p. ej. un seguimiento. Va al prompt de sistema, no en boca del cliente.
+   */
+  instruccion?: string;
 }
 
 export interface ResultadoMotor {
@@ -62,7 +67,11 @@ export const MENSAJE_SOLO_TEXTO =
 
 export const construirPromptSistema = (
   config: Pick<ConfigMotor, "systemPrompt" | "knowledgeText">,
-  { nombreCliente, conHerramientas }: { nombreCliente?: string; conHerramientas: boolean }
+  {
+    nombreCliente,
+    conHerramientas,
+    instruccion
+  }: { nombreCliente?: string; conHerramientas: boolean; instruccion?: string }
 ): string => {
   const reglas = [
     nombreCliente ? `El cliente se llama ${nombreCliente}.` : "",
@@ -77,7 +86,8 @@ export const construirPromptSistema = (
     config.knowledgeText
       ? `## Informacion de referencia\nUsa esta informacion para responder. Si algo no esta aqui, no lo inventes.\n\n${config.knowledgeText}`
       : "",
-    `## Reglas de la conversacion\n${reglas.map(r => `- ${r}`).join("\n")}`
+    `## Reglas de la conversacion\n${reglas.map(r => `- ${r}`).join("\n")}`,
+    instruccion ? `## Instruccion para este mensaje\n${instruccion.trim()}` : ""
   ]
     .filter(Boolean)
     .join("\n\n");
@@ -117,6 +127,9 @@ export const generarRespuesta = async (
   }
 
   const descartado = avisos.some(a => /^(AUDIO|IMAGE)_/.test(a));
+  if (!texto && !imagen && !audio && entrada.instruccion) {
+    texto = "(El cliente no ha escrito nada nuevo. Sigue la instruccion para este mensaje.)";
+  }
   if (!texto && !imagen && !audio) {
     if (descartado) {
       logger.info(`[AI AGENT] Mensaje sin contenido utilizable (${avisos.join(", ")})`);
@@ -141,7 +154,11 @@ export const generarRespuesta = async (
   try {
     respuesta = await llamarProveedor({
       ...peticionBase,
-      promptSistema: construirPromptSistema(config, { nombreCliente: entrada.nombreCliente, conHerramientas: usarHerramientas }),
+      promptSistema: construirPromptSistema(config, {
+        nombreCliente: entrada.nombreCliente,
+        conHerramientas: usarHerramientas,
+        instruccion: entrada.instruccion
+      }),
       texto,
       imagen,
       audio
@@ -155,7 +172,11 @@ export const generarRespuesta = async (
     const nota = `(El cliente envio ${audio ? "un audio" : "una imagen"} que no se pudo procesar. Pidele que lo escriba.)`;
     respuesta = await llamarProveedor({
       ...peticionBase,
-      promptSistema: construirPromptSistema(config, { nombreCliente: entrada.nombreCliente, conHerramientas: usarHerramientas }),
+      promptSistema: construirPromptSistema(config, {
+        nombreCliente: entrada.nombreCliente,
+        conHerramientas: usarHerramientas,
+        instruccion: entrada.instruccion
+      }),
       texto: [texto, nota].filter(Boolean).join("\n")
     });
   }

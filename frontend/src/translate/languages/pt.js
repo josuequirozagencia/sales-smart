@@ -2799,6 +2799,21 @@ const messages = {
           connection: "Conexão",
         },
       },
+      aiAgentControl: {
+        label: "Agente IA",
+        active: "ATIVO",
+        paused: "PAUSADO",
+        activate: "Ativar Agente IA",
+        pause: "Pausar Agente IA",
+        keepsAssignment: "Só muda se a IA responde. A conversa continua atribuída ao mesmo atendente.",
+        disableBot: "O chatbot está desativado para este contato: a IA não vai responder",
+        outOfSchedule: "Fora do horário do agente: vai responder quando voltar ao horário",
+        reasons: {
+          transfer: "A IA passou a conversa para uma pessoa",
+          human_message: "Pausado porque uma pessoa escreveu",
+          manual: "Pausado por um atendente",
+        },
+      },
       ticketOptionsMenu: {
         contactInfo: {
           show: "Ver dados do contato",
@@ -2873,6 +2888,9 @@ const messages = {
         },
       },
       backendErrors: {
+        ERR_AI_AGENT_NOT_ASSIGNED: "Esta conexão não tem um Agente IA atribuído.",
+        ERR_AI_AGENT_TICKET_CLOSED: "A conversa está fechada.",
+        ERR_AI_AGENT_INVALID_STATE: "Estado do Agente IA inválido.",
         ERR_META_INVALID_DATASET: "O ID do conjunto de dados deve ser numérico.",
         ERR_META_INVALID_TOKEN: "O token de acesso não é válido.",
         ERR_META_INVALID_TEST_CODE: "O código de teste só aceita letras, números, hífens e sublinhados.",

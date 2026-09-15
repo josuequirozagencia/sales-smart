@@ -102,6 +102,8 @@ import WhatsappLidMap from "../../models/WhatsapplidMap";
 import { getJidOf } from "./getJidOf";
 import { contactoCreadoDesde, registrarLeadEntrante } from "../ConversionServices/ConversionService";
 import { verifyContact } from "./verifyContact";
+import { atenderMensajeEntrante } from "../AiAgentServices/AtenderConAgente";
+import { pausarPorMensajeHumano } from "../AiAgentServices/EstadoIaTicket";
 // import { verifyContact } from "./verifyContact";
 const os = require("os");
 
@@ -3930,6 +3932,19 @@ const handleMessage = async (
     } catch (e) {
       Sentry.captureException(e);
       console.log(e);
+    }
+
+    // Agentes IA. Va antes del horario de la empresa y de colas, flujos e
+    // integraciones: si la conversacion tiene la IA activa y el agente esta en
+    // su horario, responde el agente y aqui se termina. Un mensaje enviado por
+    // una persona (celular, API) pausa la IA de la conversacion. Si el agente
+    // no atiende, todo sigue como siempre. Ver docs/AGENTES_IA.md.
+    if (!useLGPD && !isGroup) {
+      if (msg.key.fromMe) {
+        await pausarPorMensajeHumano(ticket, { wid: msg.key.id });
+      } else if (await atenderMensajeEntrante({ ticket, contact, wid: msg.key.id })) {
+        return;
+      }
     }
 
     let currentSchedule;

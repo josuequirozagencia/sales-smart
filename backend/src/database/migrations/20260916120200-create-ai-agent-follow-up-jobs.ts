@@ -4,9 +4,10 @@ import { QueryInterface, DataTypes } from "sequelize";
  * Seguimientos automaticos pendientes de un agente en un ticket.
  *
  * Cada vez que el agente responde se programa el paso 1 (dueAt = ahora +
- * "when" del paso). Si el cliente contesta, un humano toma el ticket, se cierra
- * o se activa "Detener bot", los pendientes se cancelan. Al enviarse un paso
- * se programa el siguiente. status: pending | sent | cancelled | failed.
+ * "when" del paso). Si el cliente contesta, se pausa la IA de la conversacion,
+ * se cierra o se activa "Desactivar chatbot", los pendientes se cancelan. Al
+ * enviarse un paso se programa el siguiente.
+ * status: pending | processing | sent | cancelled | failed.
  */
 module.exports = {
   up: async (queryInterface: QueryInterface) => {

@@ -67,6 +67,7 @@ import RecurrenceService from "./services/CampaignService/RecurrenceService";
 import GoogleCalendarIntegration from "./models/GoogleCalendarIntegration";
 import { pullFromGoogle } from "./services/GoogleCalendarServices/PullService";
 import { procesarConversion } from "./services/ConversionServices/ProcessConversionJob";
+import { iniciarSeguimientosAgentes } from "./services/AiAgentServices/SeguimientosWorker";
 
 const connection = process.env.REDIS_URI || "";
 const limiterMax = process.env.REDIS_OPT_LIMITER_MAX || 1;
@@ -2314,6 +2315,9 @@ export async function startQueueProcess() {
   metaConversionsQueue.process("Send", 3, handleMetaConversion);
 
   initializeBirthdayJobs();
+
+  // Seguimientos automaticos de los agentes IA (docs/AGENTES_IA.md).
+  iniciarSeguimientosAgentes();
 
   scheduleMonitor.add(
     "Verify",

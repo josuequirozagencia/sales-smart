@@ -11,6 +11,7 @@ import { getIO } from "../../libs/socket";
 import Message from "../../models/Message";
 import verifyMessageOficial from "./VerifyMessageOficial";
 import verifyQueueOficial from "./VerifyQueue";
+import { atenderMensajeEntrante } from "../AiAgentServices/AtenderConAgente";
 import ShowWhatsAppService from "../WhatsappService/ShowWhatsAppService";
 import { guardarAtribucion, ReferralMeta } from "../ConversionServices/ContactAttributionService";
 import { registrarLeadEntrante } from "../ConversionServices/ConversionService";
@@ -218,6 +219,12 @@ export class ReceibedWhatsAppService {
             await ticket.update({ lastMessage: message.type === "contacts" ? "Contato" : !!message?.text ? message?.text : '', unreadMessages: ticket.unreadMessages + 1 })
 
             await verifyMessageOficial(message, ticket, contact, companyId, fileName, fromNumber, data, quoteMessageId);
+
+            // Agentes IA: si la conversacion tiene la IA activa y el agente esta en
+            // su horario, responde el agente y no se pasa por las colas.
+            if (await atenderMensajeEntrante({ ticket, contact, wid: message.idMessage })) {
+                return;
+            }
 
             if (
                 !ticket.imported &&
