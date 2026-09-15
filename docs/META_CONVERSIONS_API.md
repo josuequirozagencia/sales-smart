@@ -109,6 +109,12 @@ los mensajes (`receivedMessageWhatsAppOficial`), y el backend lo guarda en
 el Lead. Si el contacto vuelve a entrar por **otro** anuncio, se reemplaza
 por el clic nuevo: el anterior deja de atribuir a los 7 días.
 
+El backend solo acepta `receivedMessageWhatsAppOficial` y
+`readMessageWhatsAppOficial` del socket que entra con `TOKEN_API_OFICIAL`.
+Antes los aceptaba de cualquier socket, también del de un usuario con su
+JWT, y así se podían inventar contactos y `ctwa_clid` (corregido en
+`libs/socket.ts`; lo prueba `__tests__/libs/socket.spec.ts`).
+
 > **Despliegue:** hace falta desplegar `api_oficial` además del backend.
 > Hasta hacerlo, los Lead y Purchase de WhatsApp Oficial salen sin
 > atribución, por la ruta estándar. Ver [Despliegue](#despliegue).
@@ -142,7 +148,7 @@ cumplirse las que ya usa:
 | Variable (`api_oficial`) | Debe ser |
 | --- | --- |
 | `URL_BACKEND_MULT100` | URL pública del backend, la del socket |
-| `TOKEN_ADMIN` | **Igual** a `TOKEN_API_OFICIAL` del backend: es con lo que el backend reconoce el socket de `api_oficial` |
+| `TOKEN_ADMIN` | **Igual** a `TOKEN_API_OFICIAL` del backend: es con lo que el backend reconoce el socket de `api_oficial`, y es la única vía por la que acepta sus mensajes. Si no coinciden, el socket se desconecta y los mensajes entrantes se pierden. Debe ser un valor largo y aleatorio, no uno de ejemplo como `adminpro` |
 | `DATABASE_LINK`, `REDIS_URI`, `RABBITMQ_URL`, `PORT` | Sin cambios |
 
 **Flujo manual (VPS con pm2, `api_oficial/README.md`):**
