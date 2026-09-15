@@ -51,6 +51,17 @@ const useStyles = makeStyles((theme) => ({
 		height: "100%",
 		flexDirection: "column",
 		flexGrow: 1,
+		// Con base auto, esta columna partia del ancho de su contenido y en el
+		// reparto flex le quitaba ancho a la lista aunque sobrara sitio: medido
+		// a 1920px, 550px guardados se veian como 428. Con base 0 la lista queda
+		// en el ancho que eligio el usuario y el hilo se lleva el resto, incluido
+		// lo que libera la ficha al plegarse.
+		//
+		// El minimo se deja en auto a proposito. Con minWidth 0, a 1440px el hilo
+		// bajaba a 418px y la cabecera del ticket, que pide unos 770, quedaba con
+		// seis botones recortados e inalcanzables. Con auto, solo cuando no cabe
+		// la lista cede ancho para que la cabecera se vea entera.
+		flexBasis: 0,
 	},
 	welcomeMsg: {
 		background: theme.palette.tabHeaderBackground,
