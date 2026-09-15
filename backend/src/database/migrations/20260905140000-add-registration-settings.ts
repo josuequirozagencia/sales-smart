@@ -26,6 +26,21 @@ module.exports = {
   up: async (queryInterface: QueryInterface) => {
     const ahora = new Date();
 
+    // En una base vacia la empresa 1 aun no existe: la crean los seeds, que
+    // corren despues de las migraciones, e insertar aqui romperia la clave
+    // foranea. Se retiran los globales vacios de la migracion anterior y el
+    // seed 20260907130000-create-host-settings crea estos ajustes.
+    const [anfitriona]: any = await queryInterface.sequelize.query(
+      `select id from "Companies" where id = 1 limit 1`
+    );
+    if (!anfitriona || anfitriona.length === 0) {
+      await queryInterface.sequelize.query(
+        `delete from "Settings" where key in (:claves) and "companyId" is null`,
+        { replacements: { claves: CLAVES } }
+      );
+      return;
+    }
+
     // Mover los de soporte a la empresa 1, conservando su valor si alguien
     // ya lo hubiera rellenado.
     for (const key of CLAVES) {

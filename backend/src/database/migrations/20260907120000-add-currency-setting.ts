@@ -33,8 +33,12 @@ module.exports = {
     const [empresa]: any = await queryInterface.sequelize.query(
       `select currency from "Companies" where id = 1 limit 1`
     );
-    // Si la empresa 1 no existe o no tiene moneda, se cae al mismo valor
-    // que usaba el codigo hasta ahora, para no cambiar nada por sorpresa.
+    // En una base vacia la empresa 1 aun no existe (la crean los seeds, despues
+    // de las migraciones): el ajuste lo crea el seed 20260907130000-create-host-settings.
+    if (!empresa || empresa.length === 0) return;
+
+    // Si la empresa 1 no tiene moneda, se cae al mismo valor que usaba el
+    // codigo hasta ahora, para no cambiar nada por sorpresa.
     const valor =
       empresa && empresa[0] && empresa[0].currency ? empresa[0].currency : "BRL";
 
