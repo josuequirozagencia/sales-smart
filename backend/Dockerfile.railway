@@ -18,6 +18,7 @@ ENV NODE_ENV=production
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/package.json /app/.sequelizerc ./
+COPY --from=build /app/deploy ./deploy
 
 # Los archivos subidos viven en /app/public, que en Railway es un volumen.
 # MessageController busca los medios reenviados en ../../../backend/public desde

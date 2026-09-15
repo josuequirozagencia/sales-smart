@@ -33,9 +33,14 @@ Produccion de Sales Smart en [Railway](https://railway.com). Decisiones tomadas:
   `api_oficial` (`?schema=api_oficial` en `DATABASE_LINK`). Prisma crea el esquema.
 - **Migraciones antes de arrancar**: `preDeployCommand` en cada `railway.json`. Si una migracion
   falla, el despliegue no sigue y queda en marcha el anterior.
-- **Seeds una sola vez**: `sequelize` no registra que seeds ya corrieron y
+- **Seeds solo en una base nueva**: `sequelize` no registra que seeds ya corrieron y
   `20241109070007-create-payment-settings` no comprueba si ya existen los datos: repetir
-  `db:seed:all` no da error pero duplica 7 filas de `Settings`. No puede ir en cada despliegue.
+  `db:seed:all` no da error pero duplica 7 filas de `Settings`. Por eso el `preDeployCommand` del
+  backend es `backend/deploy/predeploy.js`: migra siempre y ejecuta los seeds solo si falta
+  `requireApproval` de la empresa 1 (lo crea el ultimo seed). Probado: base nueva (siembra),
+  redespliegue y base existente (no siembra). Asi no hace falta `railway ssh`, que exige registrar
+  una clave SSH en la cuenta. Si Postgres no responde, Sequelize reintenta la conexion (hasta 100
+  veces, configuracion original) y el despliegue tarda en fallar; el anterior sigue en marcha.
 - **Instalacion desde cero**: la empresa 1 la crean los seeds, despues de todas las migraciones.
   Las migraciones que tocan ajustes de la empresa 1 no insertan nada si aun no existe, y el seed
   `20260907130000-create-host-settings` los crea (probado: base vacia y base existente acaban
@@ -124,12 +129,14 @@ cuenta con `railway login`. Todo desde una copia limpia del commit a desplegar.
 5. `volumen`: volumen del backend en `/app/public`.
 6. `variables`: las de las tablas de arriba, sin desplegar todavia (`--skip-deploys`).
 7. `secretos`: genera y carga los secretos por stdin; si ya existen no los cambia.
-8. `redis-aof`: muestra la configuracion de Redis. Anadir `--appendonly yes --appendfsync everysec`
-   al comando de arranque de la plantilla, conservando lo que ya trae (contrasena y directorio del
-   volumen), con `railway environment edit --service-config Redis deploy.startCommand "..."`.
+8. `redis-aof`: muestra la configuracion de Redis. Hay que anadir `--appendonly yes --appendfsync
+   everysec` al comando de arranque de la plantilla (Redis 8.2), conservando la contrasena y el
+   directorio del volumen. `railway environment edit --service-config` responde "No changes to
+   apply"; lo que funciona es la mutacion GraphQL `serviceInstanceUpdate` con `startCommand` y
+   despues `serviceInstanceRedeploy`. Comprobacion en el log: "Creating AOF base file".
 9. `subir-backend`, `subir-api-oficial`, `subir-frontend`, en ese orden. Se niegan si la copia
    tiene cambios sin commit o algun `.env`.
-10. `seeds`: una sola vez.
+10. `seeds`: no ejecuta nada, solo busca en el log del backend si el predeploy sembro la base.
 11. Entrar en el frontend y **cambiar enseguida la contrasena del admin sembrado**
     (`admin@multi100.com.br`, clave publica del instalador original).
 

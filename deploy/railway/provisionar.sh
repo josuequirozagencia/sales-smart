@@ -6,6 +6,8 @@
 #                  subir-backend subir-api-oficial subir-frontend seeds estado
 # Los secretos se generan aqui y viajan por stdin: no aparecen en pantalla, en el historial ni en Git.
 set -euo pipefail
+# Git Bash en Windows reescribe argumentos que empiezan por / (/app/public -> C:/Program Files/Git/...).
+export MSYS_NO_PATHCONV=1
 
 PROYECTO="sales-smart"
 cd "$(git rev-parse --show-toplevel)"
@@ -97,8 +99,9 @@ case "${1:-}" in
     limpio; railway up ./frontend --path-as-root --service frontend --ci -m "frontend $(git rev-parse --short HEAD)"
     ;;
   seeds)
-    # Solo la primera vez: el seed de payment-settings no comprueba si ya existe.
-    railway ssh --service backend npx sequelize db:seed:all
+    # No hay paso manual: backend/deploy/predeploy.js migra en cada despliegue y ejecuta los
+    # seeds solo si la base es nueva. Aqui solo se ve si ya corrieron.
+    railway logs --service backend --deployment --lines 200 | grep "predeploy:" || echo "  sin rastro de predeploy en el ultimo despliegue"
     ;;
   estado)
     for s in Postgres Redis backend api-oficial frontend; do railway service status --service "$s"; done
