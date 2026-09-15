@@ -837,6 +837,12 @@ const messages = {
           triggerIntegrationOnClose:
             "Integración de activadores al cerrar un ticket",
           enableIntegration: "Activadore Integración",
+          phone_number_id: "ID del número de teléfono",
+          waba_id: "WABA ID",
+          send_token: "Token de envío",
+          sendTokenSaved: "Guardado, termina en {{final}}. Déjalo vacío para conservarlo.",
+          business_id: "ID del negocio",
+          phone_number: "Número de teléfono",
         },
         buttons: {
           okAdd: "Agregar",
