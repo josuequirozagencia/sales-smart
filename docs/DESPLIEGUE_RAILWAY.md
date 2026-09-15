@@ -53,7 +53,7 @@ Produccion de Sales Smart en [Railway](https://railway.com). Decisiones tomadas:
 | `backend/Dockerfile.railway` | Node 20.19.4 (el de los tests). Copia `.sequelizerc`, que las migraciones necesitan. Enlaza `/backend/public` a `/app/public` porque `MessageController` busca ahi los medios reenviados. |
 | `frontend/Dockerfile.railway` | Compila con las `REACT_APP_*` como `ARG` y sirve `build/` con el `server.js` existente (Express 4 y dotenv se instalan aparte: no estan en `package.json`). El `Dockerfile_frontend` original pide `nginx.conf` y `env.sh`, que no existen. |
 | `api_oficial/Dockerfile.railway` | Instala desde `package-lock.json`, genera Prisma y anade OpenSSL a la imagen slim. |
-| `*/railway.json` | Builder Dockerfile, migraciones previas y reinicio si falla. |
+| `*/railway.json` | Builder Dockerfile, migraciones previas y reinicio si falla. **`railway up` no lo lee**: la misma configuracion se fija en cada servicio con el paso `configurar` (API de Railway). Queda como referencia y para cuando se conecte GitHub. |
 | `api_oficial/prisma/migrations/0_init` | Migracion base generada desde `schema.prisma`. El instalador original usaba `prisma migrate dev`, que no sirve en produccion. |
 | `api_oficial/package-lock.json` | Sin lockfile, `npm install` trae versiones nuevas y la compilacion ya se rompio una vez (`@types/amqplib`). |
 
@@ -129,6 +129,11 @@ cuenta con `railway login`. Todo desde una copia limpia del commit a desplegar.
 5. `volumen`: volumen del backend en `/app/public`.
 6. `variables`: las de las tablas de arriba, sin desplegar todavia (`--skip-deploys`).
 7. `secretos`: genera y carga los secretos por stdin; si ya existen no los cambia.
+   Despues, `configurar`: fija en cada servicio `dockerfilePath`, `preDeployCommand`,
+   `startCommand` y reinicio (mutacion `serviceInstanceUpdate`) y la variable
+   `RAILWAY_DOCKERFILE_PATH`. Sin este paso el primer despliegue fallo: backend y frontend se
+   construyeron con Railpack (el backend arranco con nodemon y sin migraciones) y api_oficial con
+   su `Dockerfile` original de upstream.
 8. `redis-aof`: muestra la configuracion de Redis. Hay que anadir `--appendonly yes --appendfsync
    everysec` al comando de arranque de la plantilla (Redis 8.2), conservando la contrasena y el
    directorio del volumen. `railway environment edit --service-config` responde "No changes to

@@ -2,7 +2,7 @@
 # Crea y despliega Sales Smart en Railway por pasos. Ver docs/DESPLIEGUE_RAILWAY.md.
 # Uso, desde la raiz de una copia limpia del commit a desplegar y con `railway login` hecho:
 #   bash deploy/railway/provisionar.sh <paso>
-# Pasos, en orden: proyecto bases servicios dominios volumen variables secretos redis-aof
+# Pasos, en orden: proyecto bases servicios dominios volumen variables secretos configurar redis-aof
 #                  subir-backend subir-api-oficial subir-frontend seeds estado
 # Los secretos se generan aqui y viajan por stdin: no aparecen en pantalla, en el historial ni en Git.
 set -euo pipefail
@@ -82,6 +82,23 @@ case "${1:-}" in
     cargar_secreto backend JWT_REFRESH_SECRET
     cargar_secreto backend TOKEN_ENCRYPTION_KEY
     cargar_secreto backend VERIFY_TOKEN
+    ;;
+  configurar)
+    # `railway up` NO lee railway.json (railwayConfigFile queda vacio y Railway usa Railpack, o el
+    # Dockerfile original de api_oficial si lo encuentra). La configuracion se fija por API.
+    ENV_ID=$(railway status --json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const j=JSON.parse(s);const e=(j.environments.edges||[]).map(x=>x.node).find(n=>n.name==="production");console.log(e.id)})')
+    for s in backend api-oficial frontend; do
+      SID=$(railway service list --json | S="$s" node -e 'let t="";process.stdin.on("data",d=>t+=d).on("end",()=>{console.log(JSON.parse(t).find(x=>x.name===process.env.S).id)})')
+      case "$s" in
+        backend) EXTRA='"preDeployCommand":["node deploy/predeploy.js"],"startCommand":"node dist/server.js",' ;;
+        api-oficial) EXTRA='"preDeployCommand":["npx prisma migrate deploy"],"startCommand":"node dist/main.js",' ;;
+        frontend) EXTRA='"startCommand":"node server.js",' ;;
+      esac
+      VARS="{\"environmentId\":\"$ENV_ID\",\"serviceId\":\"$SID\",\"input\":{${EXTRA}\"dockerfilePath\":\"Dockerfile.railway\",\"restartPolicyType\":\"ON_FAILURE\",\"restartPolicyMaxRetries\":10}}"
+      railway api 'mutation($environmentId: String!, $serviceId: String!, $input: ServiceInstanceUpdateInput!) { serviceInstanceUpdate(environmentId: $environmentId, serviceId: $serviceId, input: $input) }' --variables "$VARS" > /dev/null
+      railway variable set --service "$s" --skip-deploys 'RAILWAY_DOCKERFILE_PATH=Dockerfile.railway' > /dev/null
+      echo "  $s: Dockerfile.railway, arranque y predeploy fijados"
+    done
     ;;
   redis-aof)
     # El comando de arranque de la plantilla se revisa a mano antes de cambiarlo (lleva la
