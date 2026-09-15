@@ -713,14 +713,18 @@ const TicketListItemCustom = ({ setTabOpen, ticket }) => {
             }}
           />
         )}
-        <ListItemAvatar style={{ marginLeft: "-15px" }}>
+        {/* Tenia marginLeft -15px sobre el relleno de 16 del elemento: el circulo
+            quedaba a 1px del borde, encima de la barra de color de 3px. Ahora
+            queda a 12px, y pasa de 50 a 42px; el hueco hasta el texto se ajusta
+            para no quitarle ancho a la conversacion. */}
+        <ListItemAvatar style={{ marginLeft: -4, minWidth: 52 }}>
           {/* Sin foto sale un circulo de color con las iniciales, y no el
               icono generico de persona que pintaba MUI: era el mismo para
               todos los contactos, asi que no ayudaba a distinguirlos. El
               color va por contacto y es siempre el mismo. */}
           <ContactAvatar
             contact={ticket?.contact}
-            size={50}
+            size={42}
             className={classes.clickableAvatar}
             onClick={handleImageClick}
           />

@@ -228,6 +228,11 @@ const useStyles = makeStyles(theme => ({
 	tabsContainer: {
 		backgroundColor: theme.palette.background.paper,
 		flexShrink: 0,
+		// La ficha se desplaza entera (ver contentWrapper): las pestanas se quedan
+		// arriba al bajar, para cambiar de pestana sin volver al principio.
+		position: "sticky",
+		top: 0,
+		zIndex: 2,
 		padding: theme.palette.tokens.space.xs,
 		borderBottom: `1px solid ${theme.palette.divider}`,
 		"& .MuiTabs-scroller": {
@@ -243,26 +248,26 @@ const useStyles = makeStyles(theme => ({
 			display: "none",
 		},
 	},
+	// Antes el cuerpo no se desplazaba (overflow hidden) y el perfil, que no
+	// encoge, dejaba al panel de la pestana solo el hueco sobrante: en una
+	// pantalla de 900px de alto eran unos 100px con su propio scroll, y los
+	// datos y las observaciones no se llegaban a ver. Ahora se desplaza la ficha
+	// entera y cada panel ocupa lo que mide su contenido.
 	contentWrapper: {
 		display: "flex",
 		flexDirection: "column",
 		height: "calc(100% - 50px)",
-		overflow: "hidden",
+		overflowY: "auto",
+		overflowX: "hidden",
+		...theme.scrollbarStyles,
 	},
 	scrollableContent: {
-		flex: 1,
-		overflow: "hidden",
+		flex: "1 0 auto",
 		display: "flex",
 		flexDirection: "column",
 	},
 	tabPanel: {
-		flex: 1,
-		overflow: "auto",
 		padding: theme.spacing(1),
-		...theme.scrollbarStyles,
-		// Garantir que cada tab panel tenha rolagem independente
-		height: "100%",
-		maxHeight: "100%",
 	},
 	// Avatar redondo e menor
 	contactAvatar: {
@@ -605,16 +610,14 @@ function TabPanel(props) {
 			hidden={value !== index}
 			id={`contact-tabpanel-${index}`}
 			aria-labelledby={`contact-tab-${index}`}
-			style={{ 
-				height: "100%", 
-				display: value === index ? "flex" : "none", 
+			style={{
+				display: value === index ? "flex" : "none",
 				flexDirection: "column",
-				overflow: "hidden"
 			}}
 			{...other}
 		>
 			{value === index && (
-				<div className={props.classes?.tabPanel} style={{ flex: 1, overflow: "auto" }}>
+				<div className={props.classes?.tabPanel}>
 					{children}
 				</div>
 			)}
