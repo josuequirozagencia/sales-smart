@@ -5,7 +5,6 @@ import useHelps from "../hooks/useHelps";
 import ListItem from "@material-ui/core/ListItem";
 import ListItemIcon from "@material-ui/core/ListItemIcon";
 import ListItemText from "@material-ui/core/ListItemText";
-import ListSubheader from "@material-ui/core/ListSubheader";
 import Divider from "@material-ui/core/Divider";
 import Avatar from "@material-ui/core/Avatar";
 import Badge from "@material-ui/core/Badge";
@@ -17,6 +16,7 @@ import Typography from "@material-ui/core/Typography";
 import DashboardOutlinedIcon from "@material-ui/icons/DashboardOutlined";
 import WhatsAppIcon from "@material-ui/icons/WhatsApp";
 import SyncAltIcon from "@material-ui/icons/SyncAlt";
+import LinkIcon from "@material-ui/icons/Link";
 import SettingsOutlinedIcon from "@material-ui/icons/SettingsOutlined";
 import PeopleAltOutlinedIcon from "@material-ui/icons/PeopleAltOutlined";
 import ContactPhoneOutlinedIcon from "@material-ui/icons/ContactPhoneOutlined";
@@ -53,7 +53,7 @@ import { WhatsAppsContext } from "../context/WhatsApp/WhatsAppsContext";
 import { AuthContext } from "../context/Auth/AuthContext";
 import { useActiveMenu } from "../context/ActiveMenuContext";
 
-import { Can } from "../components/Can";
+import { Can, check } from "../components/Can";
 
 import { isArray } from "lodash";
 import api from "../services/api";
@@ -61,6 +61,8 @@ import toastError from "../errors/toastError";
 import usePlans from "../hooks/usePlans";
 import { i18n } from "../translate/i18n";
 import { Campaign, ShapeLine, Webhook } from "@mui/icons-material";
+import SupportAgent from "@mui/icons-material/SupportAgent";
+import AdminPanelSettingsOutlined from "@mui/icons-material/AdminPanelSettingsOutlined";
 
 import useCompanySettings from "../hooks/useSettings/companySettings";
 
@@ -97,6 +99,15 @@ const useStyles = makeStyles((theme) => ({
       fontFamily: "'Inter', 'Roboto', sans-serif",
       fontSize: "0.875rem",
     },
+  },
+
+  // Titulos de los grupos del menu: medidos en el navegador, piden entre 127 y
+  // 187px y la caja de texto del menu abierto mide 123. En una linea se
+  // montaban sobre la flecha; pasan a dos lineas. Solo con el menu abierto:
+  // plegado, el texto no se ve y partirlo alargaria la cabecera.
+  grupoTitulo: {
+    whiteSpace: "normal",
+    lineHeight: 1.25,
   },
 
   avatarActive: {
@@ -306,6 +317,79 @@ function ListItemLink(props) {
   );
 }
 
+// Grupo del menu lateral por rol. Es el mismo patron que ya tenian los
+// submenus de Campanas y del Constructor de flujos —cabecera con icono y
+// flecha, contenido en un Collapse—, sacado a un componente para no repetirlo
+// en los tres grupos.
+function GrupoMenu({ titulo, icono, abierto, onToggle, activo, collapsed, children }) {
+  const classes = useStyles();
+  const theme = useTheme();
+  const [hover, setHover] = useState(false);
+
+  return (
+    <>
+      <Tooltip title={collapsed ? titulo : ""} placement="right">
+        <ListItem
+          dense
+          button
+          onClick={onToggle}
+          onMouseEnter={() => setHover(true)}
+          onMouseLeave={() => setHover(false)}
+        >
+          <ListItemIcon>
+            <Avatar
+              className={`${classes.iconHoverActive} ${activo || hover ? "active" : ""}`}
+            >
+              {icono}
+            </Avatar>
+          </ListItemIcon>
+          <ListItemText
+            primary={
+              <Typography
+                className={`${classes.listItemText} ${collapsed ? "" : classes.grupoTitulo}`}
+              >
+                {titulo}
+              </Typography>
+            }
+          />
+          {abierto ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+        </ListItem>
+      </Tooltip>
+      <Collapse
+        in={abierto}
+        timeout="auto"
+        unmountOnExit
+        style={{
+          backgroundColor:
+            theme.mode === "light"
+              ? "rgba(120,120,120,0.1)"
+              : "rgba(120,120,120,0.5)",
+        }}
+      >
+        {children}
+      </Collapse>
+    </>
+  );
+}
+
+// Rutas de cada grupo. Sirven para abrir el grupo que contiene la pagina
+// actual (al cargar y al navegar desde fuera del menu), nunca para cerrarlo.
+const RUTAS_DIARIO = ["/kanban", "/quick-messages", "/contacts", "/tags", "/schedules", "/chats", "/helps"];
+const RUTAS_SUPERVISION = [
+  "/", "/reports", "/sales", "/response-time", "/moments", "/wallets",
+  "/campaigns", "/contact-lists", "/campaigns-config", "/files",
+  "/phrase-lists", "/flowbuilders", "/prompts", "/queue-integration",
+];
+const RUTAS_ADMINISTRACION = [
+  "/users", "/queues", "/connections", "/gohighlevel", "/allConnections",
+  "/financeiro", "/settings", "/messages-api", "/announcements", "/companies",
+];
+
+const rutaEnGrupo = (pathname, rutas) =>
+  rutas.some((ruta) =>
+    ruta === "/" ? pathname === "/" : pathname === ruta || pathname.startsWith(`${ruta}/`)
+  );
+
 const reducer = (state, action) => {
   if (action.type === "LOAD_CHATS") {
     const chats = action.payload;
@@ -373,7 +457,15 @@ const MainListItems = ({ collapsed, drawerClose }) => {
 
   const [connectionWarning, setConnectionWarning] = useState(false);
   const [openCampaignSubmenu, setOpenCampaignSubmenu] = useState(false);
-  const [openDashboardSubmenu, setOpenDashboardSubmenu] = useState(false);
+  // Uso diario abierto por defecto; los otros dos cerrados, salvo que la
+  // pagina con la que se entra sea suya.
+  const [grupoDiarioAbierto, setGrupoDiarioAbierto] = useState(true);
+  const [grupoSupervisionAbierto, setGrupoSupervisionAbierto] = useState(() =>
+    rutaEnGrupo(location.pathname, RUTAS_SUPERVISION)
+  );
+  const [grupoAdministracionAbierto, setGrupoAdministracionAbierto] = useState(() =>
+    rutaEnGrupo(location.pathname, RUTAS_ADMINISTRACION)
+  );
   const [showCampaigns, setShowCampaigns] = useState(false);
   const [showKanban, setShowKanban] = useState(false);
   const [showOpenAi, setShowOpenAi] = useState(false);
@@ -389,7 +481,6 @@ const MainListItems = ({ collapsed, drawerClose }) => {
   const [searchParam] = useState("");
   const [chats, dispatch] = useReducer(reducer, []);
   const version = "4.7.9";
-  const [managementHover, setManagementHover] = useState(false);
   const [campaignHover, setCampaignHover] = useState(false);
   const { list } = useHelps(); // INSERIR
   const [hasHelps, setHasHelps] = useState(false);
@@ -444,15 +535,60 @@ const MainListItems = ({ collapsed, drawerClose }) => {
     fetchSettings();
   }, [setShowWallets]);
 
-  const isManagementActive =
-    location.pathname === "/" ||
-    location.pathname.startsWith("/reports") ||
-    location.pathname.startsWith("/moments");
-
   const isCampaignRouteActive =
     location.pathname === "/campaigns" ||
     location.pathname.startsWith("/contact-lists") ||
     location.pathname.startsWith("/campaigns-config");
+
+  // Al entrar o navegar a una pagina de un grupo cerrado, se abre ese grupo
+  // (y su submenu, si la pagina esta dentro de Campanas o de flujos) para que
+  // se vea el item activo. Nunca se cierra nada por navegar.
+  useEffect(() => {
+    const ruta = location.pathname;
+    if (rutaEnGrupo(ruta, RUTAS_DIARIO)) setGrupoDiarioAbierto(true);
+    if (rutaEnGrupo(ruta, RUTAS_SUPERVISION)) setGrupoSupervisionAbierto(true);
+    if (rutaEnGrupo(ruta, RUTAS_ADMINISTRACION)) setGrupoAdministracionAbierto(true);
+    if (rutaEnGrupo(ruta, ["/campaigns", "/contact-lists", "/campaigns-config", "/files"])) {
+      setOpenCampaignSubmenu(true);
+    }
+    if (rutaEnGrupo(ruta, ["/phrase-lists", "/flowbuilders"])) setOpenFlowSubmenu(true);
+  }, [location.pathname]);
+
+  // Roles efectivos: son las mismas expresiones que ya llevaban los <Can> del
+  // menu, escritas una vez para usarlas en el JSX y para saber si el grupo de
+  // supervision tiene algo que mostrar.
+  const rolGestion =
+    (user.profile === "user" && user.showDashboard === "enabled") ||
+      user.allowRealTime === "enabled"
+      ? "admin"
+      : user.profile;
+  const rolDashboard =
+    user.profile === "user" && user.showDashboard === "enabled"
+      ? "admin"
+      : user.profile;
+  const rolTiempoReal =
+    user.profile === "user" && user.allowRealTime === "enabled"
+      ? "admin"
+      : user.profile;
+  const rolAdministracion =
+    user.profile === "user" && user.allowConnections === "enabled"
+      ? "admin"
+      : user.profile;
+
+  // Un asesor sin dashboard, campanas ni flujos no ve un grupo vacio. Cada
+  // termino repite la condicion con la que se pinta ese bloque mas abajo.
+  const hayGestion =
+    check(rolGestion, "drawer-admin-items:view") &&
+    (check(rolDashboard, "drawer-admin-items:view") ||
+      check(rolTiempoReal, "drawer-admin-items:view") ||
+      (user.profile === "admin" && showWallets));
+  const hayCampanas = user?.showCampaign === "enabled" && showCampaigns;
+  const hayFlujos = user.showFlow === "enabled";
+  const hayIaIntegraciones =
+    check(rolAdministracion, "dashboard:view") &&
+    (showOpenAi || showIntegrations) &&
+    check(user.profile, "dashboard:view");
+  const mostrarSupervision = hayGestion || hayCampanas || hayFlujos || hayIaIntegraciones;
 
   useEffect(() => {
     if (location.pathname.startsWith("/tickets")) {
@@ -589,126 +725,7 @@ useEffect(() => {
 
   return (
     <div onClick={drawerClose}>
-      <Can
-        role={
-          (user.profile === "user" && user.showDashboard === "enabled") ||
-            user.allowRealTime === "enabled"
-            ? "admin"
-            : user.profile
-        }
-        perform={"drawer-admin-items:view"}
-        yes={() => (
-          <>
-            <Tooltip
-              title={collapsed ? i18n.t("mainDrawer.listItems.management") : ""}
-              placement="right"
-            >
-              <ListItem
-                dense
-                button
-                onClick={() => setOpenDashboardSubmenu((prev) => !prev)}
-                onMouseEnter={() => setManagementHover(true)}
-                onMouseLeave={() => setManagementHover(false)}
-              >
-                <ListItemIcon>
-                  <Avatar
-                    className={`${classes.iconHoverActive} ${isManagementActive || managementHover ? "active" : ""
-                      }`}
-                  >
-                    <Dashboard />
-                  </Avatar>
-                </ListItemIcon>
-                <ListItemText
-                  primary={
-                    <Typography className={classes.listItemText}>
-                      {i18n.t("mainDrawer.listItems.management")}
-                    </Typography>
-                  }
-                />
-                {openDashboardSubmenu ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-              </ListItem>
-            </Tooltip>
-            <Collapse
-              in={openDashboardSubmenu}
-              timeout="auto"
-              unmountOnExit
-              style={{
-                backgroundColor:
-                  theme.mode === "light"
-                    ? "rgba(120,120,120,0.1)"
-                    : "rgba(120,120,120,0.5)",
-              }}
-            >
-              <Can
-                role={
-                  user.profile === "user" && user.showDashboard === "enabled"
-                    ? "admin"
-                    : user.profile
-                }
-                perform={"drawer-admin-items:view"}
-                yes={() => (
-                  <>
-                    <ListItemLink
-                      small
-                      to="/"
-                      primary="Dashboard"
-                      icon={<DashboardOutlinedIcon />}
-                      tooltip={collapsed}
-                    />
-                    <ListItemLink
-                      small
-                      to="/reports"
-                      primary={i18n.t("mainDrawer.listItems.reports")}
-                      icon={<Description />}
-                      tooltip={collapsed}
-                    />
-                    <ListItemLink
-                      small
-                      to="/sales"
-                      primary={i18n.t("sales.title")}
-                      icon={<MonetizationOnOutlinedIcon />}
-                      tooltip={collapsed}
-                    />
-                    <ListItemLink
-                      small
-                      to="/response-time"
-                      primary={i18n.t("responseTime.title")}
-                      icon={<Description />}
-                      tooltip={collapsed}
-                    />
-                  </>
-                )}
-              />
-              <Can
-                role={
-                  user.profile === "user" && user.allowRealTime === "enabled"
-                    ? "admin"
-                    : user.profile
-                }
-                perform={"drawer-admin-items:view"}
-                yes={() => (
-                  <ListItemLink
-                    to="/moments"
-                    primary={i18n.t("mainDrawer.listItems.chatsTempoReal")}
-                    icon={<GridOn />}
-                    tooltip={collapsed}
-                  />
-                )}
-              />
-              {user.profile === "admin" && showWallets && (
-                <>
-                  <ListItemLink
-                    to="/wallets"
-                    primary={i18n.t("mainDrawer.listItems.wallets")}
-                    icon={<AccountBalanceWalletIcon />}
-                    tooltip={collapsed}
-                  />
-                </>
-              )}
-            </Collapse>
-          </>
-        )}
-      />
+      {/* La bandeja va fija arriba, fuera de los grupos: es lo que mas se usa. */}
       <ListItemLink
         to="/tickets"
         primary={i18n.t("mainDrawer.listItems.tickets")}
@@ -716,271 +733,376 @@ useEffect(() => {
         tooltip={collapsed}
       />
 
-      <ListItemLink
-        to="/quick-messages"
-        primary={i18n.t("mainDrawer.listItems.quickMessages")}
-        icon={<FlashOnIcon />}
-        tooltip={collapsed}
-      />
-
-      {showKanban && (
-        <>
-          <ListItemLink
-            to="/kanban"
-            primary={i18n.t("mainDrawer.listItems.kanban")}
-            icon={<ViewKanban />}
-            tooltip={collapsed}
-          />
-        </>
-      )}
-
-      {user.showContacts === "enabled" && (
-        <ListItemLink
-          to="/contacts"
-          primary={i18n.t("mainDrawer.listItems.contacts")}
-          icon={<ContactPhoneOutlinedIcon />}
-          tooltip={collapsed}
-        />
-      )}
-
-      {showSchedules && (
-        <>
-          <ListItemLink
-            to="/schedules"
-            primary={i18n.t("mainDrawer.listItems.schedules")}
-            icon={<Schedule />}
-            tooltip={collapsed}
-          />
-        </>
-      )}
-
-      <ListItemLink
-        to="/tags"
-        primary={i18n.t("mainDrawer.listItems.tags")}
-        icon={<LocalOfferIcon />}
-        tooltip={collapsed}
-      />
-
-      {showInternalChat && (
-        <>
-          <ListItemLink
-            to="/chats"
-            primary={i18n.t("mainDrawer.listItems.chats")}
-            icon={
-              <Badge color="secondary" variant="dot" invisible={invisible}>
-                <ForumIcon />
-              </Badge>
-            }
-            tooltip={collapsed}
-          />
-        </>
-      )}
-
-      {/* 
-      <ListItemLink
-        to="/todolist"
-        primary={i18n.t("ToDoList")}
-        icon={<EventAvailableIcon />}
-      /> 
-      */}
-
-      {hasHelps && (
-        <ListItemLink
-          to="/helps"
-          primary={i18n.t("mainDrawer.listItems.helps")}
-          icon={<HelpOutlineIcon />}
-          tooltip={collapsed}
-        />
-      )}
-
-      {user?.showCampaign === "enabled" && showCampaigns && (
-        <>
-          <Tooltip
-            title={collapsed ? i18n.t("mainDrawer.listItems.campaigns") : ""}
-            placement="right"
-          >
-            <ListItem
-              dense
-              button
-              onClick={() => setOpenCampaignSubmenu((prev) => !prev)}
-              onMouseEnter={() => setCampaignHover(true)}
-              onMouseLeave={() => setCampaignHover(false)}
-            >
-              <ListItemIcon>
-                <Avatar
-                  className={`${classes.iconHoverActive} ${isCampaignRouteActive || campaignHover ? "active" : ""}`}
-                >
-                  <EventAvailableIcon />
-                </Avatar>
-              </ListItemIcon>
-              <ListItemText
-                primary={
-                  <Typography className={classes.listItemText}>
-                    {i18n.t("mainDrawer.listItems.campaigns")}
-                  </Typography>
-                }
-              />
-              {openCampaignSubmenu ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-            </ListItem>
-          </Tooltip>
-          <Collapse
-            in={openCampaignSubmenu}
-            timeout="auto"
-            unmountOnExit
-            style={{
-              backgroundColor:
-                theme.mode === "light"
-                  ? "rgba(120,120,120,0.1)"
-                  : "rgba(120,120,120,0.5)",
-            }}
-          >
-            <List dense component="div" disablePadding>
-              <ListItemLink
-                to="/campaigns"
-                primary={i18n.t("campaigns.subMenus.list")}
-                icon={<ListIcon />}
-                tooltip={collapsed}
-              />
-              <ListItemLink
-                to="/contact-lists"
-                primary={i18n.t("campaigns.subMenus.listContacts")}
-                icon={<PeopleIcon />}
-                tooltip={collapsed}
-              />
-              <ListItemLink
-                to="/campaigns-config"
-                primary={i18n.t("campaigns.subMenus.settings")}
-                icon={<SettingsOutlinedIcon />}
-                tooltip={collapsed}
-              />
-              <Can
-                role={user.profile}
-                perform="dashboard:view"
-                yes={() => (
-                  <ListItemLink
-                    to="/files"
-                    primary={i18n.t("mainDrawer.listItems.files")}
-                    icon={<AttachFile />}
-                    tooltip={collapsed}
-                  />
-                )}
-              />
-            </List>
-          </Collapse>
-        </>
-      )}
-
-      {/* FLOWBUILDER */}
-      {user.showFlow === "enabled" && (
-        <>
-          <Tooltip
-            title={
-              collapsed ? i18n.t("mainDrawer.listItems.campaigns") : ""
-            }
-            placement="right"
-          >
-            <ListItem
-              dense
-              button
-              onClick={() => setOpenFlowSubmenu((prev) => !prev)}
-              onMouseEnter={() => setFlowHover(true)}
-              onMouseLeave={() => setFlowHover(false)}
-            >
-              <ListItemIcon>
-                <Avatar
-                  className={`${classes.iconHoverActive} ${isFlowbuilderRouteActive || flowHover
-                    ? "active"
-                    : ""
-                    }`}
-                >
-                  <Webhook />
-                </Avatar>
-              </ListItemIcon>
-              <ListItemText
-                primary={
-                  <Typography className={classes.listItemText}>
-                    {i18n.t("mainDrawer.submenuLabels.flowbuilder")}
-                  </Typography>
-                }
-              />
-              {openFlowSubmenu ? (
-                <ExpandLessIcon />
-              ) : (
-                <ExpandMoreIcon />
-              )}
-            </ListItem>
-          </Tooltip>
-
-          <Collapse
-            in={openFlowSubmenu}
-            timeout="auto"
-            unmountOnExit
-            style={{
-              backgroundColor:
-                theme.mode === "light"
-                  ? "rgba(120,120,120,0.1)"
-                  : "rgba(120,120,120,0.5)",
-            }}
-          >
-            <List dense component="div" disablePadding>
-              <ListItemLink
-                to="/phrase-lists"
-                primary={i18n.t("mainDrawer.submenuLabels.flowCampaign")}
-                icon={<EventAvailableIcon />}
-                tooltip={collapsed}
-              />
-
-              <ListItemLink
-                to="/flowbuilders"
-                primary={i18n.t("mainDrawer.submenuLabels.flowConversation")}
-                icon={<ShapeLine />}
-                tooltip={collapsed}
-              />
-            </List>
-          </Collapse>
-        </>
-      )}
-
-      <Can
-        role={
-          user.profile === "user" && user.allowConnections === "enabled"
-            ? "admin"
-            : user.profile
-        }
-        perform="dashboard:view"
-        yes={() => (
+      {/* Uso diario (asesor) */}
+      <GrupoMenu
+        titulo={i18n.t("mainDrawer.groups.daily")}
+        icono={<SupportAgent />}
+        abierto={grupoDiarioAbierto}
+        onToggle={() => setGrupoDiarioAbierto((prev) => !prev)}
+        activo={rutaEnGrupo(location.pathname, RUTAS_DIARIO)}
+        collapsed={collapsed}
+      >
+        {showKanban && (
           <>
-            <Divider />
-            <ListSubheader inset>
-              {i18n.t("mainDrawer.listItems.administration")}
-            </ListSubheader>
+            <ListItemLink
+              to="/kanban"
+              primary={i18n.t("mainDrawer.listItems.kanban")}
+              icon={<ViewKanban />}
+              tooltip={collapsed}
+            />
+          </>
+        )}
 
-            {user.super && (
-              <ListItemLink
-                to="/announcements"
-                primary={i18n.t("mainDrawer.listItems.annoucements")}
-                icon={<AnnouncementIcon />}
-                tooltip={collapsed}
-              />
-            )}
+        <ListItemLink
+          to="/quick-messages"
+          primary={i18n.t("mainDrawer.listItems.quickMessages")}
+          icon={<FlashOnIcon />}
+          tooltip={collapsed}
+        />
 
-            {showExternalApi && (
+        {user.showContacts === "enabled" && (
+          <ListItemLink
+            to="/contacts"
+            primary={i18n.t("mainDrawer.listItems.contacts")}
+            icon={<ContactPhoneOutlinedIcon />}
+            tooltip={collapsed}
+          />
+        )}
+
+        <ListItemLink
+          to="/tags"
+          primary={i18n.t("mainDrawer.listItems.tags")}
+          icon={<LocalOfferIcon />}
+          tooltip={collapsed}
+        />
+
+        {showSchedules && (
+          <>
+            <ListItemLink
+              to="/schedules"
+              primary={i18n.t("mainDrawer.listItems.schedules")}
+              icon={<Schedule />}
+              tooltip={collapsed}
+            />
+          </>
+        )}
+
+        {showInternalChat && (
+          <>
+            <ListItemLink
+              to="/chats"
+              primary={i18n.t("mainDrawer.listItems.chats")}
+              icon={
+                <Badge color="secondary" variant="dot" invisible={invisible}>
+                  <ForumIcon />
+                </Badge>
+              }
+              tooltip={collapsed}
+            />
+          </>
+        )}
+
+        {/*
+        <ListItemLink
+          to="/todolist"
+          primary={i18n.t("ToDoList")}
+          icon={<EventAvailableIcon />}
+        />
+        */}
+
+        {hasHelps && (
+          <ListItemLink
+            to="/helps"
+            primary={i18n.t("mainDrawer.listItems.helps")}
+            icon={<HelpOutlineIcon />}
+            tooltip={collapsed}
+          />
+        )}
+      </GrupoMenu>
+
+      {/* Supervision y crecimiento: el antiguo submenu "Gestion", Campanas,
+          Constructor de flujos, Prompts IA e Integracion de colas. Cada bloque
+          conserva su condicion y sus <Can> tal cual. */}
+      {mostrarSupervision && (
+        <GrupoMenu
+          titulo={i18n.t("mainDrawer.groups.supervision")}
+          icono={<Dashboard />}
+          abierto={grupoSupervisionAbierto}
+          onToggle={() => setGrupoSupervisionAbierto((prev) => !prev)}
+          activo={rutaEnGrupo(location.pathname, RUTAS_SUPERVISION)}
+          collapsed={collapsed}
+        >
+          <Can
+            role={rolGestion}
+            perform={"drawer-admin-items:view"}
+            yes={() => (
               <>
                 <Can
-                  role={user.profile}
-                  perform="dashboard:view"
+                  role={rolDashboard}
+                  perform={"drawer-admin-items:view"}
+                  yes={() => (
+                    <>
+                      <ListItemLink
+                        small
+                        to="/"
+                        primary="Dashboard"
+                        icon={<DashboardOutlinedIcon />}
+                        tooltip={collapsed}
+                      />
+                      <ListItemLink
+                        small
+                        to="/reports"
+                        primary={i18n.t("mainDrawer.listItems.reports")}
+                        icon={<Description />}
+                        tooltip={collapsed}
+                      />
+                      <ListItemLink
+                        small
+                        to="/sales"
+                        primary={i18n.t("sales.title")}
+                        icon={<MonetizationOnOutlinedIcon />}
+                        tooltip={collapsed}
+                      />
+                      <ListItemLink
+                        small
+                        to="/response-time"
+                        primary={i18n.t("responseTime.title")}
+                        icon={<Description />}
+                        tooltip={collapsed}
+                      />
+                    </>
+                  )}
+                />
+                <Can
+                  role={rolTiempoReal}
+                  perform={"drawer-admin-items:view"}
                   yes={() => (
                     <ListItemLink
-                      to="/messages-api"
-                      primary={i18n.t("mainDrawer.listItems.messagesAPI")}
-                      icon={<CodeRoundedIcon />}
+                      to="/moments"
+                      primary={i18n.t("mainDrawer.listItems.chatsTempoReal")}
+                      icon={<GridOn />}
                       tooltip={collapsed}
                     />
                   )}
                 />
+                {user.profile === "admin" && showWallets && (
+                  <>
+                    <ListItemLink
+                      to="/wallets"
+                      primary={i18n.t("mainDrawer.listItems.wallets")}
+                      icon={<AccountBalanceWalletIcon />}
+                      tooltip={collapsed}
+                    />
+                  </>
+                )}
               </>
             )}
+          />
 
+          {user?.showCampaign === "enabled" && showCampaigns && (
+            <>
+              <Tooltip
+                title={collapsed ? i18n.t("mainDrawer.listItems.campaigns") : ""}
+                placement="right"
+              >
+                <ListItem
+                  dense
+                  button
+                  onClick={() => setOpenCampaignSubmenu((prev) => !prev)}
+                  onMouseEnter={() => setCampaignHover(true)}
+                  onMouseLeave={() => setCampaignHover(false)}
+                >
+                  <ListItemIcon>
+                    <Avatar
+                      className={`${classes.iconHoverActive} ${isCampaignRouteActive || campaignHover ? "active" : ""}`}
+                    >
+                      <EventAvailableIcon />
+                    </Avatar>
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={
+                      <Typography className={classes.listItemText}>
+                        {i18n.t("mainDrawer.listItems.campaigns")}
+                      </Typography>
+                    }
+                  />
+                  {openCampaignSubmenu ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                </ListItem>
+              </Tooltip>
+              <Collapse
+                in={openCampaignSubmenu}
+                timeout="auto"
+                unmountOnExit
+                style={{
+                  backgroundColor:
+                    theme.mode === "light"
+                      ? "rgba(120,120,120,0.1)"
+                      : "rgba(120,120,120,0.5)",
+                }}
+              >
+                <List dense component="div" disablePadding>
+                  <ListItemLink
+                    to="/campaigns"
+                    primary={i18n.t("campaigns.subMenus.list")}
+                    icon={<ListIcon />}
+                    tooltip={collapsed}
+                  />
+                  <ListItemLink
+                    to="/contact-lists"
+                    primary={i18n.t("campaigns.subMenus.listContacts")}
+                    icon={<PeopleIcon />}
+                    tooltip={collapsed}
+                  />
+                  <ListItemLink
+                    to="/campaigns-config"
+                    primary={i18n.t("campaigns.subMenus.settings")}
+                    icon={<SettingsOutlinedIcon />}
+                    tooltip={collapsed}
+                  />
+                  <Can
+                    role={user.profile}
+                    perform="dashboard:view"
+                    yes={() => (
+                      <ListItemLink
+                        to="/files"
+                        primary={i18n.t("mainDrawer.listItems.files")}
+                        icon={<AttachFile />}
+                        tooltip={collapsed}
+                      />
+                    )}
+                  />
+                </List>
+              </Collapse>
+            </>
+          )}
+
+          {/* FLOWBUILDER */}
+          {user.showFlow === "enabled" && (
+            <>
+              <Tooltip
+                title={
+                  collapsed ? i18n.t("mainDrawer.listItems.campaigns") : ""
+                }
+                placement="right"
+              >
+                <ListItem
+                  dense
+                  button
+                  onClick={() => setOpenFlowSubmenu((prev) => !prev)}
+                  onMouseEnter={() => setFlowHover(true)}
+                  onMouseLeave={() => setFlowHover(false)}
+                >
+                  <ListItemIcon>
+                    <Avatar
+                      className={`${classes.iconHoverActive} ${isFlowbuilderRouteActive || flowHover
+                        ? "active"
+                        : ""
+                        }`}
+                    >
+                      <Webhook />
+                    </Avatar>
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={
+                      <Typography className={classes.listItemText}>
+                        {i18n.t("mainDrawer.submenuLabels.flowbuilder")}
+                      </Typography>
+                    }
+                  />
+                  {openFlowSubmenu ? (
+                    <ExpandLessIcon />
+                  ) : (
+                    <ExpandMoreIcon />
+                  )}
+                </ListItem>
+              </Tooltip>
+
+              <Collapse
+                in={openFlowSubmenu}
+                timeout="auto"
+                unmountOnExit
+                style={{
+                  backgroundColor:
+                    theme.mode === "light"
+                      ? "rgba(120,120,120,0.1)"
+                      : "rgba(120,120,120,0.5)",
+                }}
+              >
+                <List dense component="div" disablePadding>
+                  <ListItemLink
+                    to="/phrase-lists"
+                    primary={i18n.t("mainDrawer.submenuLabels.flowCampaign")}
+                    icon={<EventAvailableIcon />}
+                    tooltip={collapsed}
+                  />
+
+                  <ListItemLink
+                    to="/flowbuilders"
+                    primary={i18n.t("mainDrawer.submenuLabels.flowConversation")}
+                    icon={<ShapeLine />}
+                    tooltip={collapsed}
+                  />
+                </List>
+              </Collapse>
+            </>
+          )}
+
+          {/* Prompts IA e Integracion de colas estaban dentro del bloque de
+              Administracion: se mueven con ese mismo <Can> exterior. */}
+          <Can
+            role={rolAdministracion}
+            perform="dashboard:view"
+            yes={() => (
+              <>
+                {showOpenAi && (
+                  <Can
+                    role={user.profile}
+                    perform="dashboard:view"
+                    yes={() => (
+                      <ListItemLink
+                        to="/prompts"
+                        primary={i18n.t("mainDrawer.listItems.prompts")}
+                        icon={<AllInclusive />}
+                        tooltip={collapsed}
+                      />
+                    )}
+                  />
+                )}
+
+                {showIntegrations && (
+                  <Can
+                    role={user.profile}
+                    perform="dashboard:view"
+                    yes={() => (
+                      <ListItemLink
+                        to="/queue-integration"
+                        primary={i18n.t("mainDrawer.listItems.queueIntegration")}
+                        icon={<DeviceHubOutlined />}
+                        tooltip={collapsed}
+                      />
+                    )}
+                  />
+                )}
+              </>
+            )}
+          />
+        </GrupoMenu>
+      )}
+
+      {/* Administracion de la cuenta: la misma condicion que tenia la seccion
+          "Administracion" (divisor y subtitulo), ahora como grupo. */}
+      <Can
+        role={rolAdministracion}
+        perform="dashboard:view"
+        yes={() => (
+          <GrupoMenu
+            titulo={i18n.t("mainDrawer.groups.administration")}
+            icono={<AdminPanelSettingsOutlined />}
+            abierto={grupoAdministracionAbierto}
+            onToggle={() => setGrupoAdministracionAbierto((prev) => !prev)}
+            activo={rutaEnGrupo(location.pathname, RUTAS_ADMINISTRACION)}
+            collapsed={collapsed}
+          >
             <Can
               role={user.profile}
               perform="dashboard:view"
@@ -1007,41 +1129,8 @@ useEffect(() => {
               )}
             />
 
-            {showOpenAi && (
-              <Can
-                role={user.profile}
-                perform="dashboard:view"
-                yes={() => (
-                  <ListItemLink
-                    to="/prompts"
-                    primary={i18n.t("mainDrawer.listItems.prompts")}
-                    icon={<AllInclusive />}
-                    tooltip={collapsed}
-                  />
-                )}
-              />
-            )}
-
-            {showIntegrations && (
-              <Can
-                role={user.profile}
-                perform="dashboard:view"
-                yes={() => (
-                  <ListItemLink
-                    to="/queue-integration"
-                    primary={i18n.t("mainDrawer.listItems.queueIntegration")}
-                    icon={<DeviceHubOutlined />}
-                    tooltip={collapsed}
-                  />
-                )}
-              />
-            )}
             <Can
-              role={
-                user.profile === "user" && user.allowConnections === "enabled"
-                  ? "admin"
-                  : user.profile
-              }
+              role={rolAdministracion}
               perform={"drawer-admin-items:view"}
               yes={() => (
                 <>
@@ -1052,10 +1141,12 @@ useEffect(() => {
                     showBadge={connectionWarning}
                     tooltip={collapsed}
                   />
+                  {/* Tenia el mismo SyncAltIcon que Conexiones y no se
+                      distinguian: GoHighLevel es una integracion externa. */}
                   <ListItemLink
                     to="/gohighlevel"
                     primary={i18n.t("mainDrawer.listItems.goHighLevel")}
-                    icon={<SyncAltIcon />}
+                    icon={<LinkIcon />}
                     tooltip={collapsed}
                   />
                 </>
@@ -1093,6 +1184,33 @@ useEffect(() => {
                 />
               )}
             />
+
+            {showExternalApi && (
+              <>
+                <Can
+                  role={user.profile}
+                  perform="dashboard:view"
+                  yes={() => (
+                    <ListItemLink
+                      to="/messages-api"
+                      primary={i18n.t("mainDrawer.listItems.messagesAPI")}
+                      icon={<CodeRoundedIcon />}
+                      tooltip={collapsed}
+                    />
+                  )}
+                />
+              </>
+            )}
+
+            {user.super && (
+              <ListItemLink
+                to="/announcements"
+                primary={i18n.t("mainDrawer.listItems.annoucements")}
+                icon={<AnnouncementIcon />}
+                tooltip={collapsed}
+              />
+            )}
+
             {user.super && (
               <ListItemLink
                 to="/companies"
@@ -1101,7 +1219,7 @@ useEffect(() => {
                 tooltip={collapsed}
               />
             )}
-          </>
+          </GrupoMenu>
         )}
       />
       {!collapsed && (

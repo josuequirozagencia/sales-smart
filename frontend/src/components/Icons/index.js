@@ -267,6 +267,9 @@ export const FormatClearIcon = mk(
 /* ---------------------------------------------------------------- */
 
 export const ExpandMore = mk(<path d="m6 9 6 6 6-6" {...stroke} />);
+// Plegar y desplegar la ficha de contacto hacia su riel (ContactDrawer).
+export const ChevronLeft = mk(<path d="m15 18-6-6 6-6" {...stroke} />);
+export const ChevronRight = mk(<path d="m9 18 6-6-6-6" {...stroke} />);
 export const GetApp = mk(
   <>
     <path d="M12 3v12" {...stroke} />

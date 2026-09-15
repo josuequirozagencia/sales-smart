@@ -1603,6 +1603,11 @@ const messages = {
           reports: "Reports",
           management: "Management",
         },
+        groups: {
+          daily: "Daily use (agent)",
+          supervision: "Supervision and growth",
+          administration: "Account administration",
+        },
         submenuLabels: {
           flowbuilder: "Automation Flow",
           flowCampaign: "Campaign Flow",

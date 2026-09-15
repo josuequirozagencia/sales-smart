@@ -11,6 +11,8 @@ import Button from "@material-ui/core/Button";
 import Paper from "@material-ui/core/Paper";
 // Iconos en trazo del set propio del proyecto — ver components/Icons.
 import {
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
   CloseIcon,
   GroupIcon,
   PermIdentityIcon,
@@ -51,7 +53,8 @@ import {
 	InputAdornment,
 	Collapse,
 	Dialog,
-	DialogContent
+	DialogContent,
+	Tooltip
 } from "@material-ui/core";
 import { ContactForm } from "../ContactForm";
 import ContactModal from "../ContactModal";
@@ -82,11 +85,18 @@ import TransferTicketModalCustom from "../TransferTicketModalCustom";
 import { format, parseISO } from "date-fns";
 
 const drawerWidth = 320;
+// Ancho de la ficha plegada en escritorio. Deja sitio al boton de expandir y a
+// un avatar de 36px con su margen, como los iconos del menu lateral.
+const railWidth = 56;
 
 const useStyles = makeStyles(theme => ({
 	drawer: {
 		width: drawerWidth,
 		flexShrink: 0,
+		transition: theme.transitions.create("width", {
+			easing: theme.transitions.easing.sharp,
+			duration: theme.transitions.duration.enteringScreen,
+		}),
 		// 320px fijos ocupan el 85% de un telefono de 375 y no caben en uno
 		// de 320. Se limita al ancho disponible dejando un margen para que se
 		// vea que hay contenido detras y quede sitio para cerrarlo.
@@ -129,6 +139,29 @@ const useStyles = makeStyles(theme => ({
 		borderBottomRightRadius: theme.palette.tokens.radius.lg,
 		height: "100%",
 		overflow: "hidden", // Importante para evitar overflow no drawer principal
+		transition: theme.transitions.create("width", {
+			easing: theme.transitions.easing.sharp,
+			duration: theme.transitions.duration.enteringScreen,
+		}),
+	},
+	// Ficha plegada en escritorio: la columna se queda como un riel en vez de
+	// desaparecer, y el hilo de la conversacion ocupa el resto. Solo en la
+	// variante acoplada; superpuesta (menos de 960px) sigue abriendo y cerrando.
+	drawerPlegado: {
+		width: railWidth,
+	},
+	drawerPaperPlegado: {
+		width: railWidth,
+	},
+	riel: {
+		display: "flex",
+		flexDirection: "column",
+		alignItems: "center",
+		gap: theme.spacing(1),
+		paddingTop: theme.spacing(1),
+	},
+	rielAvatar: {
+		cursor: "pointer",
 	},
 	header: {
 		display: "flex",
@@ -553,7 +586,14 @@ const useStyles = makeStyles(theme => ({
 		height: "auto",
 		maxWidth: "500px",
 		borderRadius: theme.spacing(1),
-	}
+	},
+	// El contenido de la ficha se oculta, no se desmonta: al volver a
+	// expandirla sigue en la misma pestana y con lo que ya habia cargado, igual
+	// que cuando el cajon persistente estaba cerrado. Va la ultima porque JSS
+	// aplica las reglas en orden y header y contentWrapper declaran display.
+	ocultoPlegado: {
+		display: "none",
+	},
 }));
 
 function TabPanel(props) {
@@ -582,8 +622,9 @@ function TabPanel(props) {
 	);
 }
 
-const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading, superpuesto = false }) => {
+const ContactDrawer = ({ open, handleDrawerClose, handleDrawerOpen, contact, ticket, loading, superpuesto = false }) => {
 	const classes = useStyles();
+	const plegado = !superpuesto && !open;
 
 	const [modalOpen, setModalOpen] = useState(false);
 	const [saleModalOpen, setSaleModalOpen] = useState(false);
@@ -1191,10 +1232,15 @@ const fetchGroupParticipants = async () => {
 				// clase cae sobre la RAIZ del modal y la encoge a 320: el velo
 				// tapaba solo la anchura del panel y el panel se posicionaba
 				// contra esa caja, no contra el area del ticket.
-				className={superpuesto ? undefined : classes.drawer}
+				className={
+					superpuesto
+						? undefined
+						: clsx(classes.drawer, { [classes.drawerPlegado]: plegado })
+				}
 				variant={superpuesto ? "temporary" : "persistent"}
 				anchor="right"
-				open={open}
+				// Acoplada, la columna no se cierra nunca: plegada se queda como riel.
+				open={superpuesto ? open : true}
 				onClose={handleDrawerClose}
 				PaperProps={{ style: { position: "absolute" } }}
 				BackdropProps={{ style: { position: "absolute" } }}
@@ -1211,19 +1257,49 @@ const fetchGroupParticipants = async () => {
 				classes={{
 					paper: clsx(classes.drawerPaper, {
 						[classes.drawerPaperSuperpuesto]: superpuesto,
+						[classes.drawerPaperPlegado]: plegado,
 					}),
 				}}
 			>
-				<div className={classes.header}>
-					<IconButton onClick={handleDrawerClose}>
-						<CloseIcon />
+				{plegado && (
+					<div className={classes.riel}>
+						<Tooltip title={i18n.t("ticketOptionsMenu.contactInfo.show")} placement="left">
+							<IconButton
+								onClick={handleDrawerOpen}
+								aria-label={i18n.t("ticketOptionsMenu.contactInfo.show")}
+							>
+								<ChevronLeftIcon />
+							</IconButton>
+						</Tooltip>
+						{/* ContactAvatar es un componente de funcion sin forwardRef: el
+						    Tooltip necesita un elemento que admita ref, asi que va en un span. */}
+						<Tooltip title={contact.name || ""} placement="left">
+							<span style={{ display: "inline-flex" }}>
+								<ContactAvatar
+									contact={contact}
+									size={36}
+									className={classes.rielAvatar}
+									onClick={handleDrawerOpen}
+								/>
+							</span>
+						</Tooltip>
+					</div>
+				)}
+
+				<div className={clsx(classes.header, { [classes.ocultoPlegado]: plegado })}>
+					{/* Acoplada, la ficha se pliega a su riel: flecha en vez de X. */}
+					<IconButton
+						onClick={handleDrawerClose}
+						aria-label={i18n.t("ticketOptionsMenu.contactInfo.hide")}
+					>
+						{superpuesto ? <CloseIcon /> : <ChevronRightIcon />}
 					</IconButton>
 					<Typography style={{ justifySelf: "center" }}>
 						{i18n.t("contactDrawer.header")}
 					</Typography>
 				</div>
-				
-				<div className={classes.contentWrapper}>
+
+				<div className={clsx(classes.contentWrapper, { [classes.ocultoPlegado]: plegado })}>
 					{/* Seção de Switch */}
 					<Box className={classes.switchContainer}>
 						<Typography

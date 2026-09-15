@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useContext, useRef, useCallback } from "react";
 import { useParams, useHistory } from "react-router-dom";
 
-import clsx from "clsx";
-
 import { makeStyles, useTheme, Paper, IconButton, Tooltip, useMediaQuery } from "@material-ui/core";
 // Del set propio del proyecto, como el resto de esta seccion: el boton
 // quedaba con un icono relleno de Material-UI entre iconos de trazo.
@@ -26,7 +24,27 @@ import { isNil } from 'lodash';
 import { EditMessageProvider } from "../../context/EditingMessage/EditingMessageContext";
 import { TicketsContext } from "../../context/Tickets/TicketsContext";
 
-const drawerWidth = 320;
+// Si la ficha de contacto esta expandida o plegada se recuerda por navegador,
+// como el tema o el volumen. Solo cuenta la columna acoplada de escritorio.
+const CLAVE_FICHA_ABIERTA = "contactDrawerOpen";
+
+const leerFichaAbierta = (porDefecto) => {
+  try {
+    const valor = localStorage.getItem(CLAVE_FICHA_ABIERTA);
+    return valor === null ? porDefecto : valor === "true";
+  } catch (err) {
+    return porDefecto;
+  }
+};
+
+const guardarFichaAbierta = (abierta) => {
+  try {
+    localStorage.setItem(CLAVE_FICHA_ABIERTA, String(abierta));
+  } catch (err) {
+    // Sin almacenamiento (modo privado, cuota): la ficha funciona igual,
+    // solo no se recuerda al recargar.
+  }
+};
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -36,6 +54,10 @@ const useStyles = makeStyles((theme) => ({
     overflow: "hidden",
   },
 
+  // Antes llevaba marginRight -320 para que, con la ficha cerrada, el hilo
+  // pasara por encima del hueco del cajon. Ahora la ficha acoplada nunca se
+  // cierra —plegada ocupa solo su riel— y el hilo se queda con el resto por
+  // flex; superpuesta no ocupa sitio en el flujo.
   mainWrapper: {
     flex: 1,
     height: "100%",
@@ -44,22 +66,9 @@ const useStyles = makeStyles((theme) => ({
     overflow: "hidden",
     borderTopLeftRadius: 0,
     borderBottomLeftRadius: 0,
-    borderLeft: "0",
-    marginRight: -drawerWidth,
-    transition: theme.transitions.create("margin", {
-      easing: theme.transitions.easing.sharp,
-      duration: theme.transitions.duration.leavingScreen,
-    }),
-  },
-
-  mainWrapperShift: {
     borderTopRightRadius: 0,
     borderBottomRightRadius: 0,
-    transition: theme.transitions.create("margin", {
-      easing: theme.transitions.easing.easeOut,
-      duration: theme.transitions.duration.enteringScreen,
-    }),
-    marginRight: 0,
+    borderLeft: "0",
   },
 }));
 
@@ -81,9 +90,16 @@ const Ticket = () => {
   // dejaba el hilo en unos 50px: tecnicamente abierto e inservible. Este si
   // reevalua al redimensionar, a diferencia del calculo de arriba, que solo
   // decide el estado inicial.
-  const panelSuperpuesto = useMediaQuery(theme.breakpoints.down("sm"));
+  // noSsr para que el primer render ya sepa si es superpuesto: el estado
+  // inicial de la ficha depende de ello.
+  const panelSuperpuesto = useMediaQuery(theme.breakpoints.down("sm"), { noSsr: true });
 
-  const [drawerOpen, setDrawerOpen] = useState(wideScreen);
+  // Superpuesta arranca cerrada, para no tapar el chat al entrar. Acoplada, lo
+  // que el asesor dejo la ultima vez en este navegador; si nunca lo toco,
+  // abierta en pantallas anchas y plegada en las demas, como antes.
+  const [drawerOpen, setDrawerOpen] = useState(() =>
+    panelSuperpuesto ? false : leerFichaAbierta(wideScreen)
+  );
   const [loading, setLoading] = useState(true);
   const [contact, setContact] = useState({});
   const [ticket, setTicket] = useState({});
@@ -172,11 +188,13 @@ const Ticket = () => {
 
   const handleDrawerOpen = useCallback(() => {
     setDrawerOpen(true);
-  }, []);
+    if (!panelSuperpuesto) guardarFichaAbierta(true);
+  }, [panelSuperpuesto]);
 
   const handleDrawerClose = useCallback(() => {
     setDrawerOpen(false);
-  }, []);
+    if (!panelSuperpuesto) guardarFichaAbierta(false);
+  }, [panelSuperpuesto]);
 
   const handleQuickMessageSelect = (quickMessage) => {
     try {
@@ -228,16 +246,7 @@ const Ticket = () => {
       <Paper
         variant="outlined"
         elevation={0}
-        className={clsx(classes.mainWrapper, {
-          // Cuando el panel se superpone no hay que recolocar el chat: el
-          // margen negativo se queda, y el panel pasa por encima.
-          // En superpuesto se aplica SIEMPRE, este abierto o no. mainWrapper
-          // lleva un marginRight de -320 para hacer sitio al panel acoplado;
-          // si se deja puesto, el contenedor mide 320px mas que la ventana y
-          // el panel, que se posiciona contra su borde derecho, cae fuera de
-          // la pantalla. La clase lo devuelve a 0.
-          [classes.mainWrapperShift]: panelSuperpuesto || drawerOpen,
-        })}
+        className={classes.mainWrapper}
       >
         {/* <div id="TicketHeader"> */}
         <TicketHeader loading={loading}>
@@ -292,6 +301,7 @@ const Ticket = () => {
       <ContactDrawer
         open={drawerOpen}
         handleDrawerClose={handleDrawerClose}
+        handleDrawerOpen={handleDrawerOpen}
         contact={contact}
         loading={loading}
         ticket={ticket}

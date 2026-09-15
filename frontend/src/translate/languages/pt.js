@@ -1614,6 +1614,11 @@ const messages = {
           reports: "Relatórios",
           management: "Gerência",
         },
+        groups: {
+          daily: "Uso diário (atendente)",
+          supervision: "Supervisão e crescimento",
+          administration: "Administração da conta",
+        },
         submenuLabels: {
           flowbuilder: "Fluxo de Automação",
           flowCampaign: "Fluxo de Campanha",
