@@ -1,0 +1,36 @@
+# Imagen del frontend para Railway. Se construye desde frontend/
+# (railway up ./frontend --path-as-root). Ver docs/DESPLIEGUE_RAILWAY.md.
+FROM node:20.19.4-bookworm AS build
+WORKDIR /app
+
+# vendor/ antes de npm ci: xlsx se instala desde vendor/xlsx-0.20.3.tgz.
+COPY package.json package-lock.json ./
+COPY vendor ./vendor
+RUN npm ci --legacy-peer-deps --no-audit --no-fund
+
+COPY . .
+
+# Las REACT_APP_* quedan fijadas en el build. Railway solo las pasa si se declaran con ARG.
+ARG REACT_APP_BACKEND_URL
+ARG REACT_APP_FACEBOOK_APP_ID
+ARG REACT_APP_NUMBER_SUPPORT
+ARG REACT_APP_REQUIRE_BUSINESS_MANAGEMENT
+ENV GENERATE_SOURCEMAP=false \
+    CI=false
+RUN test -n "$REACT_APP_BACKEND_URL" || (echo "Falta REACT_APP_BACKEND_URL" >&2 && exit 1)
+RUN npm run build
+
+FROM node:20.19.4-bookworm-slim
+WORKDIR /app
+
+ENV NODE_ENV=production
+# server.js usa express y dotenv, que no estan en package.json. Express 4: la ruta "/*"
+# de server.js no es valida en Express 5.
+RUN npm install --no-save --no-audit --no-fund express@4.21.2 dotenv@16.4.7
+
+COPY --from=build /app/build ./build
+COPY server.js ./
+
+ENV SERVER_PORT=3000
+EXPOSE 3000
+CMD ["node", "server.js"]

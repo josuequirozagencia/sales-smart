@@ -36,6 +36,8 @@ backend/private/*
 # Backups y dumps
 backups/
 *.sql
+# Las migraciones de Prisma son codigo, no dumps (railway up tambien respeta este archivo)
+!api_oficial/prisma/migrations/**/migration.sql
 *.sql.gz
 *.tar.gz
 *.bak
