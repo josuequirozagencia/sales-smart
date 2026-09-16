@@ -65,24 +65,29 @@ const AuthUserService = async ({
     throw new AppError("ERR_INVALID_CREDENTIALS", 401);
   }
 
-  const Hr = new Date();
+  // El horario de atencion no se le aplica al superadministrador. Es la
+  // cuenta con la que se arregla todo lo demas: si alguien le toca el horario
+  // por error, con la comprobacion puesta nadie puede entrar a deshacerlo.
+  if (!user.super) {
+    const Hr = new Date();
 
-  const hh: number = Hr.getHours() * 60 * 60;
-  const mm: number = Hr.getMinutes() * 60;
-  const hora = hh + mm;
+    const hh: number = Hr.getHours() * 60 * 60;
+    const mm: number = Hr.getMinutes() * 60;
+    const hora = hh + mm;
 
-  const inicio: string = user.startWork;
-  const hhinicio = Number(inicio.split(":")[0]) * 60 * 60;
-  const mminicio = Number(inicio.split(":")[1]) * 60;
-  const horainicio = hhinicio + mminicio;
+    const inicio: string = user.startWork;
+    const hhinicio = Number(inicio.split(":")[0]) * 60 * 60;
+    const mminicio = Number(inicio.split(":")[1]) * 60;
+    const horainicio = hhinicio + mminicio;
 
-  const termino: string = user.endWork;
-  const hhtermino = Number(termino.split(":")[0]) * 60 * 60;
-  const mmtermino = Number(termino.split(":")[1]) * 60;
-  const horatermino = hhtermino + mmtermino;
+    const termino: string = user.endWork;
+    const hhtermino = Number(termino.split(":")[0]) * 60 * 60;
+    const mmtermino = Number(termino.split(":")[1]) * 60;
+    const horatermino = hhtermino + mmtermino;
 
-  if (hora < horainicio || hora > horatermino) {
-    throw new AppError("ERR_OUT_OF_HOURS", 401);
+    if (hora < horainicio || hora > horatermino) {
+      throw new AppError("ERR_OUT_OF_HOURS", 401);
+    }
   }
 
   if (await user.checkPassword(password)) {

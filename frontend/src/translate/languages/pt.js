@@ -1145,6 +1145,7 @@ const messages = {
           profile: "Perfil",
           startWork: "Inicio de trabalho",
           endWork: "Fim de trabalho",
+          superWorkHoursNote: "O superadministrador pode entrar a qualquer hora: este horário não bloqueia o acesso dele, mas é usado para distribuir conversas.",
           whatsapp: "Conexão Padrão",
           allTicketEnable: "Habilitado",
           allTicketDisable: "Desabilitado",

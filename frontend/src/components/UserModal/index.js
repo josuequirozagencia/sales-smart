@@ -27,7 +27,7 @@ import { AuthContext } from "../../context/Auth/AuthContext";
 import useWhatsApps from "../../hooks/useWhatsApps";
 
 import { Can } from "../Can";
-import { Avatar, Grid, Input, Paper, Tab, Tabs } from "@material-ui/core";
+import { Avatar, Grid, Input, Paper, Tab, Tabs, Typography } from "@material-ui/core";
 import { getBackendUrl } from "../../config";
 import TabPanel from "../TabPanel";
 import AvatarUploader from "../AvatarUpload";
@@ -568,6 +568,17 @@ const handleSaveUser = async (values) => {
                               className={classes.textField}
                             />
                           </Grid>
+                          {/* El superadministrador entra a cualquier hora: el
+                              horario no le bloquea el acceso, pero si cuenta
+                              para el reparto de conversaciones. Sin este aviso
+                              parecia que tocarlo podia dejarlo fuera. */}
+                          {user.super && (
+                            <Grid item xs={12}>
+                              <Typography variant="caption" color="textSecondary">
+                                {i18n.t("userModal.form.superWorkHoursNote")}
+                              </Typography>
+                            </Grid>
+                          )}
                         </Grid>
                       )}
                     />

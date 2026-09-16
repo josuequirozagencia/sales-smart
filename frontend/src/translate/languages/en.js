@@ -1138,6 +1138,7 @@ const messages = {
           profile: "Profile",
           startWork: "Work Start Time",
           endWork: "Work End Time",
+          superWorkHoursNote: "The superadmin can sign in at any time: these hours do not block their access, but they are used to distribute conversations.",
           whatsapp: "Default Connection",
           allTicketEnable: "Enabled",
           allTicketDisable: "Disabled",
