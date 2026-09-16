@@ -39,6 +39,17 @@ import { closeConnection, getSeededCompany, uniqueSuffix } from "../helpers/db";
 
 jest.mock("../../libs/socket", () => ({ getIO: () => ({ of: () => ({ emit: () => undefined }) }) }));
 jest.mock("../../libs/cache", () => ({ __esModule: true, default: { get: jest.fn(), set: jest.fn(), del: jest.fn() } }));
+// La transferencia carga UpdateTicketService y con el, por la cadena de
+// imports, queues.ts: sus crons (facturas, reparto, cierre automatico)
+// arrancan solos y siguen consultando la base cuando la suite ya cerro la
+// conexion, lo que tumbaba otras suites al ejecutarlas todas juntas.
+jest.mock("../../queues", () => ({
+  __esModule: true,
+  campaignQueue: { add: jest.fn(), process: jest.fn() },
+  parseToMilliseconds: (segundos: number) => segundos * 1000,
+  randomValue: (min: number, max: number) => min + Math.floor(Math.random() * (max - min)),
+  startQueueProcess: jest.fn()
+}));
 
 // Estado del agente IA por conversacion. Lo que se protege aqui:
 //  - activar o pausar la IA nunca cambia la asignacion del ticket;

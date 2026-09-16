@@ -6,8 +6,23 @@ WhatsApp (Baileys), WhatsApp Oficial, Facebook e Instagram. GHL queda fuera.
 
 Estado: fase 1 en la rama `feat/agentes-ia`. Hechos el modelo, la API de
 administración, el motor, la atención por canal, el estado de la IA por
-conversación, la transferencia y los seguimientos. Pendientes: sandbox, página
-de administración y selector de agente en los nodos del Flow Builder.
+conversación, la transferencia, los seguimientos y la página de administración.
+Pendientes: sandbox de prueba y selector de agente en los nodos del Flow Builder.
+
+## Administración
+
+Menú **Supervisión y crecimiento → Agentes IA** (`/ai-agents`), con las mismas
+condiciones que Prompts IA: plan con IA y perfil de administrador.
+
+- Lista con nombre, proveedor y modelo, conexiones asignadas y estado.
+- Formulario por pestañas: General (proveedor, modelo, clave, instrucciones,
+  fila de transferencia), Respuestas (temperatura, límites, bloques, audio,
+  imágenes, voz), Conocimiento (pegar texto o subir PDF, Word o texto),
+  Horario, Seguimientos (hasta 5 pasos) y Canales.
+- La clave de API nunca vuelve del servidor: el campo se deja vacío y solo se
+  muestran sus 4 últimos caracteres. Enviarlo vacío conserva la guardada.
+- Los canales se guardan en su propia llamada: una conexión que ya use otro
+  agente sale bloqueada en la lista y el servidor la rechaza si se fuerza.
 
 ## Dos estados independientes
 

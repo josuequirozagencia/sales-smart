@@ -41,6 +41,7 @@ import CakeIcon from "@material-ui/icons/Cake";
 import MonetizationOnOutlinedIcon from "@material-ui/icons/MonetizationOnOutlined";
 import {
   AllInclusive,
+  AndroidOutlined,
   AttachFile,
   Dashboard,
   Description,
@@ -377,7 +378,7 @@ const RUTAS_DIARIO = ["/kanban", "/quick-messages", "/contacts", "/tags", "/sche
 const RUTAS_SUPERVISION = [
   "/", "/reports", "/sales", "/response-time", "/moments", "/wallets",
   "/campaigns", "/contact-lists", "/campaigns-config", "/files",
-  "/phrase-lists", "/flowbuilders", "/prompts", "/queue-integration",
+  "/phrase-lists", "/flowbuilders", "/prompts", "/ai-agents", "/queue-integration",
 ];
 const RUTAS_ADMINISTRACION = [
   "/users", "/queues", "/connections", "/gohighlevel", "/allConnections",
@@ -1062,6 +1063,23 @@ useEffect(() => {
                         to="/prompts"
                         primary={i18n.t("mainDrawer.listItems.prompts")}
                         icon={<AllInclusive />}
+                        tooltip={collapsed}
+                      />
+                    )}
+                  />
+                )}
+
+                {/* Agentes IA: mismas condiciones que Prompts IA, porque es la
+                    evolucion de lo mismo y depende del mismo plan. */}
+                {showOpenAi && (
+                  <Can
+                    role={user.profile}
+                    perform="dashboard:view"
+                    yes={() => (
+                      <ListItemLink
+                        to="/ai-agents"
+                        primary={i18n.t("mainDrawer.listItems.aiAgents")}
+                        icon={<AndroidOutlined />}
                         tooltip={collapsed}
                       />
                     )}
