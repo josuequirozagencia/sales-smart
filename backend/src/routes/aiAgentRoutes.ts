@@ -14,6 +14,7 @@ const subidaDocumento = multer({ storage: multer.memoryStorage(), limits: { file
 aiAgentRoutes.get("/ai-agents", isAuth, AiAgentController.index);
 aiAgentRoutes.get("/ai-agents/channels", isAuth, AiAgentController.channels);
 aiAgentRoutes.get("/ai-agents/flow-options", isAuth, AiAgentController.flowOptions);
+aiAgentRoutes.post("/ai-agents/models", isAuth, AiAgentController.models);
 aiAgentRoutes.post(
   "/ai-agents/knowledge/extract",
   isAuth,

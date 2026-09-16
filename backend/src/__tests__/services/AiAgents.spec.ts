@@ -37,6 +37,7 @@ import {
   MENSAJE_SOLO_TEXTO
 } from "../../services/AiAgentServices/AiAgentEngine";
 import { olvidarCatalogoOpenRouter } from "../../services/AiAgentServices/Capacidades";
+import { listarModelos, olvidarModelos } from "../../services/AiAgentServices/ModelosDisponibles";
 import { closeConnection, getSeededCompany, uniqueSuffix } from "../helpers/db";
 
 // Agentes IA (docs/AGENTES_IA.md).
@@ -104,6 +105,7 @@ afterAll(async () => {
 beforeEach(() => {
   peticiones = [];
   olvidarCatalogoOpenRouter();
+  olvidarModelos();
 });
 
 const configBase = (extra: Record<string, unknown> = {}) => ({
@@ -315,6 +317,57 @@ describe("Motor contra proveedores (servidor falso)", () => {
   it("el prompt de sistema cambia la regla de transferencia segun haya herramientas", () => {
     expect(construirPromptSistema({ systemPrompt: "x" }, { conHerramientas: true })).toContain("transferir_a_humano");
     expect(construirPromptSistema({ systemPrompt: "x" }, { conHerramientas: false })).toContain("Ação: Transferir");
+  });
+});
+
+// ---------------------------------------------------------------------------
+describe("Modelos que ofrece cada proveedor", () => {
+  it("OpenAI: solo los de conversacion, ordenados y sin repetir", async () => {
+    responder = () => ({
+      json: {
+        data: [
+          { id: "gpt-4o-mini" },
+          { id: "gpt-4o" },
+          { id: "text-embedding-3-small" },
+          { id: "whisper-1" },
+          { id: "dall-e-3" },
+          { id: "o3-mini" }
+        ]
+      }
+    });
+    const r = await listarModelos(COMPANY_A, "openai", CLAVE, { baseURL: base });
+    expect(r.models).toEqual(["gpt-4o", "gpt-4o-mini", "o3-mini"]);
+    expect(r.avisos).toEqual([]);
+  });
+
+  it("Gemini: solo los que generan contenido", async () => {
+    responder = () => ({
+      json: {
+        models: [
+          { name: "models/gemini-2.0-flash", supportedGenerationMethods: ["generateContent"] },
+          { name: "models/text-embedding-004", supportedGenerationMethods: ["embedContent"] }
+        ]
+      }
+    });
+    const r = await listarModelos(COMPANY_A, "gemini", CLAVE, { baseURL: base });
+    expect(r.models).toEqual(["gemini-2.0-flash"]);
+  });
+
+  it("OpenRouter no necesita clave; una clave invalida se avisa sin romper", async () => {
+    responder = () => ({ json: { data: [{ id: "anthropic/claude-3.5-sonnet" }, { id: "openai/gpt-4o" }] } });
+    const sinClave = await listarModelos(COMPANY_A, "openrouter", "", { baseURL: base });
+    expect(sinClave.models).toEqual(["anthropic/claude-3.5-sonnet", "openai/gpt-4o"]);
+
+    olvidarModelos();
+    responder = () => ({ status: 401, json: { error: { message: "Incorrect API key" } } });
+    const r = await listarModelos(COMPANY_A, "openai", CLAVE, { baseURL: base });
+    expect(r.models).toEqual([]);
+    expect(r.avisos).toEqual(["INVALID_API_KEY"]);
+  });
+
+  it("sin clave y sin agente, OpenAI y Gemini lo piden en vez de fallar", async () => {
+    const r = await listarModelos(COMPANY_A, "openai", "", { baseURL: base });
+    expect(r).toEqual({ provider: "openai", models: [], avisos: ["API_KEY_REQUIRED"] });
   });
 });
 

@@ -21,6 +21,12 @@ condiciones que Prompts IA: plan con IA y perfil de administrador.
   Horario, Seguimientos (hasta 5 pasos) y Canales.
 - La clave de API nunca vuelve del servidor: el campo se deja vacío y solo se
   muestran sus 4 últimos caracteres. Enviarlo vacío conserva la guardada.
+- El modelo es un desplegable que se llena preguntando al proveedor
+  (`POST /ai-agents/models`): OpenAI y Gemini con la clave del agente,
+  OpenRouter con su catálogo público. Acepta texto libre, para no depender de
+  una lista escrita a mano, y el resultado se cachea media hora.
+- Los fallos de validación se muestran dentro del formulario, no solo como
+  aviso de esquina, y los códigos `ERR_AI_AGENT_*` están traducidos.
 - Los canales se guardan en su propia llamada: una conexión que ya use otro
   agente sale bloqueada en la lista y el servidor la rechaza si se fuerza.
 

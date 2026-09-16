@@ -21,13 +21,15 @@ import {
   Tab,
   Tabs,
   TextField,
+  Tooltip,
   Typography,
 } from "@material-ui/core";
-import { DeleteOutline, Visibility, VisibilityOff } from "@material-ui/icons";
+import { DeleteOutline, Refresh, Visibility, VisibilityOff } from "@material-ui/icons";
+import Alert from "@material-ui/lab/Alert";
+import Autocomplete from "@material-ui/lab/Autocomplete";
 import { toast } from "react-toastify";
 
 import api from "../../services/api";
-import toastError from "../../errors/toastError";
 import { i18n } from "../../translate/i18n";
 
 // Formulario de un Agente IA. Se usa estado propio y no Formik porque hay dos
@@ -105,14 +107,55 @@ const AiAgentModal = ({ open, onClose, agentId }) => {
   const [cargando, setCargando] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [subiendo, setSubiendo] = useState(false);
+  const [modelos, setModelos] = useState([]);
+  const [cargandoModelos, setCargandoModelos] = useState(false);
+  const [avisoModelos, setAvisoModelos] = useState(null);
+  const [error, setError] = useState(null);
+  // Si el alta funciono pero fallaron los canales, al reintentar se edita ese
+  // agente en vez de crear otro.
+  const [idCreado, setIdCreado] = useState(null);
   const archivoRef = useRef();
+  const id = agentId || idCreado;
 
   const cambiar = (campo, valor) => setDatos((previo) => ({ ...previo, [campo]: valor }));
+
+  // Mensaje del servidor traducido; si el codigo no tiene traduccion se
+  // muestra tal cual, antes que dejar al asesor sin explicacion.
+  const mensajeDeError = (err) => {
+    const codigo = err?.response?.data?.error;
+    if (codigo) return i18n.exists(`backendErrors.${codigo}`) ? i18n.t(`backendErrors.${codigo}`) : codigo;
+    if (err?.request && !err?.response) return i18n.t("backendErrors.ERR_NO_SERVER_RESPONSE");
+    return err?.message || i18n.t("aiAgents.errors.generic");
+  };
+
+  /** Modelos que ofrece el proveedor. La clave va solo si se acaba de escribir. */
+  const cargarModelos = async (proveedor = datos.provider, clave = datos.apiKey) => {
+    setCargandoModelos(true);
+    setAvisoModelos(null);
+    try {
+      const { data } = await api.post("/ai-agents/models", {
+        provider: proveedor,
+        apiKey: clave || undefined,
+        agentId: agentId || idCreado || undefined,
+      });
+      setModelos(data.models || []);
+      setAvisoModelos(data.avisos?.[0] || (data.models?.length ? null : "EMPTY"));
+    } catch (err) {
+      setModelos([]);
+      setAvisoModelos("UNAVAILABLE");
+    } finally {
+      setCargandoModelos(false);
+    }
+  };
 
   useEffect(() => {
     if (!open) return;
     setPestana("general");
     setVerClave(false);
+    setError(null);
+    setIdCreado(null);
+    setModelos([]);
+    setAvisoModelos(null);
     (async () => {
       setCargando(true);
       try {
@@ -141,14 +184,17 @@ const AiAgentModal = ({ open, onClose, agentId }) => {
           setKeyLast4(data.keyLast4);
           setVoiceKeyLast4(data.voiceKeyLast4);
           setSeleccionadas((data.channels || []).map((c) => c.whatsappId));
+          cargarModelos(data.provider, "");
         } else {
           setDatos({ ...vacio, schedule: { mode: "24/7", days: horarioPorDefecto() } });
           setKeyLast4(null);
           setVoiceKeyLast4(null);
           setSeleccionadas([]);
+          // OpenRouter publica su catalogo sin clave: ese ya se puede listar.
+          cargarModelos("openrouter", "");
         }
       } catch (err) {
-        toastError(err);
+        setError(mensajeDeError(err));
       } finally {
         setCargando(false);
       }
@@ -169,7 +215,7 @@ const AiAgentModal = ({ open, onClose, agentId }) => {
       setDatos((previo) => ({ ...previo, knowledgeText: data.text, knowledgeFileName: data.fileName }));
       if (data.truncated) toast.warn(i18n.t("aiAgents.knowledge.truncated"));
     } catch (err) {
-      toastError(err);
+      setError(mensajeDeError(err));
     } finally {
       setSubiendo(false);
     }
@@ -211,7 +257,19 @@ const AiAgentModal = ({ open, onClose, agentId }) => {
     );
 
   const guardar = async () => {
+    // Se comprueba antes de enviar para poder senalar el campo y la pestana.
+    const faltan = [];
+    if (!datos.name.trim()) faltan.push(i18n.t("aiAgents.form.name"));
+    if (!datos.model.trim()) faltan.push(i18n.t("aiAgents.form.model"));
+    if (!id && !datos.apiKey.trim()) faltan.push(i18n.t("aiAgents.form.apiKey"));
+    if (faltan.length) {
+      setPestana("general");
+      setError(`${i18n.t("aiAgents.errors.required")}: ${faltan.join(", ")}`);
+      return;
+    }
+
     setGuardando(true);
+    setError(null);
     try {
       const cuerpo = {
         ...datos,
@@ -224,9 +282,8 @@ const AiAgentModal = ({ open, onClose, agentId }) => {
       if (!cuerpo.apiKey) delete cuerpo.apiKey;
       if (!cuerpo.voiceKey) delete cuerpo.voiceKey;
 
-      const { data } = agentId
-        ? await api.put(`/ai-agents/${agentId}`, cuerpo)
-        : await api.post("/ai-agents", cuerpo);
+      const { data } = id ? await api.put(`/ai-agents/${id}`, cuerpo) : await api.post("/ai-agents", cuerpo);
+      setIdCreado(data.id);
 
       // Los canales van en su propia llamada: rechaza uno ya ocupado por otro
       // agente en vez de quitarselo en silencio.
@@ -235,7 +292,8 @@ const AiAgentModal = ({ open, onClose, agentId }) => {
       toast.success(i18n.t("aiAgents.toasts.saved"));
       onClose(true);
     } catch (err) {
-      toastError(err);
+      if (err?.response?.data?.error === "ERR_AI_AGENT_CHANNEL_TAKEN") setPestana("canales");
+      setError(mensajeDeError(err));
     } finally {
       setGuardando(false);
     }
@@ -251,6 +309,13 @@ const AiAgentModal = ({ open, onClose, agentId }) => {
         {agentId ? i18n.t("aiAgents.modal.editTitle") : i18n.t("aiAgents.modal.addTitle")}
       </DialogTitle>
       <DialogContent dividers className={classes.contenido}>
+        {/* El motivo del fallo se ve aqui y no solo en un aviso fugaz de la
+            esquina, que con el formulario abierto pasa desapercibido. */}
+        {error && (
+          <Alert severity="error" onClose={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
         {cargando ? (
           <CircularProgress size={28} />
         ) : (
@@ -300,7 +365,10 @@ const AiAgentModal = ({ open, onClose, agentId }) => {
                     <InputLabel>{i18n.t("aiAgents.form.provider")}</InputLabel>
                     <Select
                       value={datos.provider}
-                      onChange={(e) => cambiar("provider", e.target.value)}
+                      onChange={(e) => {
+                        cambiar("provider", e.target.value);
+                        cargarModelos(e.target.value, datos.apiKey);
+                      }}
                       label={i18n.t("aiAgents.form.provider")}
                     >
                       <MenuItem value="openai">OpenAI</MenuItem>
@@ -310,14 +378,46 @@ const AiAgentModal = ({ open, onClose, agentId }) => {
                   </FormControl>
                 </Grid>
                 <Grid item xs={12} md={8}>
-                  <TextField
-                    label={i18n.t("aiAgents.form.model")}
+                  {/* Desplegable con lo que publica el proveedor, pero sigue
+                      aceptando texto: un modelo recien salido no espera a que
+                      alguien actualice una lista escrita a mano. */}
+                  <Autocomplete
+                    freeSolo
+                    openOnFocus
+                    options={modelos}
+                    loading={cargandoModelos}
                     value={datos.model}
-                    onChange={(e) => cambiar("model", e.target.value)}
-                    variant="outlined"
-                    margin="dense"
-                    fullWidth
-                    helperText={i18n.t(`aiAgents.form.modelHint.${datos.provider}`)}
+                    inputValue={datos.model}
+                    onChange={(e, valor) => cambiar("model", valor || "")}
+                    onInputChange={(e, valor) => cambiar("model", valor || "")}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label={i18n.t("aiAgents.form.model")}
+                        variant="outlined"
+                        margin="dense"
+                        fullWidth
+                        helperText={
+                          avisoModelos
+                            ? i18n.t(`aiAgents.models.${avisoModelos}`)
+                            : i18n.t(`aiAgents.form.modelHint.${datos.provider}`)
+                        }
+                        InputProps={{
+                          ...params.InputProps,
+                          endAdornment: (
+                            <>
+                              {cargandoModelos ? <CircularProgress size={16} /> : null}
+                              <Tooltip title={i18n.t("aiAgents.models.refresh")}>
+                                <IconButton size="small" onClick={() => cargarModelos()} disabled={cargandoModelos}>
+                                  <Refresh fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                              {params.InputProps.endAdornment}
+                            </>
+                          ),
+                        }}
+                      />
+                    )}
                   />
                 </Grid>
                 <Grid item xs={12}>
@@ -325,6 +425,7 @@ const AiAgentModal = ({ open, onClose, agentId }) => {
                     label={etiquetaClave}
                     value={datos.apiKey}
                     onChange={(e) => cambiar("apiKey", e.target.value)}
+                    onBlur={(e) => e.target.value.trim() && cargarModelos(datos.provider, e.target.value)}
                     type={verClave ? "text" : "password"}
                     variant="outlined"
                     margin="dense"

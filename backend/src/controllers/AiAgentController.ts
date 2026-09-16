@@ -11,6 +11,7 @@ import {
   agentesParaFlujos
 } from "../services/AiAgentServices/AiAgentService";
 import { extraerTextoDocumento } from "../services/AiAgentServices/ExtraerTextoDocumento";
+import { listarModelos } from "../services/AiAgentServices/ModelosDisponibles";
 import { cambiarEstadoDesdeAsesor, estadoParaAsesor } from "../services/AiAgentServices/AtenderConAgente";
 import ShowTicketService from "../services/TicketServices/ShowTicketService";
 
@@ -77,6 +78,22 @@ export const updateChannels = async (req: Request, res: Response): Promise<Respo
  */
 export const flowOptions = async (req: Request, res: Response): Promise<Response> => {
   return res.status(200).json(await agentesParaFlujos(req.user.companyId));
+};
+
+/**
+ * Modelos que ofrece el proveedor, para el desplegable del formulario. La
+ * clave llega en el cuerpo solo si se acaba de escribir; si no, se usa la que
+ * ya tiene guardada el agente. Nunca se devuelve ninguna clave.
+ */
+export const models = async (req: Request, res: Response): Promise<Response> => {
+  soloAdmin(req);
+  const { provider, apiKey, agentId } = req.body;
+  const id = Number(agentId);
+  return res.status(200).json(
+    await listarModelos(req.user.companyId, provider, typeof apiKey === "string" ? apiKey : undefined, {
+      agentId: Number.isInteger(id) && id > 0 ? id : undefined
+    })
+  );
 };
 
 export const extractKnowledge = async (req: Request, res: Response): Promise<Response> => {
