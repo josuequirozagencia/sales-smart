@@ -15,6 +15,16 @@ aiAgentRoutes.get("/ai-agents", isAuth, AiAgentController.index);
 aiAgentRoutes.get("/ai-agents/channels", isAuth, AiAgentController.channels);
 aiAgentRoutes.get("/ai-agents/flow-options", isAuth, AiAgentController.flowOptions);
 aiAgentRoutes.post("/ai-agents/models", isAuth, AiAgentController.models);
+// Chat de prueba: imagen y audio van en memoria, como el documento de conocimiento.
+const subidaPrueba = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
+aiAgentRoutes.post(
+  "/ai-agents/test-message",
+  isAuth,
+  subidaPrueba.fields([{ name: "image", maxCount: 1 }, { name: "audio", maxCount: 1 }]),
+  AiAgentController.testMessage
+);
+aiAgentRoutes.delete("/ai-agents/test-message/:sessionId", isAuth, AiAgentController.resetTest);
+aiAgentRoutes.post("/ai-agents/capabilities", isAuth, AiAgentController.capabilities);
 aiAgentRoutes.post(
   "/ai-agents/knowledge/extract",
   isAuth,

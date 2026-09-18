@@ -31,6 +31,7 @@ import { toast } from "react-toastify";
 
 import api from "../../services/api";
 import { i18n } from "../../translate/i18n";
+import AiAgentTestChat from "../AiAgentTestChat";
 
 // Formulario de un Agente IA. Se usa estado propio y no Formik porque hay dos
 // estructuras anidadas —el horario por dia y los pasos de seguimiento— que con
@@ -334,7 +335,15 @@ const AiAgentModal = ({ open, onClose, agentId }) => {
               <Tab label={i18n.t("aiAgents.tabs.schedule")} value="horario" />
               <Tab label={i18n.t("aiAgents.tabs.followUps")} value="seguimientos" />
               <Tab label={i18n.t("aiAgents.tabs.channels")} value="canales" />
+              <Tab label={i18n.t("aiAgents.tabs.test")} value="probar" />
             </Tabs>
+
+            {/* Montado todo el rato y solo oculto: cambiar de pestana para
+                retocar las instrucciones no borra la conversacion de prueba.
+                Se borra al cerrar el formulario. */}
+            <div hidden={pestana !== "probar"}>
+              <AiAgentTestChat datos={datos} agentId={id} mensajeDeError={mensajeDeError} />
+            </div>
 
             {pestana === "general" && (
               <Grid container spacing={2} className={classes.seccion}>

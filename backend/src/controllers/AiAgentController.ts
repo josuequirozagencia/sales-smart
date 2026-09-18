@@ -12,6 +12,7 @@ import {
 } from "../services/AiAgentServices/AiAgentService";
 import { extraerTextoDocumento } from "../services/AiAgentServices/ExtraerTextoDocumento";
 import { listarModelos } from "../services/AiAgentServices/ModelosDisponibles";
+import { capacidadesDelFormulario, probarMensaje, reiniciarSandbox } from "../services/AiAgentServices/Sandbox";
 import { cambiarEstadoDesdeAsesor, estadoParaAsesor } from "../services/AiAgentServices/AtenderConAgente";
 import ShowTicketService from "../services/TicketServices/ShowTicketService";
 
@@ -127,4 +128,57 @@ export const updateTicketState = async (req: Request, res: Response): Promise<Re
   if (typeof enabled !== "boolean") throw new AppError("ERR_AI_AGENT_INVALID_STATE", 400);
   const estado = await cambiarEstadoDesdeAsesor(ticketIdDe(req), req.user.companyId, enabled, Number(req.user.id));
   return res.status(200).json(estado);
+};
+
+/** Id de agente opcional que llega como texto (multipart) o numero (JSON). */
+const agenteOpcional = (valor: unknown): number | undefined => {
+  const id = Number(valor);
+  return Number.isInteger(id) && id > 0 ? id : undefined;
+};
+
+/** La configuracion del formulario viaja como JSON en un campo de texto (multipart). */
+const configDe = (valor: unknown): Record<string, any> => {
+  if (valor && typeof valor === "object") return valor as Record<string, any>;
+  try {
+    return JSON.parse(String(valor || "{}"));
+  } catch (err) {
+    throw new AppError("ERR_AI_AGENT_INVALID_CONFIG", 400);
+  }
+};
+
+/**
+ * Chat de prueba del formulario: responde con la configuracion que hay en
+ * pantalla, aunque no este guardada, y no toca contactos, tickets ni mensajes.
+ */
+export const testMessage = async (req: Request, res: Response): Promise<Response> => {
+  soloAdmin(req);
+  const archivos = (req.files || {}) as Record<string, Express.Multer.File[]>;
+  const adjunto = (f?: Express.Multer.File) =>
+    f ? { buffer: f.buffer, mimetype: f.mimetype, fileName: f.originalname } : undefined;
+
+  const respuesta = await probarMensaje({
+    companyId: req.user.companyId,
+    userId: Number(req.user.id),
+    sessionId: String(req.body.sessionId || ""),
+    config: configDe(req.body.config),
+    agentId: agenteOpcional(req.body.agentId),
+    texto: typeof req.body.text === "string" ? req.body.text : undefined,
+    imagen: adjunto(archivos.image?.[0]),
+    audio: adjunto(archivos.audio?.[0])
+  });
+  return res.status(200).json(respuesta);
+};
+
+export const resetTest = async (req: Request, res: Response): Promise<Response> => {
+  soloAdmin(req);
+  await reiniciarSandbox(req.user.companyId, Number(req.user.id), String(req.params.sessionId || ""));
+  return res.status(204).send();
+};
+
+/** Que puede hacer el modelo elegido (imagenes, audio, herramientas), con avisos. */
+export const capabilities = async (req: Request, res: Response): Promise<Response> => {
+  soloAdmin(req);
+  return res
+    .status(200)
+    .json(await capacidadesDelFormulario(req.user.companyId, configDe(req.body.config), agenteOpcional(req.body.agentId)));
 };

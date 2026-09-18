@@ -194,6 +194,8 @@ export const historialGemini = (turnos: TurnoHistorial[]): Content[] => {
   return contenido;
 };
 
+const AUDIO_GEMINI = ["audio/wav", "audio/mp3", "audio/mpeg", "audio/aiff", "audio/aac", "audio/ogg", "audio/flac"];
+
 const generarGemini = async (p: PeticionProveedor): Promise<RespuestaProveedor> => {
   const cliente = new GoogleGenerativeAI(p.apiKey);
   const modelo = cliente.getGenerativeModel(
@@ -222,7 +224,15 @@ const generarGemini = async (p: PeticionProveedor): Promise<RespuestaProveedor> 
 
   const partes: Part[] = [];
   if (p.texto) partes.push({ text: p.texto });
-  if (p.audio) partes.push({ inlineData: { mimeType: p.audio.mimetype.split(";")[0], data: p.audio.buffer.toString("base64") } });
+  if (p.audio) {
+    // Gemini no acepta webm (lo que graba el navegador en el chat de prueba) ni
+    // otros formatos raros: esos se pasan a mp3 antes de enviarlos.
+    const tipo = p.audio.mimetype.split(";")[0];
+    const audio = AUDIO_GEMINI.includes(tipo)
+      ? { mimeType: tipo, data: p.audio.buffer.toString("base64") }
+      : { mimeType: "audio/mp3", data: (await convertirA(p.audio.buffer, "mp3")).toString("base64") };
+    partes.push({ inlineData: audio });
+  }
   if (p.imagen) partes.push({ inlineData: { mimeType: p.imagen.mimetype, data: p.imagen.buffer.toString("base64") } });
   if (!partes.length) partes.push({ text: "" });
 
