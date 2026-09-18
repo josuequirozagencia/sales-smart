@@ -4,6 +4,7 @@ import cacheLayer from "../libs/cache";
 import { removeWbot, restartWbot } from "../libs/wbot";
 import Whatsapp from "../models/Whatsapp";
 import AppError from "../errors/AppError";
+import ListTemplatesService from "../services/WhatsappService/ListTemplatesService";
 import DeleteBaileysService from "../services/BaileysServices/DeleteBaileysService";
 import ShowCompanyService from "../services/CompanyService/ShowCompanyService";
 import {
@@ -681,6 +682,18 @@ export const showAdmin = async (
 
   // Ruta solo para super (whatsappRoutes): WhatsAppModalAdmin muestra el token.
   return res.status(200).json({ ...whatsapp.toJSON(), token: whatsapp.token });
+};
+
+/**
+ * Plantillas de WhatsApp aprobadas por Meta para una conexion, en solo
+ * lectura y tal cual las devuelve Meta. La ve cualquier usuario de la empresa:
+ * tambien la usa quien responde un ticket para elegir plantilla.
+ */
+export const listTemplates = async (req: Request, res: Response): Promise<Response> => {
+  const { companyId } = req.user;
+  const whatsappId = Number(req.params.whatsappId);
+  if (!Number.isInteger(whatsappId) || whatsappId < 1) throw new AppError("ERR_NO_WAPP_FOUND", 404);
+  return res.status(200).json(await ListTemplatesService(whatsappId, companyId));
 };
 
 export const syncTemplatesOficial = async (

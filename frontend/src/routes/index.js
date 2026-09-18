@@ -53,6 +53,7 @@ const Annoucements = lazy(() => import("../pages/Annoucements"));
 const Chat = lazy(() => import("../pages/Chat"));
 const Prompts = lazy(() => import("../pages/Prompts"));
 const AiAgents = lazy(() => import("../pages/AiAgents"));
+const WhatsAppTemplates = lazy(() => import("../pages/WhatsAppTemplates"));
 const AllConnections = lazy(() => import("../pages/AllConnections/"));
 const Reports = lazy(() => import("../pages/Reports"));
 const ResponseTime = lazy(() => import("../pages/ResponseTime"));
@@ -220,6 +221,7 @@ const Routes = () => {
                 />
                 <Route exact path="/prompts" component={Prompts} isPrivate />
                 <Route exact path="/ai-agents" component={AiAgents} isPrivate />
+                <Route exact path="/whatsapp-templates" component={WhatsAppTemplates} isPrivate />
                 <Route
                   exact
                   path="/allConnections"

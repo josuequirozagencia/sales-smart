@@ -27,6 +27,9 @@ whatsappRoutes.get("/whatsapp/sync-templates/:whatsappId", isAuth, canManageConn
 whatsappRoutes.post("/whatsapp/", isAuth, canManageConnections, WhatsAppController.store);
 whatsappRoutes.post("/facebook/", isAuth, canManageConnections, WhatsAppController.storeFacebook);
 whatsappRoutes.get("/whatsapp/:whatsappId", isAuth, WhatsAppController.show);
+// Plantillas aprobadas por Meta, solo lectura. Cualquier usuario de la empresa:
+// tambien las usa quien responde un ticket.
+whatsappRoutes.get("/whatsapp/:whatsappId/templates", isAuth, WhatsAppController.listTemplates);
 whatsappRoutes.put("/whatsapp/:whatsappId", isAuth, canManageConnections, WhatsAppController.update);
 whatsappRoutes.delete("/whatsapp/:whatsappId", isAuth, canManageConnections, WhatsAppController.remove);
 whatsappRoutes.post("/closedimported/:whatsappId", isAuth, canManageConnections, WhatsAppController.closedTickets);

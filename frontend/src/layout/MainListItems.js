@@ -381,7 +381,7 @@ const RUTAS_SUPERVISION = [
   "/phrase-lists", "/flowbuilders", "/prompts", "/ai-agents", "/queue-integration",
 ];
 const RUTAS_ADMINISTRACION = [
-  "/users", "/queues", "/connections", "/gohighlevel", "/allConnections",
+  "/users", "/queues", "/connections", "/whatsapp-templates", "/gohighlevel", "/allConnections",
   "/financeiro", "/settings", "/messages-api", "/announcements", "/companies",
 ];
 
@@ -1156,6 +1156,14 @@ useEffect(() => {
                     primary={i18n.t("mainDrawer.listItems.connections")}
                     icon={<SyncAltIcon />}
                     showBadge={connectionWarning}
+                    tooltip={collapsed}
+                  />
+                  {/* Catalogo real de plantillas aprobadas por Meta, junto a
+                      Conexiones y con sus mismos permisos. */}
+                  <ListItemLink
+                    to="/whatsapp-templates"
+                    primary={i18n.t("mainDrawer.listItems.whatsappTemplates")}
+                    icon={<WhatsAppIcon />}
                     tooltip={collapsed}
                   />
                   {/* Tenia el mismo SyncAltIcon que Conexiones y no se
