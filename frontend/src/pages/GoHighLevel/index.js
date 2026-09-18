@@ -7,19 +7,9 @@ import {
   Button,
   Switch,
   FormControlLabel,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   CircularProgress,
 } from "@material-ui/core";
-import { CreateIcon, BlockIcon } from "../../components/Icons";
+import { useHistory } from "react-router-dom";
 import { toast } from "react-toastify";
 
 import MainContainer from "../../components/MainContainer";
@@ -74,8 +64,6 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const PLANTILLA_VACIA = { name: "", language: "es", body: "" };
-
 const GoHighLevel = () => {
   const classes = useStyles();
   const { user } = useContext(AuthContext);
@@ -91,10 +79,10 @@ const GoHighLevel = () => {
   // siempre y solo se manda si se escribe algo.
   const [token, setToken] = useState("");
   const [guardando, setGuardando] = useState(false);
-
-  const [plantillas, setPlantillas] = useState([]);
-  const [dialogo, setDialogo] = useState(false);
-  const [editando, setEditando] = useState(PLANTILLA_VACIA);
+  // Igual que el token de GHL: el de Meta nunca vuelve del servidor, solo
+  // sus 4 ultimos caracteres, y aqui solo se manda si se escribe uno nuevo.
+  const [tokenMeta, setTokenMeta] = useState("");
+  const history = useHistory();
 
   const esAdmin = user.profile === "admin";
 
@@ -106,14 +94,6 @@ const GoHighLevel = () => {
     } catch (err) {
       toastError(err);
     }
-    try {
-      const { data } = await api.get("/ghl/templates");
-      setPlantillas(data);
-    } catch (err) {
-      // Las plantillas son secundarias: si fallan, la pantalla sigue
-      // sirviendo para configurar la conexion.
-      setPlantillas([]);
-    }
     setCargando(false);
   };
 
@@ -122,7 +102,7 @@ const GoHighLevel = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const guardarConfig = async () => {
+  const guardarConfig = async ({ quitarMeta = false } = {}) => {
     if (!config.locationId) {
       toast.error(i18n.t("goHighLevel.errors.locationRequired"));
       return;
@@ -133,42 +113,18 @@ const GoHighLevel = () => {
         token: token || undefined,
         locationId: config.locationId,
         isActive: config.isActive,
+        metaBusinessId: config.metaBusinessId || "",
+        metaAccessToken: tokenMeta || undefined,
+        quitarMeta,
       });
       setConfig(data);
       setToken("");
+      setTokenMeta("");
       toast.success(i18n.t("goHighLevel.saved"));
     } catch (err) {
       toastError(err);
     }
     setGuardando(false);
-  };
-
-  const guardarPlantilla = async () => {
-    if (!editando.name || !editando.body) {
-      toast.error(i18n.t("goHighLevel.errors.templateRequired"));
-      return;
-    }
-    try {
-      if (editando.id) {
-        await api.put(`/ghl/templates/${editando.id}`, editando);
-      } else {
-        await api.post("/ghl/templates", editando);
-      }
-      setDialogo(false);
-      setEditando(PLANTILLA_VACIA);
-      cargar();
-    } catch (err) {
-      toastError(err);
-    }
-  };
-
-  const borrarPlantilla = async (id) => {
-    try {
-      await api.delete(`/ghl/templates/${id}`);
-      cargar();
-    } catch (err) {
-      toastError(err);
-    }
   };
 
   const copiar = () => {
@@ -257,7 +213,7 @@ const GoHighLevel = () => {
             <Button
               variant="contained"
               color="primary"
-              onClick={guardarConfig}
+              onClick={() => guardarConfig()}
               disabled={guardando}
             >
               {i18n.t("goHighLevel.save")}
@@ -295,123 +251,60 @@ const GoHighLevel = () => {
         </Paper>
       )}
 
-      {/* --- Plantillas --- */}
+      {/* --- Plantillas de WhatsApp (Meta) ---
+          GHL no deja leer las plantillas por API, pero la cuenta de WhatsApp
+          Business de detras es de Meta. Con estas dos credenciales se leen las
+          plantillas reales y se ven en "Plantillas de WhatsApp". */}
       <Paper className={classes.bloque} variant="outlined">
-        <div className={classes.titulo}>
-          {i18n.t("goHighLevel.templates.title")}
-        </div>
-        <div className={classes.ayuda}>
-          {i18n.t("goHighLevel.templates.help")}
-        </div>
+        <div className={classes.titulo}>{i18n.t("goHighLevel.meta.title")}</div>
+        <div className={classes.ayuda}>{i18n.t("goHighLevel.meta.help")}</div>
 
-        {esAdmin && (
-          <div style={{ marginBottom: 12 }}>
-            <Button
-              size="small"
-              variant="outlined"
-              onClick={() => {
-                setEditando(PLANTILLA_VACIA);
-                setDialogo(true);
-              }}
-            >
-              {i18n.t("goHighLevel.templates.add")}
-            </Button>
-          </div>
-        )}
-
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell>{i18n.t("goHighLevel.templates.name")}</TableCell>
-              <TableCell>{i18n.t("goHighLevel.templates.language")}</TableCell>
-              <TableCell>{i18n.t("goHighLevel.templates.body")}</TableCell>
-              {esAdmin && <TableCell align="right" />}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {plantillas.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={esAdmin ? 4 : 3}>
-                  {i18n.t("goHighLevel.templates.empty")}
-                </TableCell>
-              </TableRow>
-            )}
-            {plantillas.map((p) => (
-              <TableRow key={p.id}>
-                <TableCell>{p.name}</TableCell>
-                <TableCell>{p.language}</TableCell>
-                <TableCell>{p.body}</TableCell>
-                {esAdmin && (
-                  <TableCell align="right">
-                    <div className={classes.acciones}>
-                      <IconButton
-                        size="small"
-                        onClick={() => {
-                          setEditando(p);
-                          setDialogo(true);
-                        }}
-                      >
-                        <CreateIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => borrarPlantilla(p.id)}
-                      >
-                        <BlockIcon fontSize="small" />
-                      </IconButton>
-                    </div>
-                  </TableCell>
-                )}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Paper>
-
-      <Dialog open={dialogo} onClose={() => setDialogo(false)} fullWidth maxWidth="sm">
-        <DialogTitle>{i18n.t("goHighLevel.templates.dialogTitle")}</DialogTitle>
-        <DialogContent>
+        <div className={classes.fila}>
           <TextField
-            fullWidth
-            margin="dense"
+            className={classes.campo}
             variant="outlined"
             size="small"
-            label={i18n.t("goHighLevel.templates.name")}
-            value={editando.name}
-            onChange={(e) => setEditando({ ...editando, name: e.target.value })}
+            label={i18n.t("goHighLevel.meta.businessId")}
+            value={config.metaBusinessId || ""}
+            onChange={(e) => setConfig({ ...config, metaBusinessId: e.target.value.replace(/\D/g, "") })}
+            disabled={!esAdmin}
           />
           <TextField
-            fullWidth
-            margin="dense"
+            className={classes.campo}
             variant="outlined"
             size="small"
-            label={i18n.t("goHighLevel.templates.language")}
-            value={editando.language}
-            onChange={(e) =>
-              setEditando({ ...editando, language: e.target.value })
+            type="password"
+            autoComplete="new-password"
+            label={i18n.t("goHighLevel.meta.token")}
+            placeholder={
+              config.tieneTokenMeta
+                ? `${i18n.t("goHighLevel.meta.tokenSaved")} ••••${config.metaTokenLast4 || ""}`
+                : ""
             }
+            value={tokenMeta}
+            onChange={(e) => setTokenMeta(e.target.value)}
+            disabled={!esAdmin}
           />
-          <TextField
-            fullWidth
-            multiline
-            minRows={4}
-            margin="dense"
-            variant="outlined"
-            size="small"
-            label={i18n.t("goHighLevel.templates.body")}
-            value={editando.body}
-            onChange={(e) => setEditando({ ...editando, body: e.target.value })}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDialogo(false)}>
-            {i18n.t("goHighLevel.cancel")}
-          </Button>
-          <Button color="primary" variant="contained" onClick={guardarPlantilla}>
-            {i18n.t("goHighLevel.save")}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        </div>
+
+        <div className={classes.acciones} style={{ marginTop: 12, flexWrap: "wrap" }}>
+          {esAdmin && (
+            <Button variant="contained" color="primary" onClick={() => guardarConfig()} disabled={guardando}>
+              {i18n.t("goHighLevel.save")}
+            </Button>
+          )}
+          {config.tieneTokenMeta && config.metaBusinessId && (
+            <Button variant="outlined" onClick={() => history.push("/whatsapp-templates")}>
+              {i18n.t("goHighLevel.meta.viewTemplates")}
+            </Button>
+          )}
+          {esAdmin && (config.tieneTokenMeta || config.metaBusinessId) && (
+            <Button onClick={() => guardarConfig({ quitarMeta: true })} disabled={guardando}>
+              {i18n.t("goHighLevel.meta.remove")}
+            </Button>
+          )}
+        </div>
+      </Paper>
     </MainContainer>
   );
 };

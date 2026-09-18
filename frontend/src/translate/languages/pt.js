@@ -305,19 +305,17 @@ const messages = {
           help: "Cole este endereço no GoHighLevel, na ação «Webhook» de um Workflow com o gatilho «Customer Replied», para as mensagens recebidas. Com um Private Integration Token não há outra via: a assinatura de eventos é exclusiva dos apps do Marketplace, e o GoHighLevel não tem API para criá-la. É feito uma única vez.",
           copy: "Copiar",
         },
-        templates: {
-          title: "Modelos de WhatsApp",
-          help: "O GoHighLevel não permite ler os modelos pela API. Anote aqui os que já estão aprovados pela Meta dentro do GoHighLevel, com o mesmo nome exato: esta lista é um espelho, não valida nada.",
-          add: "Adicionar modelo",
-          name: "Nome",
-          language: "Idioma",
-          body: "Texto",
-          empty: "Ainda não há modelos anotados",
-          dialogTitle: "Modelo",
+        meta: {
+          title: "Templates de WhatsApp (Meta)",
+          help: "O GoHighLevel não deixa ler os templates por API, mas a conta do WhatsApp Business por trás é da Meta. Com o ID dela e um token da Meta (de um usuário do sistema com a permissão whatsapp_business_management) os templates aprovados reais aparecem em «Templates de WhatsApp». Opcional; o token é salvo criptografado.",
+          businessId: "ID da conta do WhatsApp Business (WABA)",
+          token: "Token de acesso da Meta",
+          tokenSaved: "Salvo, termina em",
+          viewTemplates: "Ver templates",
+          remove: "Remover credenciais da Meta",
         },
         errors: {
           locationRequired: "Falta o Location ID",
-          templateRequired: "Nome e texto são obrigatórios",
         },
       },
       signup: {
@@ -3081,6 +3079,7 @@ const messages = {
         },
       },
       backendErrors: {
+        ERR_GHL_META_BUSINESS_ID_INVALIDO: "O ID da conta do WhatsApp Business só tem números.",
         ERR_TEMPLATES_CHANNEL_UNSUPPORTED: "Esta conexão não tem templates da Meta: só WhatsApp Oficial e GoHighLevel.",
         ERR_TEMPLATES_UNAVAILABLE: "A Meta não devolveu os templates. Verifique se a conexão está ativa e tente de novo.",
         ERR_TEMPLATES_GHL_META_NOT_CONFIGURED: "Para ver os templates do GoHighLevel, salve o ID da conta do WhatsApp Business e o token da Meta no GoHighLevel.",

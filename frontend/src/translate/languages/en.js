@@ -305,19 +305,17 @@ const messages = {
           help: "Paste this address into GoHighLevel, in the «Webhook» action of a Workflow with the «Customer Replied» trigger, for inbound messages. With a Private Integration Token there is no other way: event subscriptions are reserved for Marketplace apps, and GoHighLevel has no API to create them. It is done once.",
           copy: "Copy",
         },
-        templates: {
-          title: "WhatsApp templates",
-          help: "GoHighLevel does not expose templates through its API. Record here the ones already approved by Meta inside GoHighLevel, using the exact same name: this list is a mirror, it validates nothing.",
-          add: "Add template",
-          name: "Name",
-          language: "Language",
-          body: "Body",
-          empty: "No templates recorded yet",
-          dialogTitle: "Template",
+        meta: {
+          title: "WhatsApp templates (Meta)",
+          help: "GoHighLevel does not let templates be read through its API, but the WhatsApp Business Account behind it belongs to Meta. With its ID and a Meta token (from a system user with the whatsapp_business_management permission) the real approved templates show up in \"WhatsApp templates\". Optional; the token is stored encrypted.",
+          businessId: "WhatsApp Business Account ID (WABA)",
+          token: "Meta access token",
+          tokenSaved: "Saved, ends in",
+          viewTemplates: "View templates",
+          remove: "Remove Meta credentials",
         },
         errors: {
           locationRequired: "Location ID is missing",
-          templateRequired: "Name and body are required",
         },
       },
       ticketInfo: {
@@ -3038,6 +3036,7 @@ const messages = {
         },
       },
       backendErrors: {
+        ERR_GHL_META_BUSINESS_ID_INVALIDO: "The WhatsApp Business Account ID only contains digits.",
         ERR_TEMPLATES_CHANNEL_UNSUPPORTED: "This connection has no Meta templates: only WhatsApp Official and GoHighLevel.",
         ERR_TEMPLATES_UNAVAILABLE: "Meta did not return the templates. Check the connection is active and try again.",
         ERR_TEMPLATES_GHL_META_NOT_CONFIGURED: "To see GoHighLevel templates, save the WhatsApp Business Account ID and the Meta token in GoHighLevel.",

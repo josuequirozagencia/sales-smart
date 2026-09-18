@@ -64,7 +64,10 @@ export const verConfiguracion = async (companyId: number) => {
       locationId: "",
       workflows: [] as Flujo[],
       webhookSecret: "",
-      isActive: false
+      isActive: false,
+      metaBusinessId: "",
+      tieneTokenMeta: false,
+      metaTokenLast4: null as string | null
     };
   }
 
@@ -74,8 +77,27 @@ export const verConfiguracion = async (companyId: number) => {
     locationId: fila.locationId || "",
     workflows: leerFlujos(fila.workflows),
     webhookSecret: fila.webhookSecret || "",
-    isActive: fila.isActive
+    isActive: fila.isActive,
+    // Del token de Meta solo sale si hay uno y sus 4 ultimos caracteres.
+    metaBusinessId: fila.metaBusinessId || "",
+    tieneTokenMeta: Boolean(fila.metaAccessToken && decrypt(fila.metaAccessToken)),
+    metaTokenLast4: fila.metaAccessToken ? fila.metaAccessTokenLast4 || null : null
   };
+};
+
+/**
+ * Credenciales de Meta para leer las plantillas de la cuenta de WhatsApp
+ * Business que hay detras de GHL, o null si no estan completas.
+ */
+export const obtenerCredencialesMeta = async (
+  companyId: number
+): Promise<{ businessId: string; accessToken: string } | null> => {
+  const fila = await buscarIntegracion(companyId);
+  if (!fila?.metaBusinessId || !fila.metaAccessToken) return null;
+  const accessToken = decrypt(fila.metaAccessToken);
+  // Dato manipulado o clave de cifrado cambiada: como si no hubiera token.
+  if (!accessToken) return null;
+  return { businessId: fila.metaBusinessId, accessToken };
 };
 
 /**
@@ -112,7 +134,25 @@ interface DatosGuardado {
   locationId: string;
   isActive: boolean;
   workflows?: Flujo[];
+  /** Opcional. Undefined no lo toca; cadena vacia lo borra. */
+  metaBusinessId?: string;
+  /** Solo si se quiere cambiar. Vacio o ausente deja el que ya habia. */
+  metaAccessToken?: string;
+  /** Borra las credenciales de Meta (ID de cuenta y token). */
+  quitarMeta?: boolean;
 }
+
+const camposMeta = (datos: DatosGuardado): Record<string, unknown> => {
+  if (datos.quitarMeta) return { metaBusinessId: null, metaAccessToken: null, metaAccessTokenLast4: null };
+  const campos: Record<string, unknown> = {};
+  if (datos.metaBusinessId !== undefined) campos.metaBusinessId = datos.metaBusinessId.trim() || null;
+  const token = (datos.metaAccessToken || "").trim();
+  if (token) {
+    campos.metaAccessToken = encrypt(token);
+    campos.metaAccessTokenLast4 = token.slice(-4);
+  }
+  return campos;
+};
 
 /**
  * Guarda o actualiza la configuracion.
@@ -139,7 +179,8 @@ export const guardarConfiguracion = async (
       // Se genera una vez, al crear.
       webhookSecret: crypto.randomBytes(24).toString("hex"),
       workflows: JSON.stringify(workflows || []),
-      isActive
+      isActive,
+      ...camposMeta(datos)
     } as any);
     return;
   }
@@ -152,7 +193,8 @@ export const guardarConfiguracion = async (
     // entrar sin que nadie tocara nada alli.
     webhookSecret: fila.webhookSecret || crypto.randomBytes(24).toString("hex"),
     ...(workflows ? { workflows: JSON.stringify(workflows) } : {}),
-    ...(token ? { token: encrypt(token) } : {})
+    ...(token ? { token: encrypt(token) } : {}),
+    ...camposMeta(datos)
   });
 };
 
@@ -160,5 +202,6 @@ export default {
   buscarIntegracion,
   verConfiguracion,
   obtenerCredenciales,
+  obtenerCredencialesMeta,
   guardarConfiguracion
 };

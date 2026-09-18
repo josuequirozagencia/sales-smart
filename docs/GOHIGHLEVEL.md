@@ -9,7 +9,7 @@ la vez, porque son dos filas distintas de `Whatsapp`.
 | Hace | No hace |
 | --- | --- |
 | Recibe mensajes entrantes por webhook y los convierte en tickets normales | Crear el webhook en GHL (no existe esa API) |
-| Envía la respuesta del asesor por la API de GHL, así queda espejada allí | Leer plantillas de WhatsApp (GHL no las expone) |
+| Envía la respuesta del asesor por la API de GHL, así queda espejada allí | Leer plantillas de WhatsApp por la API de GHL (no las expone): se leen de Meta, ver «Plantillas de WhatsApp» |
 | Sincroniza etiquetas en los dos sentidos (ver «Etiquetas») | Crear usuarios en GHL: los asesores son solo de Sales Smart |
 | Mete cada ticket en la cola de la conexión; el reparto entre asesores es el de siempre | Mover etapas del Kanban desde GHL |
 | Inscribe contactos en flujos de GHL desde el panel de contacto | Tocar la integración directa con Meta |
@@ -182,12 +182,24 @@ guarda en `Contacts.ghlTagsSnapshot`. De ahí salen tres reglas:
 
 ## Plantillas de WhatsApp
 
-GHL no permite leerlas por API. En la pantalla de GoHighLevel se anotan a
-mano las que **ya están aprobadas por Meta dentro de GHL**, con el mismo
-nombre exacto.
+GHL no permite leerlas por API, pero la cuenta de WhatsApp Business que hay
+detrás sigue siendo de Meta. En la pantalla de GoHighLevel, el bloque
+«Plantillas de WhatsApp (Meta)» guarda dos datos opcionales:
 
-Esa lista es un espejo: no valida nada. Si el nombre no coincide con una
-plantilla real, el envío falla del lado de GHL.
+- **ID de la cuenta de WhatsApp Business (WABA)**, numérico;
+- **token de acceso de Meta** (de un usuario del sistema con el permiso
+  `whatsapp_business_management`), cifrado con `SecretBox`; de él solo se
+  muestran los 4 últimos caracteres.
+
+Con los dos, `GET /whatsapp/:whatsappId/templates` de la conexión GHL lee las
+plantillas reales directamente del Graph API
+(`GET /{WABA}/message_templates`, la misma llamada que hace `api_oficial`
+para las conexiones directas, recorriendo todas las páginas) y la pantalla
+**Plantillas de WhatsApp** las muestra en solo lectura.
+
+La lista anotada a mano (`GhlTemplate`) se retiró del código y de la
+pantalla. Su tabla `GhlTemplates` sigue en la base con lo que tuviera: no se
+borra ningún dato.
 
 ## Cómo encaja por dentro
 
@@ -220,7 +232,8 @@ cliente nunca recibió.
 | `backend/src/services/GhlServices/SyncGhlTags.ts` | Etiquetas de Sales Smart hacia GHL |
 | `backend/src/services/GhlServices/ReceiveGhlTagEventService.ts` | Etiquetas de GHL hacia Sales Smart |
 | `backend/src/controllers/GhlWebhookController.ts` | Endpoint público de entrada, para mensajes y etiquetas |
-| `backend/src/controllers/GhlController.ts` | Configuración, flujos y plantillas |
+| `backend/src/controllers/GhlController.ts` | Configuración (también las credenciales de Meta) y flujos |
+| `backend/src/services/WhatsappService/ListTemplatesService.ts` | Plantillas de una conexión: api_oficial o Graph API de Meta |
 | `frontend/src/pages/GoHighLevel/` | Pantalla de administración |
 
 La sincronización de etiquetas **nunca lanza**: si GHL está caído o el

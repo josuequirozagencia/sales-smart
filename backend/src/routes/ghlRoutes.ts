@@ -22,10 +22,7 @@ ghlRoutes.put("/ghl/config", isAuth, GhlController.update);
 ghlRoutes.get("/ghl/workflows", isAuth, GhlController.workflows);
 ghlRoutes.post("/ghl/enroll", isAuth, GhlController.enroll);
 
-// --- Plantillas anotadas a mano ---
-ghlRoutes.get("/ghl/templates", isAuth, GhlController.listTemplates);
-ghlRoutes.post("/ghl/templates", isAuth, GhlController.storeTemplate);
-ghlRoutes.put("/ghl/templates/:templateId", isAuth, GhlController.updateTemplate);
-ghlRoutes.delete("/ghl/templates/:templateId", isAuth, GhlController.removeTemplate);
+// Las plantillas de WhatsApp ya no se anotan a mano: se leen de Meta en
+// GET /whatsapp/:whatsappId/templates (ver ListTemplatesService).
 
 export default ghlRoutes;

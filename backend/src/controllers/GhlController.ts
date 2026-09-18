@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import AppError from "../errors/AppError";
 import Ticket from "../models/Ticket";
 import Contact from "../models/Contact";
-import GhlTemplate from "../models/GhlTemplate";
 import {
   verConfiguracion,
   guardarConfiguracion
@@ -17,8 +16,9 @@ import { resolverContactoGhl } from "../services/GhlServices/SendGhlMessage";
 /**
  * Administracion del canal de GoHighLevel.
  *
- * Todo lo de aqui es de administrador de la empresa: credenciales, flujos
- * y plantillas. El envio de mensajes NO pasa por este controlador, va por
+ * Todo lo de aqui es de administrador de la empresa: credenciales (tambien
+ * las de Meta, para leer las plantillas) y flujos. El envio de mensajes NO
+ * pasa por este controlador, va por
  * el de siempre (MessageController), que es lo que permite que el asesor
  * no note ninguna diferencia.
  */
@@ -56,10 +56,14 @@ export const show = async (req: Request, res: Response): Promise<Response> => {
 export const update = async (req: Request, res: Response): Promise<Response> => {
   soloAdmin(req);
   const { companyId } = req.user;
-  const { token, locationId, isActive } = req.body;
+  const { token, locationId, isActive, metaBusinessId, metaAccessToken, quitarMeta } = req.body;
 
   if (!locationId) {
     throw new AppError("ERR_GHL_FALTA_LOCATION", 400);
+  }
+  // El ID de una cuenta de WhatsApp Business es numerico.
+  if (typeof metaBusinessId === "string" && metaBusinessId.trim() && !/^\d{5,30}$/.test(metaBusinessId.trim())) {
+    throw new AppError("ERR_GHL_META_BUSINESS_ID_INVALIDO", 400);
   }
 
   await guardarConfiguracion({
@@ -69,7 +73,10 @@ export const update = async (req: Request, res: Response): Promise<Response> => 
     // al editar cualquier otra cosa.
     token: token || undefined,
     locationId,
-    isActive: isActive !== false
+    isActive: isActive !== false,
+    metaBusinessId: typeof metaBusinessId === "string" ? metaBusinessId : undefined,
+    metaAccessToken: typeof metaAccessToken === "string" ? metaAccessToken : undefined,
+    quitarMeta: quitarMeta === true
   });
 
   return show(req, res);
@@ -139,108 +146,9 @@ export const enroll = async (req: Request, res: Response): Promise<Response> => 
   return res.status(200).json({ ok: true });
 };
 
-// ---------------------------------------------------------------------------
-// Plantillas
-// ---------------------------------------------------------------------------
-//
-// GHL no expone las plantillas aprobadas por Meta, asi que se anotan a
-// mano. Esta lista es un espejo de lo que ya esta aprobado alli; aqui no
-// se valida nada contra Meta.
-
-export const listTemplates = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
-  const { companyId } = req.user;
-
-  const templates = await GhlTemplate.findAll({
-    where: { companyId },
-    order: [["name", "ASC"]]
-  });
-
-  return res.status(200).json(templates);
-};
-
-export const storeTemplate = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
-  soloAdmin(req);
-  const { companyId } = req.user;
-  const { name, language, body, variables, isActive } = req.body;
-
-  if (!name || !body) {
-    throw new AppError("ERR_GHL_PLANTILLA_INCOMPLETA", 400);
-  }
-
-  const template = await GhlTemplate.create({
-    companyId,
-    name,
-    language: language || "es",
-    body,
-    variables: JSON.stringify(variables || []),
-    isActive: isActive !== false
-  } as any);
-
-  return res.status(201).json(template);
-};
-
-export const updateTemplate = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
-  soloAdmin(req);
-  const { companyId } = req.user;
-  const { templateId } = req.params;
-  const { name, language, body, variables, isActive } = req.body;
-
-  const template = await GhlTemplate.findOne({
-    where: { id: templateId, companyId }
-  });
-
-  if (!template) {
-    throw new AppError("ERR_GHL_PLANTILLA_NO_ENCONTRADA", 404);
-  }
-
-  await template.update({
-    ...(name ? { name } : {}),
-    ...(language ? { language } : {}),
-    ...(body ? { body } : {}),
-    ...(variables ? { variables: JSON.stringify(variables) } : {}),
-    ...(isActive !== undefined ? { isActive } : {})
-  });
-
-  return res.status(200).json(template);
-};
-
-export const removeTemplate = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
-  soloAdmin(req);
-  const { companyId } = req.user;
-  const { templateId } = req.params;
-
-  const template = await GhlTemplate.findOne({
-    where: { id: templateId, companyId }
-  });
-
-  if (!template) {
-    throw new AppError("ERR_GHL_PLANTILLA_NO_ENCONTRADA", 404);
-  }
-
-  await template.destroy();
-
-  return res.status(200).json({ ok: true });
-};
-
 export default {
   show,
   update,
   workflows,
-  enroll,
-  listTemplates,
-  storeTemplate,
-  updateTemplate,
-  removeTemplate
+  enroll
 };

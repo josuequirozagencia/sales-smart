@@ -52,6 +52,21 @@ class GhlConfig extends Model<GhlConfig> {
   @Column
   isActive: boolean;
 
+  /**
+   * ID de la cuenta de WhatsApp Business (WABA) de Meta que hay detras de
+   * GHL. Opcional: sirve para leer las plantillas reales del Graph API.
+   */
+  @Column
+  metaBusinessId: string;
+
+  /** Token de acceso de Meta, cifrado con SecretBox. */
+  @Column(DataType.TEXT)
+  metaAccessToken: string;
+
+  /** Ultimos 4 caracteres del token de Meta: lo unico que se muestra. */
+  @Column
+  metaAccessTokenLast4: string;
+
   @CreatedAt
   createdAt: Date;
 

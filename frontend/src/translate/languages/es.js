@@ -305,19 +305,17 @@ const messages = {
           help: "Pega esta dirección en GoHighLevel, en la acción «Webhook» de un Workflow con el disparador «Customer Replied», para los mensajes entrantes. Con un Private Integration Token no hay otra vía: la suscripción a eventos es exclusiva de las apps del Marketplace, y GoHighLevel no tiene API para crearla. Se hace una sola vez.",
           copy: "Copiar",
         },
-        templates: {
-          title: "Plantillas de WhatsApp",
-          help: "GoHighLevel no permite leer las plantillas por API. Anota aquí las que ya están aprobadas por Meta dentro de GoHighLevel, con el mismo nombre exacto: esta lista es un espejo, no valida nada.",
-          add: "Añadir plantilla",
-          name: "Nombre",
-          language: "Idioma",
-          body: "Texto",
-          empty: "Todavía no hay plantillas anotadas",
-          dialogTitle: "Plantilla",
+        meta: {
+          title: "Plantillas de WhatsApp (Meta)",
+          help: "GoHighLevel no deja leer las plantillas por API, pero la cuenta de WhatsApp Business de detrás es de Meta. Con su ID y un token de Meta (de un usuario del sistema con el permiso whatsapp_business_management) se leen las plantillas aprobadas reales en «Plantillas de WhatsApp». Opcional; el token se guarda cifrado.",
+          businessId: "ID de la cuenta de WhatsApp Business (WABA)",
+          token: "Token de acceso de Meta",
+          tokenSaved: "Guardado, termina en",
+          viewTemplates: "Ver plantillas",
+          remove: "Quitar credenciales de Meta",
         },
         errors: {
           locationRequired: "Falta el Location ID",
-          templateRequired: "El nombre y el texto son obligatorios",
         },
       },
       ticketInfo: {
@@ -3030,6 +3028,7 @@ const messages = {
         },
       },
       backendErrors: {
+        ERR_GHL_META_BUSINESS_ID_INVALIDO: "El ID de la cuenta de WhatsApp Business solo lleva números.",
         ERR_TEMPLATES_CHANNEL_UNSUPPORTED: "Esta conexión no tiene plantillas de Meta: solo WhatsApp Oficial y GoHighLevel.",
         ERR_TEMPLATES_UNAVAILABLE: "Meta no devolvió las plantillas. Revisa que la conexión esté activa y vuelve a intentarlo.",
         ERR_TEMPLATES_GHL_META_NOT_CONFIGURED: "Para ver las plantillas de GoHighLevel, guarda el ID de la cuenta de WhatsApp Business y el token de Meta en GoHighLevel.",
