@@ -50,6 +50,7 @@ import https from "https";
 import { flowbuilderIntegration } from "../WbotServices/wbotMessageListener";
 import { handleOpenAiFlow } from "../IntegrationsServices/OpenAiService";
 import { IOpenAi } from "../../@types/openai";
+import AiAgent from "../../models/AiAgent";
 
 
 declare global {
@@ -504,6 +505,18 @@ export const ActionsWebhookService = async (
 
       if (nodeSelected.type === "openai" || nodeSelected.type === "gemini") {
         try {
+          // Nodo con Agente IA (docs/AGENTES_IA.md): la configuracion se lee del
+          // agente al responder. Aqui solo se comprueba que exista, que sea de
+          // esta empresa y que este activo.
+          const idAgenteNodo = Number((nodeSelected.data.typebotIntegration as IOpenAi)?.agentId) || 0;
+          const agenteNodo = idAgenteNodo
+            ? await AiAgent.findOne({ where: { id: idAgenteNodo, companyId, isActive: true } })
+            : null;
+          if (idAgenteNodo && !agenteNodo) {
+            logger.error(`[AI NODE] Agente ${idAgenteNodo} no disponible en la empresa ${companyId}: nodo omitido`);
+            continue;
+          }
+
           const {
             name = "",
             prompt = "",
@@ -525,7 +538,7 @@ export const ActionsWebhookService = async (
             autoCompleteOnObjective = false
           } = nodeSelected.data.typebotIntegration as IOpenAi;
 
-          if (!apiKey || !model) {
+          if (!agenteNodo && (!apiKey || !model)) {
             logger.error(`[${provider.toUpperCase()} NODE] Configurações obrigatórias não encontradas`);
             continue;
           }
@@ -552,6 +565,21 @@ export const ActionsWebhookService = async (
             objective,
             autoCompleteOnObjective
           };
+
+          if (agenteNodo) {
+            // En el ticket queda solo el id: ni clave, ni prompt, ni modelo.
+            Object.assign(aiSettings, {
+              agentId: agenteNodo.id,
+              name: name || agenteNodo.name,
+              prompt: "",
+              apiKey: "",
+              voice: "texto",
+              voiceKey: "",
+              voiceRegion: "",
+              model: agenteNodo.model,
+              maxMessages: agenteNodo.maxMessages
+            });
+          }
 
           logger.info(`[${provider.toUpperCase()} NODE] Ativando modo ${provider.toUpperCase()} para ticket ${ticket.id} (${flowMode})`);
 
@@ -614,14 +642,15 @@ export const ActionsWebhookService = async (
                 : `Olá! Sou ${name}. Como posso ajudá-lo?`;
 
             logger.info(`[${provider.toUpperCase()} NODE] Enviando boas-vindas para ticket ${ticket.id}`);
+            const saludo = agenteNodo ? `\u200e${welcomeMessage}` : welcomeMessage;
 
             if (whatsapp.channel === "whatsapp") {
-              await SendWhatsAppMessage({ body: welcomeMessage, ticket, quotedMsg: null });
+              await SendWhatsAppMessage({ body: saludo, ticket, quotedMsg: null });
             }
 
             if (whatsapp.channel === "whatsapp_oficial") {
               await SendWhatsAppOficialMessage({
-                body: welcomeMessage,
+                body: saludo,
                 ticket: ticket,
                 quotedMsg: null,
                 type: 'text',

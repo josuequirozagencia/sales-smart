@@ -25,8 +25,10 @@ import {
   dentroDeHorario,
   esperarAtencion,
   motivoNoAtiende,
+  responderEnFlujo,
   turnoDeMensaje
 } from "../../services/AiAgentServices/AtenderConAgente";
+import { procesarNodoAgente } from "../../services/IntegrationsServices/OpenAiService";
 import {
   cambiarEstado,
   leerEstado,
@@ -520,5 +522,117 @@ describe("Seguimientos", () => {
     await procesarSeguimientosVencidos();
     expect(enviados).toHaveLength(0);
     expect((await AiAgentFollowUpJob.findOne({ where: { ticketId: ticket.id } }))!.reason).toBe("client_replied");
+  });
+});
+
+// ---------------------------------------------------------------------------
+describe("Nodos del Flow Builder con agente", () => {
+  let conexionFlujo: Whatsapp;
+  let agenteFlujo: AiAgent;
+
+  beforeAll(async () => {
+    // Conexion SIN agente propio: el que responde es el del nodo del flujo.
+    conexionFlujo = await Whatsapp.create({ name: `fb-flujo-${uniqueSuffix()}`, channel: "facebook", companyId: COMPANY_A, status: "CONNECTED", isDefault: false } as any);
+    const creado = await crearAgente(COMPANY_A, {
+      name: `Agente flujo ${uniqueSuffix()}`,
+      provider: "openai",
+      model: "gpt-prueba",
+      apiKey: CLAVE,
+      disponibleEnFlujos: true
+    } as any);
+    agenteFlujo = (await AiAgent.findByPk(creado.id))!;
+  });
+
+  afterAll(async () => {
+    await AiAgent.destroy({ where: { id: agenteFlujo.id } });
+    await Ticket.update({ whatsappId: null } as any, { where: { whatsappId: conexionFlujo.id } });
+    await Whatsapp.destroy({ where: { id: conexionFlujo.id } });
+  });
+
+  const ticketEnNodo = async (settings: Record<string, unknown> = {}) => {
+    const { ticket, contacto } = await crearTicket();
+    await ticket.update({
+      whatsappId: conexionFlujo.id,
+      useIntegration: true,
+      dataWebhook: { type: "openai", mode: "permanent", settings: { agentId: agenteFlujo.id, flowMode: "permanent", queueId: 0, ...settings } }
+    } as any);
+    await TicketTraking.update({ whatsappId: conexionFlujo.id } as any, { where: { ticketId: ticket.id } });
+    return { ticket: (await Ticket.findByPk(ticket.id))!, contacto };
+  };
+
+  it("responde el agente del nodo aunque la conexion no tenga agente; el enganche de conexion no interviene", async () => {
+    const { ticket, contacto } = await ticketEnNodo();
+    const entrante = await mensaje(ticket, "quiero informacion", false);
+    responder = () => ({ content: "Claro, te cuento." });
+
+    expect(await atenderMensajeEntrante({ ticket, contact: contacto, wid: entrante.wid })).toBe(false);
+    expect(await responderEnFlujo({ ticket, contact: contacto, agentId: agenteFlujo.id, wid: entrante.wid })).toBe("respondido");
+    expect(enviados.map(e => e.texto)).toEqual(["Claro, te cuento."]);
+    // Los seguimientos son del agente de conexion: en un flujo manda el flujo.
+    expect(await AiAgentFollowUpJob.count({ where: { ticketId: ticket.id } })).toBe(0);
+  });
+
+  it("al transferir sale del modo IA del flujo, pausa la IA y usa la fila del nodo", async () => {
+    const { ticket, contacto } = await ticketEnNodo({ queueId: fila.id });
+    const entrante = await mensaje(ticket, "con una persona", false);
+    responder = () => ({ content: "Te paso con el equipo.", transferir: true });
+
+    expect(
+      await responderEnFlujo({ ticket, contact: contacto, agentId: agenteFlujo.id, wid: entrante.wid, filaTransferencia: fila.id })
+    ).toBe("transferido");
+    const despues = await recargar(ticket);
+    expect(despues.useIntegration).toBe(false);
+    expect(despues.dataWebhook).toBeNull();
+    expect(despues.queueId).toBe(fila.id);
+    expect((await leerEstado(ticket)).reason).toBe("transfer");
+  });
+
+  it("un mensaje de una persona tambien pausa al agente del flujo", async () => {
+    const { ticket, contacto } = await ticketEnNodo();
+    expect(await pausarPorMensajeHumano(ticket, { userId: asesor.id })).toBe(true);
+    const entrante = await mensaje(ticket, "hola?", false);
+    expect(await responderEnFlujo({ ticket, contact: contacto, agentId: agenteFlujo.id, wid: entrante.wid })).toBe("pausado");
+    expect(enviados).toHaveLength(0);
+  });
+
+  it("los textos automaticos del flujo, sin la marca, no dejan al agente pausado de entrada", async () => {
+    const { ticket, contacto } = await ticketEnNodo();
+    await mensaje(ticket, "Bienvenido a la academia", true); // texto de un nodo del flujo
+    const entrante = await mensaje(ticket, "info", false);
+    responder = () => ({ content: "Con gusto." });
+    expect(await responderEnFlujo({ ticket, contact: contacto, agentId: agenteFlujo.id, wid: entrante.wid })).toBe("respondido");
+  });
+
+  it("un agente no disponible para flujos no responde", async () => {
+    await agenteFlujo.update({ disponibleEnFlujos: false });
+    try {
+      const { ticket, contacto } = await ticketEnNodo();
+      const entrante = await mensaje(ticket, "hola", false);
+      expect(await responderEnFlujo({ ticket, contact: contacto, agentId: agenteFlujo.id, wid: entrante.wid })).toBe("no_aplica");
+      expect(peticiones).toHaveLength(0);
+    } finally {
+      await agenteFlujo.update({ disponibleEnFlujos: true });
+    }
+  });
+
+  it("modo temporal: la palabra clave vuelve al flujo con un aviso marcado como automatico", async () => {
+    const { ticket, contacto } = await ticketEnNodo();
+    await ticket.update({
+      dataWebhook: {
+        ...(ticket.dataWebhook as any),
+        mode: "temporary",
+        flowContinuation: { nextNodeId: "nodo-siguiente", interactionCount: 0, startTime: new Date().toISOString() }
+      }
+    } as any);
+    const conCliente = (await Ticket.findByPk(ticket.id, { include: ["contact"] }))!;
+    const ajustes: any = { agentId: agenteFlujo.id, flowMode: "temporary", continueKeywords: ["continuar"], queueId: 0 };
+
+    await procesarNodoAgente(ajustes, conCliente, contacto, "sin-wid", "quiero continuar");
+    expect(peticiones).toHaveLength(0);
+    // Sale por el envio de los agentes, que pone la marca de automatico: su eco
+    // no pausa la IA del siguiente nodo.
+    expect(enviados.map(e => e.texto)).toEqual(["Perfeito! Vou prosseguir com o atendimento."]);
+    const despues = await recargar(ticket);
+    expect(despues.useIntegration).toBe(false);
   });
 });

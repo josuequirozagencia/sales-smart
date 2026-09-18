@@ -1,6 +1,7 @@
 // frontend/geminiModal.jsx
 import React, { useState, useEffect, useRef } from "react";
 import * as Yup from "yup";
+import FlowAgentPicker, { datosNodoAgente, esquemaNodoAgente, useAgentesDeFlujo } from "../FlowAgentPicker";
 import { Formik, Form, Field, FieldArray } from "formik";
 import { makeStyles } from "@material-ui/core/styles";
 import { green } from "@material-ui/core/colors";
@@ -197,6 +198,8 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
     apiKey: "",
     maxMessages: 10,
     queueId: 0,
+    // Vacio = configuracion manual. Con un agente el nodo guarda solo su id.
+    agentId: "",
     
     // Campos para controle de fluxo
     flowMode: "permanent",
@@ -214,6 +217,7 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
     btn: "Adicionar",
   });
   const [newKeyword, setNewKeyword] = useState("");
+  const agentes = useAgentesDeFlujo(open === "create" || open === "edit");
 
   useEffect(() => {
     if (open === "edit") {
@@ -256,7 +260,7 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
   };
 
   const handleSavePrompt = (values, { setSubmitting }) => {
-    const promptData = {
+    const promptData = values.agentId ? datosNodoAgente(values, agentes, "gemini") : {
       ...values,
       // Garantir que campos do modo temporário sejam nulos se modo for permanente
       maxInteractions: values.flowMode === "temporary" ? values.maxInteractions : null,
@@ -311,15 +315,24 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
         <Formik
           initialValues={integration}
           enableReinitialize={true}
-          validationSchema={GeminiSchema}
+          validationSchema={Yup.lazy((v) => (v.agentId ? esquemaNodoAgente : GeminiSchema))}
           onSubmit={handleSavePrompt}
         >
           {({ touched, errors, isSubmitting, values, setFieldValue }) => (
             <Form style={{ width: "100%" }}>
               <DialogContent dividers>
                 
-                {/* CONFIGURAÇÕES BÁSICAS */}
-                <Accordion className={classes.accordion} defaultExpanded>
+                <FlowAgentPicker
+                  agentes={agentes}
+                  value={values.agentId}
+                  onChange={(id) => setFieldValue("agentId", id)}
+                  className={classes.accordion}
+                  summaryClassName={classes.accordionSummary}
+                  titleClassName={classes.sectionTitle}
+                />
+
+                {/* CONFIGURAÇÕES BÁSICAS: con agente las pone el agente */}
+                <Accordion className={classes.accordion} defaultExpanded style={values.agentId ? { display: "none" } : undefined}>
                   <AccordionSummary 
                     expandIcon={<ExpandMore />}
                     className={classes.accordionSummary}

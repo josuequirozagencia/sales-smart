@@ -2963,6 +2963,14 @@ const messages = {
           deleteMessage: "Esta ação não pode ser desfeita. O agente deixará de responder nas conexões dele.",
         },
       },
+      flowAgentPicker: {
+        title: "Agente IA",
+        label: "Configuração do nó",
+        manual: "Configuração manual (chave, modelo e prompt neste nó)",
+        manualHelp: "Escolha um agente para reutilizar a configuração dele. Com configuração manual o nó funciona como sempre.",
+        noAgents: "Não há agentes disponíveis para fluxos. Crie em Agentes IA e marque «Disponível no construtor de fluxos».",
+        usingAgent: "Usa o agente «{{name}}»: modelo, chave, instruções e horário são lidos ao responder. O nó não guarda nenhuma chave.",
+      },
       aiAgentControl: {
         label: "Agente IA",
         active: "ATIVO",

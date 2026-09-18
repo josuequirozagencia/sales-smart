@@ -2921,6 +2921,14 @@ const messages = {
           deleteMessage: "This cannot be undone. The agent will stop replying on its connections.",
         },
       },
+      flowAgentPicker: {
+        title: "AI Agent",
+        label: "Node configuration",
+        manual: "Manual configuration (key, model and prompt in this node)",
+        manualHelp: "Pick an agent to reuse its configuration. With manual configuration the node works as before.",
+        noAgents: "No agents are available for flows. Create them in AI Agents and tick \"Available in the flow builder\".",
+        usingAgent: "Uses the agent \"{{name}}\": its model, key, instructions and schedule are read when replying. The node stores no key.",
+      },
       aiAgentControl: {
         label: "AI Agent",
         active: "ACTIVE",

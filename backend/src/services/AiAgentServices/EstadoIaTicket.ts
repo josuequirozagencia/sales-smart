@@ -16,10 +16,13 @@ import { agenteDeConexion } from "./AiAgentService";
  *
  * - Vale por atencion (TicketTraking). Al cerrarse el ticket la atencion
  *   termina y la siguiente empieza con la IA activa.
- * - Sin fila guardada para la atencion actual, la IA esta activa salvo que un
- *   humano ya haya escrito en esa atencion (misma regla que usa el enrutador:
- *   fromMe, no privado, sin U+200E). Evita que la IA irrumpa en conversaciones
- *   que ya atendia una persona el dia que se asigna un agente a la conexion.
+ * - Sin fila guardada para la atencion actual, la IA esta activa salvo que el
+ *   ticket este ABIERTO con un asesor que ya haya escrito en esa atencion
+ *   (regla del enrutador: fromMe, no privado, sin U+200E). Evita que la IA
+ *   irrumpa en conversaciones que ya atendia una persona el dia que se asigna
+ *   un agente a la conexion. Se limita a tickets abiertos y asignados porque
+ *   muchos mensajes automaticos (textos de flujos, aviso de fuera de horario)
+ *   no llevan la marca y, en un ticket pendiente, parecerian de una persona.
  * - version sube con cada cambio. Quien genera una respuesta la anota al
  *   empezar y, justo antes de enviar cada bloque, comprueba bajo el bloqueo del
  *   ticket que no haya cambiado. Asi un mensaje del asesor (que pausa bajo el
@@ -104,6 +107,14 @@ const desdeFila = (fila: AiAgentTicketState): EstadoIa => ({
 
 type TicketMinimo = Pick<Ticket, "id" | "companyId">;
 
+/** Agente de un nodo IA del Flow Builder en marcha en este ticket, si lo hay. */
+export const agenteDeFlujoId = (ticket: Partial<Pick<Ticket, "useIntegration" | "dataWebhook">>): number | null => {
+  const datos = ticket?.dataWebhook as any;
+  if (!ticket?.useIntegration || !["openai", "gemini"].includes(datos?.type)) return null;
+  const id = Number(datos?.settings?.agentId);
+  return Number.isInteger(id) && id > 0 ? id : null;
+};
+
 interface Lectura {
   estado: EstadoIa;
   fila: AiAgentTicketState | null;
@@ -121,7 +132,11 @@ const leer = async (ticket: TicketMinimo): Promise<Lectura> => {
   const vigente = !!fila && (!atencion || fila.ticketTrakingId === atencion.id);
   if (vigente) return { estado: desdeFila(fila!), fila, atencion, vigente };
 
-  const humano = atencion ? await hasHumanReplySince(ticket.id, atencion.createdAt) : false;
+  const actual = atencion
+    ? await Ticket.findOne({ where: { id: ticket.id, companyId: ticket.companyId }, attributes: ["id", "status", "userId"] })
+    : null;
+  const atendido = !!actual && actual.status === "open" && !!actual.userId;
+  const humano = atendido ? await hasHumanReplySince(ticket.id, atencion!.createdAt) : false;
   return {
     estado: {
       ticketId: ticket.id,
@@ -216,7 +231,7 @@ export const asegurarEstado = (ticket: TicketMinimo): Promise<EstadoIa> =>
  * Devuelve true si ha pausado.
  */
 export const pausarPorMensajeHumano = async (
-  ticket: TicketMinimo & Pick<Ticket, "whatsappId">,
+  ticket: TicketMinimo & Pick<Ticket, "whatsappId"> & Partial<Pick<Ticket, "useIntegration" | "dataWebhook">>,
   { userId = null, wid = null }: { userId?: number | null; wid?: string | null } = {}
 ): Promise<boolean> => {
   if (fueEnviadoPorAgente(wid)) return false;
@@ -225,7 +240,11 @@ export const pausarPorMensajeHumano = async (
       // Solo conversaciones que gobierna un agente: la conexion tiene uno, o ya
       // actuo uno aqui. El resto de tickets ni consulta el estado ni crea filas.
       const conFila = (await AiAgentTicketState.count({ where: { ticketId: ticket.id, companyId: ticket.companyId } })) > 0;
-      if (!conFila && !(ticket.whatsappId && (await agenteDeConexion(ticket.companyId, ticket.whatsappId)))) {
+      if (
+        !conFila &&
+        !agenteDeFlujoId(ticket) &&
+        !(ticket.whatsappId && (await agenteDeConexion(ticket.companyId, ticket.whatsappId)))
+      ) {
         return false;
       }
       const lectura = await leer(ticket);

@@ -4,10 +4,10 @@ Agentes de IA reutilizables por empresa (`AiAgent`), asignados a una conexión
 (`AiAgentChannel`, como máximo un agente por conexión) y usados igual en
 WhatsApp (Baileys), WhatsApp Oficial, Facebook e Instagram. GHL queda fuera.
 
-Estado: fase 1 en la rama `feat/agentes-ia`. Hechos el modelo, la API de
-administración, el motor, la atención por canal, el estado de la IA por
-conversación, la transferencia, los seguimientos y la página de administración.
-Pendientes: sandbox de prueba y selector de agente en los nodos del Flow Builder.
+Estado: fase 1 completa en la rama `feat/agentes-ia`: modelo, API de
+administración, motor, atención por canal, estado de la IA por conversación,
+transferencia, seguimientos, página de administración, chat de prueba y
+selector de agente en los nodos del Flow Builder.
 
 ## Administración
 
@@ -49,7 +49,7 @@ No se reutilizó ningún campo existente:
 ### Reglas del estado (`services/AiAgentServices/EstadoIaTicket.ts`)
 
 - Vale por **atención** (`TicketTraking`). Al cerrarse el ticket, la siguiente atención empieza con la IA activa.
-- Sin fila para la atención actual: activa, salvo que una persona ya haya escrito en ella. Se usa la regla del enrutador: `fromMe`, no privado y sin U+200E.
+- Sin fila para la atención actual: activa, salvo que el ticket esté **abierto con un asesor** que ya haya escrito en ella (regla del enrutador: `fromMe`, no privado y sin U+200E). Se limita a tickets abiertos y asignados porque muchos mensajes automáticos (textos de flujos, aviso de fuera de horario) no llevan la marca y, en un ticket pendiente, parecerían de una persona.
 - `version` sube con cada cambio.
 - Motivos (`reason`): `transfer`, `human_message`, `manual`.
 - Cada cambio se emite por socket: `company-{id}-aiAgentTicketState`.
@@ -119,6 +119,42 @@ El horario del **asesor** no afecta a la IA; el del **agente**, sí.
 - Pausar la IA cancela los pendientes.
 - Límite de Meta: WhatsApp Oficial e Instagram rechazan texto libre pasadas 24 h desde el último mensaje del cliente. Esos pasos quedan como `failed` con el motivo.
 
+## Chat de prueba (pestaña «Probar»)
+
+- `POST /ai-agents/test-message` (multipart: `sessionId`, `config` en JSON,
+  `agentId` opcional, `text`, `image`, `audio`) responde con la configuración
+  que hay en pantalla, aunque no esté guardada, y con el mismo motor que en
+  producción. **No crea contactos, tickets, mensajes ni seguimientos.**
+- Sin clave escrita usa la del agente guardado, solo si es de la empresa.
+- Historial en Redis por empresa, usuario y sesión, con caducidad de 2 h.
+  `DELETE /ai-agents/test-message/:sessionId` lo borra; el formulario lo hace
+  al cerrarse.
+- `POST /ai-agents/capabilities`: si el modelo acepta imágenes, audio y
+  herramientas, con avisos (clave inválida, modelo inexistente).
+- El micrófono graba en `webm`; para Gemini se convierte a mp3.
+
+## Nodos del Flow Builder con agente
+
+- En los nodos OpenAI y Gemini, «Configuración del nodo» permite elegir un
+  agente disponible para flujos (`disponibleEnFlujos`) o seguir con la
+  configuración manual de siempre.
+- Con agente, **el nodo guarda solo `agentId`**: proveedor, modelo, clave,
+  instrucciones y horario se leen del agente al responder. En el ticket
+  (`dataWebhook.settings`) tampoco queda ninguna clave.
+- Responde con el motor, el envío por canal, el estado de la IA y la prioridad
+  humana de los agentes, en WhatsApp (Baileys) y en WhatsApp Oficial, donde
+  antes los nodos IA no respondían. Facebook/Instagram no tienen nodos IA en
+  sus flujos.
+- El modo temporal se conserva (palabras clave, máximo de interacciones,
+  tiempo límite, objetivo cumplido); sus controles se comparten con los nodos
+  manuales (`controlarModoTemporal`). El aviso de vuelta al flujo sale con la
+  marca de automático para que no pause la IA del siguiente nodo.
+- Al transferir, sale del modo IA del flujo y aplica la cadena de asignación,
+  con la fila elegida en el nodo por delante de la del agente.
+- Los seguimientos son del agente de conexión; en un flujo manda el flujo.
+- El control «Agente IA» de la conversación también aparece mientras un nodo
+  con agente atiende el ticket.
+
 ## Pruebas
 
 - `src/__tests__/services/AiAgents.spec.ts`: validación, cifrado, motor contra un proveedor falso y aislamiento por empresa.
@@ -128,7 +164,9 @@ El horario del **asesor** no afecta a la IA; el del **agente**, sí.
   - prioridad humana durante la generación y entre bloques;
   - las tres ramas de la transferencia;
   - activación por el asesor;
-  - seguimientos.
+  - seguimientos;
+  - nodos del Flow Builder con agente.
+- `src/__tests__/services/AiAgentSandbox.spec.ts`: chat de prueba sin escribir en la base.
 
 ## Migraciones
 

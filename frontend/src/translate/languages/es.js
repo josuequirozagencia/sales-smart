@@ -2914,6 +2914,14 @@ const messages = {
           deleteMessage: "Esta acción no se puede deshacer. El agente dejará de responder en sus conexiones.",
         },
       },
+      flowAgentPicker: {
+        title: "Agente IA",
+        label: "Configuración del nodo",
+        manual: "Configuración manual (clave, modelo y prompt en este nodo)",
+        manualHelp: "Elige un agente para reutilizar su configuración. Con configuración manual el nodo funciona como siempre.",
+        noAgents: "No hay agentes disponibles para flujos. Créalos en Agentes IA y marca «Disponible en el constructor de flujos».",
+        usingAgent: "Usa el agente «{{name}}»: su modelo, clave, instrucciones y horario se leen al responder. El nodo no guarda ninguna clave.",
+      },
       aiAgentControl: {
         label: "Agente IA",
         active: "ACTIVO",

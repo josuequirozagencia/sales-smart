@@ -22,6 +22,7 @@ import {
   cancelarSeguimientos,
   conBloqueo,
   EstadoIa,
+  agenteDeFlujoId,
   fijarEstadoSinBloqueo,
   leerEstado
 } from "./EstadoIaTicket";
@@ -67,16 +68,20 @@ export const dentroDeHorario = (horario: HorarioAgente | null | undefined, ahora
 /** Motivo por el que el agente no debe atender este ticket, o null si puede. */
 export const motivoNoAtiende = (
   ticket: Pick<Ticket, "channel" | "isGroup" | "imported" | "status" | "useIntegration" | "flowStopped" | "lastFlowId" | "dataWebhook">,
-  contact: Pick<Contact, "disableBot"> | null
+  contact: Pick<Contact, "disableBot"> | null,
+  { enFlujo = false }: { enFlujo?: boolean } = {}
 ): string | null => {
   if (!CANALES_AGENTE.includes(ticket.channel)) return "canal";
   if (ticket.isGroup) return "grupo";
   if (ticket.imported) return "importado";
   if (["closed", "lgpd", "nps", "group"].includes(ticket.status)) return `estado:${ticket.status}`;
   // Typebot, flujo o nodo IA del Flow Builder en marcha: manda esa integracion.
-  if (ticket.useIntegration) return "integracion";
-  if (ticket.flowStopped && ticket.lastFlowId) return "flujo";
-  if ((ticket.dataWebhook as any)?.waitingInput) return "flujo_input";
+  // Salvo que quien responde sea precisamente el agente de ese nodo.
+  if (!enFlujo) {
+    if (ticket.useIntegration) return "integracion";
+    if (ticket.flowStopped && ticket.lastFlowId) return "flujo";
+    if ((ticket.dataWebhook as any)?.waitingInput) return "flujo_input";
+  }
   if (contact?.disableBot) return "disableBot";
   return null;
 };
@@ -257,7 +262,11 @@ export type AsignacionTransferencia = "asesor_actual" | "cartera" | "fila" | "si
  *   4. nada de lo anterior -> pendiente sin asesor, visible para el equipo
  * Llamar dentro de conBloqueo(ticket.id).
  */
-export const transferirAHumanoSinBloqueo = async (ticket: Ticket, agente: AiAgent): Promise<AsignacionTransferencia> => {
+export const transferirAHumanoSinBloqueo = async (
+  ticket: Ticket,
+  agente: AiAgent,
+  filaPreferida?: number | null
+): Promise<AsignacionTransferencia> => {
   await fijarEstadoSinBloqueo(ticket, false, "transfer", null);
 
   const actual = await Ticket.findOne({ where: { id: ticket.id, companyId: ticket.companyId } });
@@ -279,8 +288,9 @@ export const transferirAHumanoSinBloqueo = async (ticket: Ticket, agente: AiAgen
     }
   }
 
-  if (agente.transferQueueId) {
-    const fila = await Queue.findOne({ where: { id: agente.transferQueueId, companyId: actual.companyId } });
+  const idFila = filaPreferida || agente.transferQueueId;
+  if (idFila) {
+    const fila = await Queue.findOne({ where: { id: idFila, companyId: actual.companyId } });
     if (fila) {
       await UpdateTicketService({ ticketData: { queueId: fila.id }, ticketId: actual.id, companyId: actual.companyId });
       return "fila";
@@ -296,7 +306,7 @@ export const transferirAHumanoSinBloqueo = async (ticket: Ticket, agente: AiAgen
 const colaProceso = new Map<number, Promise<void>>();
 const ultimoEncolado = new Map<number, string>();
 
-const encolar = (ticketId: number, wid: string, tarea: () => Promise<void>): Promise<void> => {
+const encolar = (ticketId: number, wid: string, tarea: () => Promise<unknown>): Promise<void> => {
   ultimoEncolado.set(ticketId, wid);
   const anterior = colaProceso.get(ticketId) || Promise.resolve();
   const siguiente = anterior
@@ -318,22 +328,37 @@ const encolar = (ticketId: number, wid: string, tarea: () => Promise<void>): Pro
   return siguiente;
 };
 
-const responderMensaje = async (ticketId: number, companyId: number, agenteId: number, wid: string): Promise<void> => {
+export type ResultadoAtencion = "respondido" | "transferido" | "descartado" | "sin_respuesta" | "no_aplica";
+
+interface OpcionesRespuesta {
+  /** Responde el agente de un nodo IA del Flow Builder, no el de la conexion. */
+  enFlujo?: boolean;
+  /** Fila elegida en el nodo del flujo para transferir. */
+  filaTransferencia?: number | null;
+}
+
+const responderMensaje = async (
+  ticketId: number,
+  companyId: number,
+  agenteId: number,
+  wid: string,
+  { enFlujo = false, filaTransferencia = null }: OpcionesRespuesta = {}
+): Promise<ResultadoAtencion> => {
   const ticket = await ticketCompleto(ticketId, companyId);
   const contact = ticket.contact;
   const agente = await AiAgent.findOne({ where: { id: agenteId, companyId, isActive: true } });
-  if (!agente) return;
+  if (!agente) return "no_aplica";
 
-  const motivo = motivoNoAtiende(ticket, contact);
+  const motivo = motivoNoAtiende(ticket, contact, { enFlujo });
   if (motivo) {
     logger.info(`[AI AGENT] Ticket ${ticket.id}: no se responde (${motivo})`);
-    return;
+    return "no_aplica";
   }
   const estado: EstadoIa = await leerEstado(ticket);
-  if (!estado.enabled || !dentroDeHorario(agente.schedule)) return;
+  if (!estado.enabled || !dentroDeHorario(agente.schedule)) return "no_aplica";
 
   const mensaje = await Message.findOne({ where: { wid, ticketId: ticket.id, companyId } });
-  if (!mensaje || mensaje.fromMe) return;
+  if (!mensaje || mensaje.fromMe) return "no_aplica";
 
   const tipo = TIPOS_MEDIA[mensaje.mediaType || ""];
   const entrada: EntradaMotor = {
@@ -355,7 +380,7 @@ const responderMensaje = async (ticketId: number, companyId: number, agenteId: n
     // Sin respuesta la conversacion queda para el equipo; no se manda al
     // cliente un error tecnico.
     logger.error(`[AI AGENT] Agente ${agente.id} sin respuesta del proveedor en ticket ${ticket.id}: ${(err as Error).message}`);
-    return;
+    return "sin_respuesta";
   }
   if (resultado.avisos.length) logger.info(`[AI AGENT] Ticket ${ticket.id}: ${resultado.avisos.join(", ")}`);
 
@@ -366,7 +391,7 @@ const responderMensaje = async (ticketId: number, companyId: number, agenteId: n
 
   if (resultado.bloques.length) {
     const envio = await enviarBloques(ticket, contact, resultado.bloques, estado.version, voz);
-    if (envio === "abortado") return;
+    if (envio === "abortado") return "descartado";
   }
 
   if (resultado.transferir) {
@@ -374,13 +399,63 @@ const responderMensaje = async (ticketId: number, companyId: number, agenteId: n
       const vigente = await leerEstado(ticket);
       // Si el asesor ya tomo el control mientras tanto, no hay nada que transferir.
       if (!vigente.enabled || vigente.version !== estado.version) return null;
-      return transferirAHumanoSinBloqueo(ticket, agente);
+      if (enFlujo) {
+        // Sale del modo IA del flujo, como hacian los nodos IA al transferir.
+        await Ticket.update(
+          { useIntegration: false, isBot: false, dataWebhook: null } as any,
+          { where: { id: ticket.id, companyId } }
+        );
+      }
+      return transferirAHumanoSinBloqueo(ticket, agente, filaTransferencia);
     });
     if (asignacion) logger.info(`[AI AGENT] Ticket ${ticket.id} transferido a humano (${asignacion})`);
-    return;
+    return "transferido";
   }
 
-  if (resultado.bloques.length) await programarSeguimiento(ticket, agente, 1);
+  // Los seguimientos son del agente de la conexion; en un flujo manda el flujo.
+  if (resultado.bloques.length && !enFlujo) await programarSeguimiento(ticket, agente, 1);
+  return resultado.bloques.length ? "respondido" : "sin_respuesta";
+};
+
+/**
+ * Respuesta del agente elegido en un nodo IA del Flow Builder. Mismo motor,
+ * envio por canal, estado de la IA y prioridad humana que el de la conexion.
+ * Se espera al resultado porque el flujo lo necesita (objetivo cumplido,
+ * vuelta al flujo). Si llegan varios mensajes seguidos, se responde al ultimo.
+ */
+export const responderEnFlujo = async ({
+  ticket,
+  contact,
+  agentId,
+  wid,
+  filaTransferencia
+}: {
+  ticket: Ticket;
+  contact: Contact;
+  agentId: number;
+  wid: string | null | undefined;
+  filaTransferencia?: number | null;
+}): Promise<ResultadoAtencion | "pausado" | "fuera_de_horario" | "agrupado"> => {
+  if (!wid) return "no_aplica";
+  const agente = await AiAgent.findOne({ where: { id: agentId, companyId: ticket.companyId, isActive: true } });
+  if (!agente || !agente.disponibleEnFlujos) {
+    logger.warn(`[AI AGENT] Ticket ${ticket.id}: el agente ${agentId} del flujo no esta activo o disponible para flujos`);
+    return "no_aplica";
+  }
+  if (motivoNoAtiende(ticket, contact, { enFlujo: true })) return "no_aplica";
+
+  const estado = await asegurarEstado(ticket);
+  if (!estado.enabled) return "pausado";
+  if (!dentroDeHorario(agente.schedule)) return "fuera_de_horario";
+
+  let resultado: ResultadoAtencion | "agrupado" = "agrupado";
+  await encolar(ticket.id, wid, async () => {
+    resultado = await responderMensaje(ticket.id, ticket.companyId, agente.id, wid, {
+      enFlujo: true,
+      filaTransferencia
+    });
+  });
+  return resultado;
 };
 
 /**
@@ -441,8 +516,22 @@ export interface EstadoParaAsesor extends EstadoIa {
   withinSchedule: boolean;
 }
 
+/**
+ * Agente que gobierna la conversacion: el de un nodo IA del flujo en marcha
+ * o, si no, el de la conexion.
+ */
+const agenteDelTicket = async (ticket: Ticket): Promise<{ agente: AiAgent; enFlujo: boolean } | null> => {
+  const idFlujo = agenteDeFlujoId(ticket);
+  if (idFlujo) {
+    const agente = await AiAgent.findOne({ where: { id: idFlujo, companyId: ticket.companyId, isActive: true } });
+    if (agente) return { agente, enFlujo: true };
+  }
+  const deConexion = ticket.whatsappId ? await agenteDeConexion(ticket.companyId, ticket.whatsappId) : null;
+  return deConexion ? { agente: deConexion, enFlujo: false } : null;
+};
+
 export const estadoParaAsesor = async (ticket: Ticket): Promise<EstadoParaAsesor> => {
-  const agente = ticket.whatsappId ? await agenteDeConexion(ticket.companyId, ticket.whatsappId) : null;
+  const agente = (await agenteDelTicket(ticket))?.agente || null;
   const estado = await leerEstado(ticket);
   return {
     ...estado,
@@ -468,18 +557,22 @@ export const cambiarEstadoDesdeAsesor = async (
 ): Promise<EstadoParaAsesor> => {
   const ticket = await ticketCompleto(ticketId, companyId);
   if (ticket.status === "closed") throw new AppError("ERR_AI_AGENT_TICKET_CLOSED", 409);
-  const agente = ticket.whatsappId ? await agenteDeConexion(companyId, ticket.whatsappId) : null;
-  if (!agente || !CANALES_AGENTE.includes(ticket.channel)) throw new AppError("ERR_AI_AGENT_NOT_ASSIGNED", 409);
+  const gobierno = await agenteDelTicket(ticket);
+  if (!gobierno || !CANALES_AGENTE.includes(ticket.channel)) throw new AppError("ERR_AI_AGENT_NOT_ASSIGNED", 409);
+  const { agente, enFlujo } = gobierno;
 
   await cambiarEstado(ticket, enabled, "manual", userId);
 
-  if (enabled && !motivoNoAtiende(ticket, ticket.contact) && dentroDeHorario(agente.schedule)) {
+  if (enabled && !motivoNoAtiende(ticket, ticket.contact, { enFlujo }) && dentroDeHorario(agente.schedule)) {
     const ultimo = await Message.findOne({
       where: { ticketId: ticket.id, companyId, isPrivate: { [Op.not]: true }, isDeleted: { [Op.not]: true } },
       order: [["createdAt", "DESC"]]
     });
     if (ultimo && !ultimo.fromMe) {
-      encolar(ticket.id, ultimo.wid, () => responderMensaje(ticket.id, companyId, agente.id, ultimo.wid));
+      const filaTransferencia = enFlujo ? Number((ticket.dataWebhook as any)?.settings?.queueId) || null : null;
+      encolar(ticket.id, ultimo.wid, () =>
+        responderMensaje(ticket.id, companyId, agente.id, ultimo.wid, { enFlujo, filaTransferencia })
+      );
     }
   }
   return estadoParaAsesor(ticket);

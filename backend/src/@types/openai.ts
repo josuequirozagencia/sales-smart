@@ -19,4 +19,10 @@ export interface IOpenAi {
   completionTimeout?: number;
   objective?: string;
   autoCompleteOnObjective?: boolean;
+
+  /**
+   * Nodo con Agente IA: la configuracion (proveedor, modelo, clave, prompt)
+   * se lee del agente al responder y el nodo no guarda ninguna clave.
+   */
+  agentId?: number;
 }
