@@ -201,6 +201,29 @@ La lista anotada a mano (`GhlTemplate`) se retiró del código y de la
 pantalla. Su tabla `GhlTemplates` sigue en la base con lo que tuviera: no se
 borra ningún dato.
 
+## Mensajes escritos directamente en GHL
+
+Un evento **saliente** que llega al webhook puede ser dos cosas:
+
+- **El eco de un envío de Sales Smart.** `SendGhlMessage` guarda el mensaje
+  con el `messageId` que devuelve GHL como `wid`. Si el evento trae ese mismo
+  identificador, se descarta: ya está en el hilo.
+- **Un mensaje escrito en la bandeja de GHL**, que no estaba en ningún sitio.
+  Si su identificador no coincide con nada guardado, se guarda en el ticket
+  como enviado (`fromMe`, leído, sin sumar no leídos).
+
+Dos protecciones contra duplicados:
+- un saliente **sin `messageId`** no se puede comparar y se descarta como
+  antes, dejándolo anotado en el log;
+- si el eco llega **antes** de que `SendGhlMessage` guarde su envío, este no lo
+  vuelve a crear.
+
+**Requisito:** que los eventos salientes lleguen al webhook. El flujo con el
+disparador «Customer Replied» solo manda mensajes entrantes, y el evento
+`OutboundMessage` es de las apps del Marketplace (un Private Integration
+Token no puede suscribirse). Sin una fuente de eventos salientes, este
+camino no se activa.
+
 ## Cómo encaja por dentro
 
 Un mensaje entrante de GHL recorre exactamente el mismo camino que uno de

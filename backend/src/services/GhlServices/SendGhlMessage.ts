@@ -1,5 +1,6 @@
 import Ticket from "../../models/Ticket";
 import Contact from "../../models/Contact";
+import Message from "../../models/Message";
 import CreateMessageService from "../MessageServices/CreateMessageService";
 import formatBody from "../../helpers/Mustache";
 import AppError from "../../errors/AppError";
@@ -105,6 +106,14 @@ const SendGhlMessage = async ({ body, ticket, media }: Peticion) => {
   }
 
   await ticket.update({ lastMessage: texto, unreadMessages: 0 });
+
+  // El webhook de GHL puede traer el eco de este mismo envio antes de que
+  // llegue aqui: en ese caso ReceiveGhlMessageService ya lo guardo con el
+  // mismo wid (el messageId de GHL) y no se crea otra vez.
+  if (envio.messageId) {
+    const yaGuardado = await Message.findOne({ where: { wid: envio.messageId, companyId: ticket.companyId } });
+    if (yaGuardado) return envio;
+  }
 
   await CreateMessageService({
     messageData: {

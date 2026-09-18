@@ -52,6 +52,11 @@ interface DatosNormalizados {
   nombre: string;
   texto: string;
   idMensaje: string;
+  /**
+   * false si GHL no mando identificador y se fabrico uno. Con un id fabricado
+   * no se puede saber si un saliente es el eco de un envio de Sales Smart.
+   */
+  idReal: boolean;
   entrante: boolean;
 }
 
@@ -103,6 +108,7 @@ export const normalizar = (evento: EventoGhl): DatosNormalizados | null => {
     evento.messageType
   ).toLowerCase();
   const entrante = !["outbound", "outgoing"].includes(sentido);
+  const idDeGhl = primero(evento.messageId, mensaje.id, evento.id);
 
   return {
     contactIdGhl,
@@ -126,6 +132,7 @@ export const normalizar = (evento: EventoGhl): DatosNormalizados | null => {
       // recortados de un Workflow.
       `ghl_${contactIdGhl}_${Math.floor(Date.now() / 1000)}`
     ),
+    idReal: Boolean(idDeGhl),
     entrante
   };
 };
@@ -155,11 +162,20 @@ const ReceiveGhlMessageService = async (
     return { atendido: false, motivo: "evento sin contacto ni telefono" };
   }
 
-  // Los salientes ya los pintamos nosotros al enviarlos. Si se guardaran
-  // tambien al volver por el webhook, cada respuesta del asesor apareceria
-  // dos veces en el hilo.
+  // Salientes: pueden ser el eco de un envio de Sales Smart (SendGhlMessage
+  // lo guarda con el messageId que devuelve GHL como wid) o un mensaje escrito
+  // directamente en la bandeja de GHL, que no esta en ningun sitio. El eco se
+  // descarta; el otro se guarda en el ticket como enviado (fromMe).
   if (!datos.entrante) {
-    return { atendido: false, motivo: "mensaje saliente, ya registrado" };
+    if (!datos.idReal) {
+      // Sin identificador de GHL no hay con que comparar: guardarlo duplicaria
+      // cada respuesta del asesor. Se descarta como antes y queda en el log.
+      return { atendido: false, motivo: "mensaje saliente sin messageId: no se puede distinguir del eco" };
+    }
+    const eco = await Message.findOne({ where: { wid: datos.idMensaje, companyId } });
+    if (eco) {
+      return { atendido: false, motivo: `eco del mensaje ${datos.idMensaje}, ya registrado` };
+    }
   }
 
   if (!datos.texto) {
@@ -222,10 +238,10 @@ const ReceiveGhlMessageService = async (
       ghlContactId: datos.contactIdGhl || null
     } as any);
 
-    // Meta Conversions API: aqui solo llegan mensajes entrantes (los
-    // salientes se descartan arriba), asi que un contacto nuevo escribio
-    // primero y es un lead. Solo encola; no espera ni lanza.
-    registrarLeadEntrante(contact);
+    // Meta Conversions API: un contacto nuevo que escribio primero es un
+    // lead. Si el primer mensaje es saliente (escrito en GHL) no lo es.
+    // Solo encola; no espera ni lanza.
+    if (datos.entrante) registrarLeadEntrante(contact);
   }
 
   // Se anota el identificador de GHL si el contacto ya existia sin el.
@@ -291,7 +307,8 @@ const ReceiveGhlMessageService = async (
 
   await ticket.update({
     lastMessage: datos.texto,
-    unreadMessages: ticket.unreadMessages + 1
+    // Lo que se escribio desde GHL no es un mensaje sin leer del cliente.
+    ...(datos.entrante ? { unreadMessages: ticket.unreadMessages + 1 } : { fromMe: true })
   });
 
   await CreateMessageService({
@@ -300,10 +317,10 @@ const ReceiveGhlMessageService = async (
       ticketId: ticket.id,
       contactId: contact.id,
       body: datos.texto,
-      fromMe: false,
+      fromMe: !datos.entrante,
       mediaType: "conversation",
-      read: false,
-      ack: 0,
+      read: !datos.entrante,
+      ack: datos.entrante ? 0 : 1,
       channel: CANAL,
       ticketTrakingId: null,
       isPrivate: false
@@ -312,7 +329,7 @@ const ReceiveGhlMessageService = async (
   });
 
   logger.info(
-    `[GHL] mensaje entrante -> empresa ${companyId}, ticket ${ticket.id}`
+    `[GHL] mensaje ${datos.entrante ? "entrante" : "escrito en GHL"} -> empresa ${companyId}, ticket ${ticket.id}`
   );
 
   return { atendido: true };
