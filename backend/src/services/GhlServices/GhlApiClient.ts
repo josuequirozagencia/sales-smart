@@ -200,6 +200,45 @@ export const listarFlujos = async (
   }
 };
 
+/**
+ * Campos personalizados de contacto de la location (GET /locations/{id}/customFields).
+ * Devuelve null si la llamada falla (por ejemplo, un token sin el permiso de
+ * leer campos): la pantalla deja entonces escribir la clave a mano.
+ */
+export const listarCamposPersonalizados = async (
+  cliente: ClienteGhl
+): Promise<{ id: string; name: string; fieldKey: string }[] | null> => {
+  try {
+    const { data } = await cliente.api.get(`/locations/${cliente.locationId}/customFields`, {
+      params: { model: "contact" }
+    });
+    const campos = data?.customFields || [];
+    return campos.map((c: any) => ({ id: c.id, name: c.name, fieldKey: c.fieldKey }));
+  } catch (err) {
+    logger.error(`[GHL] listado de campos personalizados: ${resumirError(err)}`);
+    return null;
+  }
+};
+
+/**
+ * Da valor a campos personalizados del contacto (PUT /contacts/{id} con
+ * customFields: [{ id | key, fieldValue }], segun la documentacion de GHL).
+ */
+export const actualizarCamposContacto = async (
+  cliente: ClienteGhl,
+  contactId: string,
+  campos: { id?: string; key?: string; fieldValue: string }[]
+): Promise<{ ok: boolean; error?: string }> => {
+  try {
+    await cliente.api.put(`/contacts/${contactId}`, { customFields: campos });
+    return { ok: true };
+  } catch (err) {
+    const error = resumirError(err);
+    logger.error(`[GHL] campos del contacto: ${error}`);
+    return { ok: false, error };
+  }
+};
+
 export default {
   crearCliente,
   clienteDeEmpresa,
@@ -208,6 +247,8 @@ export default {
   anadirEtiquetas,
   quitarEtiquetas,
   inscribirEnFlujo,
+  listarCamposPersonalizados,
+  actualizarCamposContacto,
   listarFlujos,
   resumirError
 };

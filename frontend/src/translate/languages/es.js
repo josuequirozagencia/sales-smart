@@ -305,6 +305,26 @@ const messages = {
           help: "Pega esta dirección en GoHighLevel, en la acción «Webhook» de un Workflow con el disparador «Customer Replied», para los mensajes entrantes. Con un Private Integration Token no hay otra vía: la suscripción a eventos es exclusiva de las apps del Marketplace, y GoHighLevel no tiene API para crearla. Se hace una sola vez.",
           copy: "Copiar",
         },
+        templateWorkflows: {
+          title: "Plantillas de WhatsApp → Workflows de GHL",
+          help: "GoHighLevel no permite enviar plantillas por su API de mensajes; se envían con un Workflow que tenga la acción «Send WhatsApp». Para cada plantilla elige ese Workflow y el campo personalizado del contacto donde va cada variable: el Workflow debe usar esos mismos campos. Así la plantilla se puede enviar desde los tickets de GoHighLevel.",
+          template: "Plantilla",
+          workflow: "Workflow",
+          variables: "Variables → campos del contacto",
+          none: "— Ninguno —",
+          noVariables: "Sin variables",
+          empty: "No hay plantillas aprobadas en la cuenta de Meta.",
+          saved: "Asignación guardada.",
+          fieldsUnavailable: "No se pudieron leer los campos personalizados de GoHighLevel (el token puede no tener ese permiso). Escribe la clave de cada campo a mano, por ejemplo contact.nombre_curso.",
+          parts: {
+            header: "Encabezado",
+            body: "Cuerpo",
+          },
+          reasons: {
+            HEADER_MEDIA: "Tiene encabezado con imagen, video o documento: no se puede enviar desde Sales Smart.",
+            BUTTON_VARIABLES: "Tiene botones con variables: no se puede enviar desde Sales Smart.",
+          },
+        },
         meta: {
           title: "Plantillas de WhatsApp (Meta)",
           help: "GoHighLevel no deja leer las plantillas por API, pero la cuenta de WhatsApp Business de detrás es de Meta. Con su ID y un token de Meta (de un usuario del sistema con el permiso whatsapp_business_management) se leen las plantillas aprobadas reales en «Plantillas de WhatsApp». Opcional; el token se guarda cifrado.",
@@ -2991,6 +3011,9 @@ const messages = {
         },
       },
       messageInput: {
+        ghlTemplate: {
+          sent: "Plantilla enviada: GoHighLevel la manda con su Workflow.",
+        },
         tooltip: {
           signature: "Activar/Desactivar firma",
           privateMessage: "Activar/Desactivar mensaje privado",
@@ -3001,6 +3024,7 @@ const messages = {
           cam: "Cámara",
           contact: "Contacto",
           meet: "Link Jitsi Meet",
+          template: "Plantilla de WhatsApp",
         },
       },
       messageOptionsMenu: {
@@ -3028,6 +3052,12 @@ const messages = {
         },
       },
       backendErrors: {
+        ERR_GHL_PLANTILLA_SIN_WORKFLOW: "Esta plantilla no tiene un Workflow de GoHighLevel asignado.",
+        ERR_GHL_PLANTILLA_NO_APROBADA: "La plantilla ya no está aprobada en Meta.",
+        ERR_GHL_PLANTILLA_NO_SOPORTADA: "Esta plantilla no se puede enviar desde Sales Smart (encabezado multimedia o botones con variables).",
+        ERR_GHL_PLANTILLA_FALTAN_VARIABLES: "Faltan valores para las variables de la plantilla.",
+        ERR_GHL_PLANTILLAS_INVALIDAS: "La asignación de plantillas no es válida.",
+        ERR_GHL_TICKET_NO_GHL: "Este ticket no es de GoHighLevel.",
         ERR_GHL_META_BUSINESS_ID_INVALIDO: "El ID de la cuenta de WhatsApp Business solo lleva números.",
         ERR_TEMPLATES_CHANNEL_UNSUPPORTED: "Esta conexión no tiene plantillas de Meta: solo WhatsApp Oficial y GoHighLevel.",
         ERR_TEMPLATES_UNAVAILABLE: "Meta no devolvió las plantillas. Revisa que la conexión esté activa y vuelve a intentarlo.",

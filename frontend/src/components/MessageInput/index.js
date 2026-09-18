@@ -69,6 +69,7 @@ import { ReplyMessageContext } from "../../context/ReplyingMessage/ReplyingMessa
 import { AuthContext } from "../../context/Auth/AuthContext";
 import { i18n } from "../../translate/i18n";
 import toastError from "../../errors/toastError";
+import { toast } from "react-toastify";
 import api, { openApi } from "../../services/api";
 import RecordingTimer from "./RecordingTimer";
 
@@ -520,6 +521,36 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
+// Plantillas de GHL: la lista real de Meta tiene otra forma que las de
+// WhatsApp Oficial guardadas como respuestas rapidas. Se adapta a lo que
+// espera TemplateModal (shortcode, botones en JSON).
+const plantillaGhlParaModal = (p) => ({
+  ...p,
+  id: `${p.name}|${p.language}`,
+  shortcode: p.name,
+  components: (p.components || []).map((c) =>
+    c.buttons && typeof c.buttons !== "string" ? { ...c, buttons: JSON.stringify(c.buttons) } : c
+  ),
+});
+
+/**
+ * Valores del modal (por componente y posicion) -> "header.1", "body.2"...,
+ * que es como el backend sabe en que campo de GHL va cada variable.
+ */
+const valoresPlantillaGhl = (plantilla, variableValues) => {
+  const valores = {};
+  (plantilla.components || []).forEach((c) => {
+    const tipo = String(c.type || "").toLowerCase();
+    if (!["header", "body"].includes(tipo)) return;
+    const numeros = [...String(c.text || "").matchAll(/{{(\d+)}}/g)].map((m) => m[1]);
+    numeros.forEach((n, i) => {
+      const valor = variableValues?.[tipo]?.[i]?.value;
+      if (valor !== undefined) valores[`${tipo}.${n}`] = valor;
+    });
+  });
+  return valores;
+};
+
 const MessageInput = ({
   ticketId,
   ticketStatus,
@@ -537,6 +568,8 @@ const MessageInput = ({
   const [showEmoji, setShowEmoji] = useState(false);
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
   const [templates, setTemplates] = useState([]);
+  // Plantillas enviables en tickets de GHL (van por un Workflow de GHL).
+  const [plantillasGhl, setPlantillasGhl] = useState([]);
   const [loading, setLoading] = useState(false);
   const [recording, setRecording] = useState(false);
   const [quickAnswers, setQuickAnswer] = useState([]);
@@ -945,6 +978,16 @@ const MessageInput = ({
   };
 
   const handleSendTemplate = async () => {
+    if (ticketChannel === "ghl") {
+      // Se piden al abrir: son las reales de Meta, con su Workflow asignado.
+      try {
+        const { data } = await api.get("/ghl/sendable-templates");
+        setPlantillasGhl((data || []).map(plantillaGhlParaModal));
+      } catch (err) {
+        toastError(err);
+        return;
+      }
+    }
     setTemplateModalOpen(true);
   };
 
@@ -1280,6 +1323,25 @@ const MessageInput = ({
   const handleSendMessageTemplate = async (e) => {
     if (e.id === "") return;
     setLoading(true);
+
+    if (ticketChannel === "ghl") {
+      // GHL: la envia un Workflow; el backend rellena los campos del contacto
+      // con las variables y lo inscribe.
+      try {
+        await api.post(`/ghl/tickets/${ticketId}/template`, {
+          name: e.name,
+          language: e.language,
+          values: valoresPlantillaGhl(e, e.variables),
+        });
+        toast.success(i18n.t("messageInput.ghlTemplate.sent"));
+      } catch (err) {
+        toastError(err);
+      }
+      setLoading(false);
+      setTemplateModalOpen(false);
+      handleMenuItemClick();
+      return;
+    }
 
     const message = {
       templateId: e.id,
@@ -1824,7 +1886,7 @@ const MessageInput = ({
             open={templateModalOpen}
             handleClose={() => setTemplateModalOpen(false)}
             onSelectTemplate={(e) => handleSendMessageTemplate(e)}
-            templates={templates}
+            templates={ticketChannel === "ghl" ? plantillasGhl : templates}
           />
         )}
         {modalCameraOpen && (
@@ -1966,8 +2028,8 @@ const MessageInput = ({
                     </Fab>
                     {i18n.t("messageInput.type.meet")}
                   </MenuItem>
-                  {useWhatsappOfficial &&
-                    ticketChannel === "whatsapp_oficial" && (
+                  {((useWhatsappOfficial && ticketChannel === "whatsapp_oficial") ||
+                    ticketChannel === "ghl") && (
                       <MenuItem onClick={handleSendTemplate}>
                         <Fab className={classes.invertedFabMenuMeet}>
                           <WhatsApp />

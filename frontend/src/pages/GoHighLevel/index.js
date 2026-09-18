@@ -18,6 +18,7 @@ import Title from "../../components/Title";
 import api from "../../services/api";
 import toastError from "../../errors/toastError";
 import { i18n } from "../../translate/i18n";
+import GhlTemplateWorkflows from "../../components/GhlTemplateWorkflows";
 import { AuthContext } from "../../context/Auth/AuthContext";
 
 const useStyles = makeStyles((theme) => ({
@@ -305,6 +306,10 @@ const GoHighLevel = () => {
           )}
         </div>
       </Paper>
+
+      {/* Plantilla -> Workflow de GHL que la envia. Solo con las credenciales de
+          Meta, que es de donde salen las plantillas reales. */}
+      {esAdmin && config.tieneTokenMeta && config.metaBusinessId && <GhlTemplateWorkflows />}
     </MainContainer>
   );
 };

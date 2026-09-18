@@ -305,6 +305,26 @@ const messages = {
           help: "Cole este endereço no GoHighLevel, na ação «Webhook» de um Workflow com o gatilho «Customer Replied», para as mensagens recebidas. Com um Private Integration Token não há outra via: a assinatura de eventos é exclusiva dos apps do Marketplace, e o GoHighLevel não tem API para criá-la. É feito uma única vez.",
           copy: "Copiar",
         },
+        templateWorkflows: {
+          title: "Templates de WhatsApp → Workflows do GHL",
+          help: "O GoHighLevel não permite enviar templates pela API de mensagens; eles são enviados por um Workflow com a ação «Send WhatsApp». Para cada template escolha esse Workflow e o campo personalizado do contato de cada variável: o Workflow deve usar esses mesmos campos. Assim o template pode ser enviado nos tickets do GoHighLevel.",
+          template: "Template",
+          workflow: "Workflow",
+          variables: "Variáveis → campos do contato",
+          none: "— Nenhum —",
+          noVariables: "Sem variáveis",
+          empty: "Não há templates aprovados na conta da Meta.",
+          saved: "Atribuição salva.",
+          fieldsUnavailable: "Não foi possível ler os campos personalizados do GoHighLevel (o token pode não ter essa permissão). Digite a chave de cada campo, por exemplo contact.nome_curso.",
+          parts: {
+            header: "Cabeçalho",
+            body: "Corpo",
+          },
+          reasons: {
+            HEADER_MEDIA: "Tem cabeçalho com imagem, vídeo ou documento: não pode ser enviado pelo Sales Smart.",
+            BUTTON_VARIABLES: "Tem botões com variáveis: não pode ser enviado pelo Sales Smart.",
+          },
+        },
         meta: {
           title: "Templates de WhatsApp (Meta)",
           help: "O GoHighLevel não deixa ler os templates por API, mas a conta do WhatsApp Business por trás é da Meta. Com o ID dela e um token da Meta (de um usuário do sistema com a permissão whatsapp_business_management) os templates aprovados reais aparecem em «Templates de WhatsApp». Opcional; o token é salvo criptografado.",
@@ -3040,6 +3060,9 @@ const messages = {
         },
       },
       messageInput: {
+        ghlTemplate: {
+          sent: "Template enviado: o GoHighLevel envia com o Workflow.",
+        },
         tooltip: {
           signature: "Habilitar/Desabilitar Assinatura",
           privateMessage: "Habilitar/Desabilitar Mensagem Privada",
@@ -3079,6 +3102,12 @@ const messages = {
         },
       },
       backendErrors: {
+        ERR_GHL_PLANTILLA_SIN_WORKFLOW: "Este template não tem um Workflow do GoHighLevel atribuído.",
+        ERR_GHL_PLANTILLA_NO_APROBADA: "O template não está mais aprovado na Meta.",
+        ERR_GHL_PLANTILLA_NO_SOPORTADA: "Este template não pode ser enviado pelo Sales Smart (cabeçalho de mídia ou botões com variáveis).",
+        ERR_GHL_PLANTILLA_FALTAN_VARIABLES: "Faltam valores para as variáveis do template.",
+        ERR_GHL_PLANTILLAS_INVALIDAS: "A atribuição de templates não é válida.",
+        ERR_GHL_TICKET_NO_GHL: "Este ticket não é do GoHighLevel.",
         ERR_GHL_META_BUSINESS_ID_INVALIDO: "O ID da conta do WhatsApp Business só tem números.",
         ERR_TEMPLATES_CHANNEL_UNSUPPORTED: "Esta conexão não tem templates da Meta: só WhatsApp Oficial e GoHighLevel.",
         ERR_TEMPLATES_UNAVAILABLE: "A Meta não devolveu os templates. Verifique se a conexão está ativa e tente de novo.",

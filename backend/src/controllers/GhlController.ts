@@ -4,14 +4,22 @@ import Ticket from "../models/Ticket";
 import Contact from "../models/Contact";
 import {
   verConfiguracion,
-  guardarConfiguracion
+  guardarConfiguracion,
+  buscarIntegracion
 } from "../services/GhlServices/GhlConfigService";
 import {
   clienteDeEmpresa,
   listarFlujos,
-  inscribirEnFlujo
+  inscribirEnFlujo,
+  listarCamposPersonalizados
 } from "../services/GhlServices/GhlApiClient";
 import { resolverContactoGhl } from "../services/GhlServices/SendGhlMessage";
+import {
+  enviarPlantillaGhl,
+  guardarMapa,
+  leerMapa,
+  plantillasEnviables
+} from "../services/GhlServices/PlantillasGhlService";
 
 /**
  * Administracion del canal de GoHighLevel.
@@ -146,9 +154,72 @@ export const enroll = async (req: Request, res: Response): Promise<Response> => 
   return res.status(200).json({ ok: true });
 };
 
+// ---------------------------------------------------------------------------
+// Plantillas de WhatsApp enviadas con un Workflow de GHL
+// ---------------------------------------------------------------------------
+//
+// GHL no documenta el envio de plantillas por su API de mensajes; la via
+// documentada es un Workflow con la accion "Send WhatsApp". Ver
+// PlantillasGhlService.
+
+/** Campos personalizados de contacto, para elegir donde van las variables. */
+export const customFields = async (req: Request, res: Response): Promise<Response> => {
+  soloAdmin(req);
+  const cliente = await clienteDeEmpresa(req.user.companyId);
+  const campos = await listarCamposPersonalizados(cliente);
+  // null = GHL no los dio (p. ej. token sin permiso): la pantalla deja
+  // escribir la clave a mano.
+  return res.status(200).json({ disponible: campos !== null, campos: campos || [] });
+};
+
+/** Plantillas aprobadas con su Workflow y sus variables, para configurarlas. */
+export const templateWorkflows = async (req: Request, res: Response): Promise<Response> => {
+  soloAdmin(req);
+  const { companyId } = req.user;
+  const [plantillas, fila] = await Promise.all([plantillasEnviables(companyId), buscarIntegracion(companyId)]);
+  return res.status(200).json({ plantillas, mapa: leerMapa(fila?.templateWorkflows) });
+};
+
+export const updateTemplateWorkflows = async (req: Request, res: Response): Promise<Response> => {
+  soloAdmin(req);
+  const mapa = await guardarMapa(req.user.companyId, req.body?.mapa);
+  return res.status(200).json({ mapa });
+};
+
+/**
+ * Plantillas que se pueden enviar desde un ticket de GHL. Cualquier usuario
+ * de la empresa: es lo que ve quien responde.
+ */
+export const sendableTemplates = async (req: Request, res: Response): Promise<Response> => {
+  const plantillas = await plantillasEnviables(req.user.companyId);
+  return res.status(200).json(plantillas.filter(p => p.enviable));
+};
+
+export const sendTemplate = async (req: Request, res: Response): Promise<Response> => {
+  const ticketId = Number(req.params.ticketId);
+  if (!Number.isInteger(ticketId) || ticketId < 1) throw new AppError("ERR_NO_TICKET_FOUND", 404);
+  const { name, language, values } = req.body || {};
+  if (typeof name !== "string" || typeof language !== "string") {
+    throw new AppError("ERR_GHL_PLANTILLAS_INVALIDAS", 400);
+  }
+  await enviarPlantillaGhl({
+    ticketId,
+    companyId: req.user.companyId,
+    name,
+    language,
+    valores: values && typeof values === "object" ? values : {}
+  });
+  return res.status(200).json({ ok: true });
+};
+
 export default {
   show,
   update,
   workflows,
-  enroll
+  enroll,
+  customFields,
+  templateWorkflows,
+  updateTemplateWorkflows,
+  sendableTemplates,
+  sendTemplate
 };

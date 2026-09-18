@@ -67,6 +67,13 @@ class GhlConfig extends Model<GhlConfig> {
   @Column
   metaAccessTokenLast4: string;
 
+  /**
+   * Plantilla de WhatsApp -> Workflow de GHL que la envia, y campos
+   * personalizados donde van sus variables. JSON. Ver PlantillasGhlService.
+   */
+  @Column(DataType.TEXT)
+  templateWorkflows: string;
+
   @CreatedAt
   createdAt: Date;
 

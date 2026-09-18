@@ -201,6 +201,35 @@ La lista anotada a mano (`GhlTemplate`) se retiró del código y de la
 pantalla. Su tabla `GhlTemplates` sigue en la base con lo que tuviera: no se
 borra ningún dato.
 
+### Enviar una plantilla desde un ticket de GHL
+
+GHL no documenta cómo enviar una plantilla aprobada por su API de mensajes:
+`POST /conversations/messages` solo tiene un `templateId` genérico («ID of
+message template»), sin variables ni idioma, y su ayuda describe el envío de
+plantillas solo desde la interfaz, los Workflows y los envíos masivos. Por eso
+se usa la vía documentada, un **Workflow con la acción «Send WhatsApp»**:
+
+1. En la pantalla de GoHighLevel, bloque «Plantillas de WhatsApp → Workflows de
+   GHL» (visible con las credenciales de Meta), se elige para cada plantilla
+   aprobada el Workflow que la envía y el **campo personalizado del contacto**
+   donde va cada variable `{{n}}` del encabezado o del cuerpo. El Workflow de
+   GHL debe rellenar la plantilla con esos mismos campos. Se guarda en
+   `GhlConfigs.templateWorkflows`.
+2. En un ticket de GHL, «Plantilla de WhatsApp» lista las plantillas que ya
+   tienen Workflow. Al enviar, Sales Smart:
+   - da valor a esos campos (`PUT /contacts/{id}` con
+     `customFields: [{ id | key, fieldValue }]`);
+   - inscribe al contacto en el Workflow
+     (`POST /contacts/{id}/workflow/{workflowId}`);
+   - deja una **nota interna** en el ticket con el texto de la plantilla. No se
+     guarda como mensaje entregado: lo envía GHL y no nos consta la entrega.
+
+No se pueden enviar desde aquí las plantillas con encabezado multimedia o con
+variables en los botones: no se rellenan con un campo de texto del contacto.
+
+Los campos personalizados se leen de `GET /locations/{id}/customFields`; si el
+token no tiene ese permiso, la pantalla deja escribir la clave a mano.
+
 ## Mensajes escritos directamente en GHL
 
 Un evento **saliente** que llega al webhook puede ser dos cosas:

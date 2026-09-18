@@ -24,5 +24,11 @@ ghlRoutes.post("/ghl/enroll", isAuth, GhlController.enroll);
 
 // Las plantillas de WhatsApp ya no se anotan a mano: se leen de Meta en
 // GET /whatsapp/:whatsappId/templates (ver ListTemplatesService).
+// Para enviarlas en un ticket, cada una se asocia a un Workflow de GHL.
+ghlRoutes.get("/ghl/custom-fields", isAuth, GhlController.customFields);
+ghlRoutes.get("/ghl/template-workflows", isAuth, GhlController.templateWorkflows);
+ghlRoutes.put("/ghl/template-workflows", isAuth, GhlController.updateTemplateWorkflows);
+ghlRoutes.get("/ghl/sendable-templates", isAuth, GhlController.sendableTemplates);
+ghlRoutes.post("/ghl/tickets/:ticketId/template", isAuth, GhlController.sendTemplate);
 
 export default ghlRoutes;
