@@ -25,8 +25,14 @@ const useStyles = makeStyles(theme => ({
 		borderBottom: `1px solid ${theme.palette.tokens.border.border}`,
 		// Altura minima en vez de fija: con 65px exactos, la barra recortaba
 		// el contenido en cuanto el nombre del contacto pasaba a dos lineas.
-		minHeight: 64,
+		minHeight: 56,
 		padding: theme.spacing(0, 0.5),
+		// Botones compactos: con el relleno de serie cada accion ocupaba 48px y
+		// las de la barra pedian mas ancho del que hay a 1366px. A 36px siguen
+		// siendo comodas de pulsar y la conversacion gana unos 80px.
+		"& .MuiIconButton-root": {
+			padding: 6,
+		},
 		[theme.breakpoints.down("sm")]: {
 			flexWrap: "wrap",
 			height: "max-content",

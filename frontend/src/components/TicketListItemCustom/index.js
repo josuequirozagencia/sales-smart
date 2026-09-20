@@ -172,6 +172,9 @@ const useStyles = makeStyles((theme) => ({
     // 700 en vez de "bold": el nombre es el ancla de la fila y conviene
     // fijar el peso, no dejarlo a lo que interprete cada tipografia.
     fontWeight: 700,
+    // 14px en vez de los 16 de serie: con nombre, vista previa, insignias y
+    // hora en cada fila, 16 hacia la lista mas alta sin decir nada mas.
+    fontSize: "0.875rem",
     // Era negro y blanco literales. El token se adapta al modo y respeta
     // el contraste que ya esta medido en el sistema.
     color: theme.palette.tokens.text.primary,
@@ -227,11 +230,14 @@ const useStyles = makeStyles((theme) => ({
     paddingRight: "0%",
     marginLeft: "5px",
     color: theme.palette.text.secondary,
+    // Un paso por debajo del nombre: la vista previa es apoyo, no titular.
+    fontSize: "0.8125rem",
   },
 
   contactLastMessageUnread: {
     paddingRight: 20,
     fontWeight: 600,
+    fontSize: "0.8125rem",
     color: theme.palette.text.primary,
     // A largura fixa de 50% cortava a pré-visualização num ponto diferente
     // da versão lida, fazendo a lista "saltar" ao marcar como lida.

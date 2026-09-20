@@ -17,7 +17,10 @@ import logo from "../../assets/logo.png";
 import logoDark from "../../assets/logo-black.png";
 
 const defaultTicketsManagerWidth = 550;
-const minTicketsManagerWidth = 404;
+// 320 y no 404: a 1366px la lista, la conversacion y la ficha no cabian y
+// aparecia scroll horizontal con la ficha cortada. Con la cabecera del ticket
+// ya compacta, la lista puede ceder hasta 320 sin apretar su contenido.
+const minTicketsManagerWidth = 320;
 const maxTicketsManagerWidth = 700;
 
 const useStyles = makeStyles((theme) => ({
@@ -26,10 +29,10 @@ const useStyles = makeStyles((theme) => ({
 		// Eran 2px: la lista y la conversacion quedaban pegadas al borde de
 		// la pantalla y entre si. Se pasa a la escala del sistema, con un
 		// paso reducido en anchos intermedios donde el espacio es mas caro.
-		padding: theme.palette.tokens.space.lg,
-		[theme.breakpoints.down("md")]: {
-			padding: theme.palette.tokens.space.sm,
-		},
+		// Sin relleno: las tres columnas se separan con sus propios bordes. El
+		// relleno de aqui, sumado al del contenido del layout, gastaba 40px por
+		// lado en la pantalla donde el asesor pasa el dia.
+		padding: 0,
 		height: `calc(100% - 48px)`,
 		overflowY: "hidden",
 	},
@@ -57,11 +60,14 @@ const useStyles = makeStyles((theme) => ({
 		// en el ancho que eligio el usuario y el hilo se lleva el resto, incluido
 		// lo que libera la ficha al plegarse.
 		//
-		// El minimo se deja en auto a proposito. Con minWidth 0, a 1440px el hilo
-		// bajaba a 418px y la cabecera del ticket, que pide unos 770, quedaba con
-		// seis botones recortados e inalcanzables. Con auto, solo cuando no cabe
-		// la lista cede ancho para que la cabecera se vea entera.
+		// Minimo en 480 y no en auto. Con auto, el hilo pedia el ancho entero de
+		// la cabecera del ticket (unos 770px) y a 1366 empujaba la ficha fuera de
+		// la pantalla: de ahi el scroll horizontal. Con 0 pasaria lo contrario, el
+		// hilo se encogeria hasta recortar los botones de la cabecera, que no se
+		// reacomodan en escritorio. 480 es lo que necesita la cabecera ya compacta
+		// (nombre recortado y botones de 36px), y quien cede primero es la lista.
 		flexBasis: 0,
+		minWidth: 480,
 	},
 	welcomeMsg: {
 		background: theme.palette.tabHeaderBackground,
@@ -113,6 +119,9 @@ const TicketsCustom = () => {
 	const classes = useStyles({ ticketsManagerWidth });
 	const { ticketId } = useParams();
 	const ticketsManagerWidthRef = useRef(ticketsManagerWidth);
+	// Borde izquierdo real de la lista: el arrastre media desde el borde de la
+	// ventana, asi que la lista acababa mas ancha que donde estaba el puntero.
+	const contactsWrapperRef = useRef(null);
 
 	// ⚠️ CORREÇÃO: useEffect mais robusto para inicialização
 	useEffect(() => {
@@ -148,7 +157,8 @@ const TicketsCustom = () => {
 	};
 
 	const handleMouseMove = useCallback((e) => {
-		const newWidth = e.clientX - document.body.offsetLeft;
+		const izquierda = contactsWrapperRef.current?.getBoundingClientRect().left ?? 0;
+		const newWidth = e.clientX - izquierda;
 		
 		if (newWidth >= minTicketsManagerWidth && newWidth <= maxTicketsManagerWidth) {
 			ticketsManagerWidthRef.current = newWidth;
@@ -175,6 +185,7 @@ const TicketsCustom = () => {
 			<div className={classes.chatContainer}>
 				<div className={classes.chatPapper}>
 					<div
+						ref={contactsWrapperRef}
 						className={classes.contactsWrapper}
 						style={{ 
 							width: `${effectiveWidth}px`,
