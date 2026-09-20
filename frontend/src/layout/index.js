@@ -1,5 +1,6 @@
 import React, { useState, useContext, useEffect, useMemo, useCallback, useRef } from "react";
 import clsx from "clsx";
+import { useLocation } from "react-router-dom";
 import {
   makeStyles,
   Drawer,
@@ -51,6 +52,7 @@ import VersionControl from "../components/VersionControl";
 import useSocketListener from "../hooks/useSocketListener";
 import { FaGlobe } from "react-icons/fa";
 import LanguageSelector from "../components/LanguageSelector";
+import AvisoInactividad from "../components/AvisoInactividad";
 import logo from "../assets/logo.png";
 import logoBlack from "../assets/logo-black.png";
 
@@ -300,6 +302,13 @@ const useStyles = makeStyles((theme) => ({
     },
   },
 
+  // La bandeja de conversaciones ocupa toda el area: sus tres columnas ya
+  // se separan con bordes, y el relleno de arriba solo le quitaba ancho a la
+  // conversacion (a 1366px se iba en scroll horizontal).
+  contentBandeja: {
+    padding: 0,
+  },
+
   container: {
     padding: 0,
     margin: 0,
@@ -504,6 +513,8 @@ const SmallAvatar = withStyles((theme) => ({
 }))(Avatar);
 
 const LoggedInLayout = ({ children, themeToggle }) => {
+  const location = useLocation();
+  const esBandeja = location.pathname.startsWith("/tickets");
   const classes = useStyles();
   const [userModalOpen, setUserModalOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -965,10 +976,13 @@ useEffect(() => {
           </div>
         </Toolbar>
       </AppBar>
-      <main className={classes.content}>
+      <main className={clsx(classes.content, esBandeja && classes.contentBandeja)}>
         <div className={classes.appBarSpacer} />
         {children ? children : null}
       </main>
+
+      {/* Aviso y cierre de sesion por inactividad */}
+      <AvisoInactividad />
 
       {/* Modal de Informativos */}
       <Dialog

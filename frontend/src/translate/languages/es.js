@@ -435,6 +435,13 @@ const messages = {
           expirationToday: "Su suscripción termina hoy!",
         },
         token: "Token",
+        inactivity: {
+          title: "¿Sigues ahí?",
+          message: "Por inactividad, tu sesión se cerrará cuando termine la cuenta atrás.",
+          stay: "Seguir conectado",
+          logoutNow: "Cerrar sesión",
+          loggedOut: "Tu sesión se cerró por inactividad. Vuelve a iniciar sesión para continuar.",
+        },
       },
       dashboard: {
         filters: {
@@ -2611,6 +2618,12 @@ const messages = {
             updating: "Actualizando...",
             requireApproval: "Requerir aprobación para nuevos registros",
           requireApprovalHelp: "Si está activo, las empresas nuevas quedan pendientes hasta que las apruebes.",
+          sessionInactivity: "Cerrar sesión por inactividad tras",
+          sessionInactivityHelp: "Se avisa al usuario un minuto antes, con una cuenta atrás. Aplica a todos los usuarios de la empresa.",
+          sessionInactivityMinutes: "{{n}} minutos",
+          sessionInactivityHour: "1 hora",
+          sessionInactivityHours: "{{n}} horas",
+          sessionInactivitySaved: "Tiempo de inactividad guardado.",
           currency: "Moneda del sistema",
           currencyHelp: "Se usa en el registro público y en todas las pantallas que muestran importes.",
           supportEmail: "Correo de soporte",
@@ -3052,6 +3065,8 @@ const messages = {
         },
       },
       backendErrors: {
+        ERR_SESSION_INACTIVITY_INVALID: "El tiempo de inactividad debe estar entre 15 minutos y 24 horas.",
+        ERR_COMPANY_SETTINGS_NOT_FOUND: "No se encontró la configuración de la empresa.",
         ERR_GHL_PLANTILLA_SIN_WORKFLOW: "Esta plantilla no tiene un Workflow de GoHighLevel asignado.",
         ERR_GHL_PLANTILLA_NO_APROBADA: "La plantilla ya no está aprobada en Meta.",
         ERR_GHL_PLANTILLA_NO_SOPORTADA: "Esta plantilla no se puede enviar desde Sales Smart (encabezado multimedia o botones con variables).",

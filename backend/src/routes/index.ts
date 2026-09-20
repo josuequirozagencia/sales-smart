@@ -55,6 +55,7 @@ import ghlRoutes from "./ghlRoutes";
 import configSnapshotRoutes from "./configSnapshotRoutes";
 import metaRoutes from "./metaRoutes";
 import aiAgentRoutes from "./aiAgentRoutes";
+import sessionSettingsRoutes from "./sessionSettingsRoutes";
 
 import ChatController from "../controllers/ChatController";
 
@@ -73,6 +74,7 @@ routes.use("/auth", authRoutes);
 routes.use(ghlRoutes);
 routes.use(metaRoutes);
 routes.use(aiAgentRoutes);
+routes.use(sessionSettingsRoutes);
 routes.use("/api/messages", apiRoutes);
 routes.use(settingRoutes);
 routes.use(contactRoutes);

@@ -16,6 +16,7 @@ import { grey, blue } from "@material-ui/core/colors";
 import { Tab, Tabs, TextField } from "@material-ui/core";
 import { i18n } from "../../translate/i18n";
 import useCompanySettings from "../../hooks/useSettings/companySettings";
+import SessionInactivity from "./SessionInactivity";
 
 const useStyles = makeStyles((theme) => ({
   container: {
@@ -707,6 +708,11 @@ async function handleCopyContactPrefix(value) {
   return (
     <>
       <Grid spacing={3} container>
+
+        {/* CIERRE DE SESION POR INACTIVIDAD (de la empresa, solo admin) */}
+        {user?.profile === "admin" && (
+          <SessionInactivity className={classes.selectContainer} />
+        )}
 
         {/* CRIAÇÃO DE COMPANY/USERS */}
         {isSuper() ?

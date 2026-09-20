@@ -9,6 +9,11 @@ import api from "../../services/api";
 import toastError from "../../errors/toastError";
 import { socketConnection } from "../../services/socket";
 import moment from "moment";
+import {
+  marcarActividad,
+  olvidarActividad,
+  sesionCaducadaPorInactividad,
+} from "../../services/inactividadSesion";
 
 const useAuth = () => {
   const history = useHistory();
@@ -38,6 +43,8 @@ const useAuth = () => {
   const reconnectTimeoutRef = useRef(null);
   const reconnectAttemptsRef = useRef(0);
   const maxReconnectAttempts = 5;
+  // Evita dos cierres a la vez (el aviso y la carga de la pagina, o dos ticks).
+  const cerrandoPorInactividadRef = useRef(false);
 
   // Interceptors do API (mantém como estava)
   api.interceptors.request.use(
@@ -133,12 +140,22 @@ const useAuth = () => {
   useEffect(() => {
     const token = localStorage.getItem("token");
     (async () => {
+      if (token && sesionCaducadaPorInactividad()) {
+        // La sesion quedo abierta y sin uso mas alla del limite de la empresa
+        // (pestana olvidada, navegador cerrado, equipo suspendido): se cierra
+        // al volver en vez de reabrirla.
+        await cerrarSesionPorInactividad();
+        setLoading(false);
+        return;
+      }
       if (token) {
         try {
           const { data } = await api.post("/auth/refresh_token");
           api.defaults.headers.Authorization = `Bearer ${data.token}`;
           setIsAuth(true);
           setUser(data.user || data);
+          // Recargar la pagina tambien es actividad.
+          marcarActividad();
         } catch (err) {
           // Si el refresco no sale adelante —sesion caducada, o el backend
           // sin responder— la sesion no sirve. Se deja constancia explicita
@@ -324,6 +341,9 @@ const useAuth = () => {
       var dias = moment.duration(diff).asDays();
 
       if (before === true) {
+        // La cuenta de inactividad empieza de cero con cada inicio de sesion:
+        // sin esto, la marca de una sesion anterior la cerraria al instante.
+        marcarActividad();
         localStorage.setItem("token", JSON.stringify(data.token));
         localStorage.setItem("companyDueDate", vencimento);
         api.defaults.headers.Authorization = `Bearer ${data.token}`;
@@ -401,6 +421,7 @@ Entre em contato com o Suporte para mais informações! `);
       setSocket(null);
       localStorage.removeItem("token");
       localStorage.removeItem("cshow");
+      olvidarActividad();
       api.defaults.headers.Authorization = undefined;
       setLoading(false);
       history.push("/login");
@@ -408,6 +429,46 @@ Entre em contato com o Suporte para mais informações! `);
       toastError(err);
       setLoading(false);
     }
+  };
+
+  /**
+   * Cierre por inactividad.
+   *
+   * A diferencia de handleLogout, cierra SIEMPRE en este navegador aunque la
+   * llamada al servidor falle (sin red, backend caido): un equipo abandonado
+   * no puede quedarse con la sesion abierta por un error de red. La llamada
+   * sirve para borrar la cookie de renovacion y marcar al usuario offline.
+   */
+  const cerrarSesionPorInactividad = async () => {
+    if (cerrandoPorInactividadRef.current) return;
+    cerrandoPorInactividadRef.current = true;
+
+    if (socket) {
+      listenersRef.current.forEach((eventName) => {
+        if (socket.off) socket.off(eventName);
+      });
+      listenersRef.current.clear();
+      if (typeof socket.disconnect === "function") socket.disconnect();
+    }
+
+    try {
+      await api.delete("/auth/logout");
+    } catch (err) {
+      // La sesion se cierra igual en este navegador.
+    }
+
+    localStorage.removeItem("token");
+    localStorage.removeItem("cshow");
+    olvidarActividad();
+    api.defaults.headers.Authorization = undefined;
+    setIsAuth(false);
+    setUser({});
+    setSocket(null);
+    // Fijo, no pasajero: quien vuelve al equipo tiene que poder leer por que
+    // esta en el login.
+    toast.info(i18n.t("auth.inactivity.loggedOut"), { autoClose: false });
+    history.push("/login");
+    cerrandoPorInactividadRef.current = false;
   };
 
   const getCurrentUserInfo = async () => {
@@ -428,6 +489,7 @@ Entre em contato com o Suporte para mais informações! `);
     loading,
     handleLogin,
     handleLogout,
+    cerrarSesionPorInactividad,
     getCurrentUserInfo,
     socket,
   };

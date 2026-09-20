@@ -435,6 +435,13 @@ const messages = {
           expirationToday: "Your subscription expires today!",
         },
         token: "Token",
+        inactivity: {
+          title: "Are you still there?",
+          message: "Due to inactivity, your session will end when the countdown finishes.",
+          stay: "Stay signed in",
+          logoutNow: "Log out",
+          loggedOut: "You were logged out due to inactivity. Log in again to continue.",
+        },
       },
       dashboard: {
         filters: {
@@ -2621,6 +2628,12 @@ const messages = {
             updating: "Updating...",
             requireApproval: "Require approval for new registrations",
           requireApprovalHelp: "When on, new companies stay pending until you approve them.",
+          sessionInactivity: "Log out after inactivity of",
+          sessionInactivityHelp: "Users are warned one minute before, with a countdown. Applies to every user in the company.",
+          sessionInactivityMinutes: "{{n}} minutes",
+          sessionInactivityHour: "1 hour",
+          sessionInactivityHours: "{{n}} hours",
+          sessionInactivitySaved: "Inactivity time saved.",
           currency: "System currency",
           currencyHelp: "Used on the public sign-up page and everywhere amounts are shown.",
           supportEmail: "Support email",
@@ -3059,6 +3072,8 @@ const messages = {
         },
       },
       backendErrors: {
+        ERR_SESSION_INACTIVITY_INVALID: "Inactivity time must be between 15 minutes and 24 hours.",
+        ERR_COMPANY_SETTINGS_NOT_FOUND: "Company settings not found.",
         ERR_GHL_PLANTILLA_SIN_WORKFLOW: "This template has no GoHighLevel Workflow assigned.",
         ERR_GHL_PLANTILLA_NO_APROBADA: "The template is no longer approved in Meta.",
         ERR_GHL_PLANTILLA_NO_SOPORTADA: "This template cannot be sent from Sales Smart (media header or buttons with variables).",

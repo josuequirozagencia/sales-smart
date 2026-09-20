@@ -434,6 +434,13 @@ const messages = {
           expirationToday: "Sua assinatura expira hoje!",
         },
         token: "Token",
+        inactivity: {
+          title: "Você ainda está aí?",
+          message: "Por inatividade, sua sessão será encerrada quando a contagem regressiva terminar.",
+          stay: "Continuar conectado",
+          logoutNow: "Sair",
+          loggedOut: "Sua sessão foi encerrada por inatividade. Entre novamente para continuar.",
+        },
       },
       dashboard: {
         filters: {
@@ -2657,6 +2664,12 @@ const messages = {
             updating: "Atualizando...",
             requireApproval: "Exigir aprovação para novos cadastros",
           requireApprovalHelp: "Quando ativo, novas empresas ficam pendentes até você aprová-las.",
+          sessionInactivity: "Encerrar sessão por inatividade após",
+          sessionInactivityHelp: "O usuário é avisado um minuto antes, com uma contagem regressiva. Vale para todos os usuários da empresa.",
+          sessionInactivityMinutes: "{{n}} minutos",
+          sessionInactivityHour: "1 hora",
+          sessionInactivityHours: "{{n}} horas",
+          sessionInactivitySaved: "Tempo de inatividade salvo.",
           currency: "Moeda do sistema",
           currencyHelp: "Usada no cadastro público e em todas as telas que exibem valores.",
           supportEmail: "E-mail de suporte",
@@ -3102,6 +3115,8 @@ const messages = {
         },
       },
       backendErrors: {
+        ERR_SESSION_INACTIVITY_INVALID: "O tempo de inatividade deve estar entre 15 minutos e 24 horas.",
+        ERR_COMPANY_SETTINGS_NOT_FOUND: "Configurações da empresa não encontradas.",
         ERR_GHL_PLANTILLA_SIN_WORKFLOW: "Este template não tem um Workflow do GoHighLevel atribuído.",
         ERR_GHL_PLANTILLA_NO_APROBADA: "O template não está mais aprovado na Meta.",
         ERR_GHL_PLANTILLA_NO_SOPORTADA: "Este template não pode ser enviado pelo Sales Smart (cabeçalho de mídia ou botões com variáveis).",
