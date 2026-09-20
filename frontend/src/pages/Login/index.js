@@ -6,7 +6,6 @@ import TextField from "@material-ui/core/TextField";
 import Link from "@material-ui/core/Link";
 import Grid from "@material-ui/core/Grid";
 import { makeStyles, useTheme } from "@material-ui/core/styles";
-import Container from "@material-ui/core/Container";
 import { i18n, soloIdioma, IDIOMA_POR_DEFECTO } from "../../translate/i18n";
 import { AuthContext } from "../../context/Auth/AuthContext";
 import ColorModeContext from "../../layout/themeContext";
@@ -53,17 +52,36 @@ const useStyles = makeStyles((theme) => ({
     opacity: 0.9,
   },
   root: {
-    width: "100vw",
+    width: "100%",
     height: "100vh",
+    // dvh descuenta las barras del navegador movil; donde no existe se queda
+    // el 100vh de arriba.
+    "@supports (height: 100dvh)": {
+      height: "100dvh",
+    },
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    justifyContent: "center",
+    // El centrado vertical lo da el margin auto de la tarjeta, no
+    // justifyContent: con "center", cuando la tarjeta no cabe se sale por
+    // arriba y esa parte ya no se alcanza con el scroll.
+    justifyContent: "flex-start",
     textAlign: "center",
-    padding: "0",
+    // Arriba queda sitio para el idioma y el tema, que van fijos.
+    padding: "80px 16px 32px",
     margin: "0",
     boxSizing: "border-box",
-    overflow: "hidden", // Corrigido: removido auto que causava rolagem
+    // Scroll vertical propio (el body de la aplicacion tiene overflow hidden):
+    // antes era overflow hidden y, en un movil con el teclado abierto o en
+    // horizontal, el boton quedaba fuera de la pantalla sin forma de llegar.
+    overflowX: "hidden",
+    overflowY: "auto",
+    // Escritorio: tarjeta a la derecha, como antes, pero dentro del flujo y no
+    // en posicion absoluta, para que tambien pueda desplazarse en ventanas bajas.
+    [theme.breakpoints.up("md")]: {
+      alignItems: "flex-end",
+      padding: "80px 8% 32px",
+    },
     // Fondo con el color de MARCA, no un azul fijo.
     //
     // Se deriva del primario configurado en Ajustes > Whitelabel, asi que
@@ -72,7 +90,7 @@ const useStyles = makeStyles((theme) => ({
     // del tono activo al primario en vez de abrir hacia un tono claro.
     background: `linear-gradient(135deg, ${theme.palette.tokens.brand.primaryActive} 0%, ${theme.palette.tokens.brand.primary} 100%)`,
     position: "relative",
-    
+
     // Padrão de pontos no fundo
     "&::before": {
       content: '""',
@@ -96,30 +114,17 @@ const useStyles = makeStyles((theme) => ({
   },
 
   // Container ajustado - desktop à direita, mobile centralizado
+  // Ya no es un <Container> de MUI: el tema global le quita el padding con
+  // !important a todos (App.js, MuiContainer) y en el movil la tarjeta llegaba
+  // de borde a borde de la pantalla. El margen lo da ahora la raiz.
   containerLogin: {
-    padding: "16px",
-    maxWidth: "444px",
     width: "100%",
-    margin: "0 auto",
+    maxWidth: "420px",
     position: "relative",
     zIndex: 10,
-    
-    // Desktop - alinhar à direita
-    [theme.breakpoints.up("md")]: {
-      position: "absolute",
-      right: "8%",
-      top: "50%",
-      transform: "translateY(-50%)",
-      margin: "0",
-      maxWidth: "420px",
-    },
-    
-    // Mobile - centralizado (comportamento original)
-    [theme.breakpoints.down("sm")]: {
-      position: "relative",
-      margin: "0 auto",
-      transform: "none",
-    },
+    marginTop: "auto",
+    marginBottom: "auto",
+    flexShrink: 0,
   },
 
   paper: {
@@ -141,11 +146,11 @@ const useStyles = makeStyles((theme) => ({
     margin: "0 auto",
     border: "1px solid rgba(255, 255, 255, 0.2)",
     animation: "$slideInRight 0.8s cubic-bezier(0.4, 0, 0.2, 1)",
-    
+
     [theme.breakpoints.down("sm")]: {
       animation: "$slideInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1)",
-      borderRadius: "12px",
-      padding: "35px 25px",
+      borderRadius: "16px",
+      padding: "28px 20px 20px",
     },
   },
 
@@ -218,23 +223,40 @@ const useStyles = makeStyles((theme) => ({
     height: "auto",
     maxHeight: "80px",
     margin: "0 auto 20px auto",
+    [theme.breakpoints.down("xs")]: {
+      maxWidth: "220px",
+      maxHeight: "56px",
+      marginBottom: "8px",
+    },
     filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.1))",
     // Sempre usa logo.png na página de login
     content: "url(" + defaultLogoLight + ")",
   },
 
+  // Boton de tema: fuera de la tarjeta, fijo arriba a la derecha, como el
+  // idioma a la izquierda. Dentro de la tarjeta, en el movil, tapaba el logo.
   iconButton: {
-    position: "absolute",
-    top: 15,
-    right: 15,
-    background: "rgba(255, 255, 255, 0.1)",
+    position: "fixed",
+    top: 20,
+    right: 20,
+    zIndex: 1000,
+    width: 40,
+    height: 40,
+    padding: 8,
+    borderRadius: "12px",
+    background: "rgba(255, 255, 255, 0.9)",
     backdropFilter: "blur(10px)",
-    border: "1px solid rgba(255, 255, 255, 0.2)",
+    border: "1px solid rgba(0, 0, 0, 0.15)",
+    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
     color: "#374151",
     transition: "all 0.3s ease",
     "&:hover": {
-      background: "rgba(255, 255, 255, 0.2)",
+      background: "rgba(255, 255, 255, 1)",
       transform: "scale(1.05)",
+    },
+    [theme.breakpoints.down("xs")]: {
+      top: 16,
+      right: 16,
     },
   },
 
@@ -255,6 +277,14 @@ const useStyles = makeStyles((theme) => ({
         // borde: es lo que senala donde se esta escribiendo.
         boxShadow: `0 0 0 3px ${theme.palette.tokens.brand.primary}22`,
       },
+      // 48px de alto y letra de 16px. El tema global deja los campos en 38px
+      // con la etiqueta calculada para 56 (quedaba pegada al borde inferior),
+      // y con menos de 16px Safari en iPhone amplia la pagina al tocar el campo.
+      "& .MuiOutlinedInput-input": {
+        paddingTop: 14,
+        paddingBottom: 14,
+        fontSize: 16,
+      },
       "& input": {
         color: "#1f2937", // Garante que o texto do input seja escuro
         "&::placeholder": {
@@ -273,6 +303,9 @@ const useStyles = makeStyles((theme) => ({
         borderWidth: "2px",
       },
     },
+    "& .MuiInputLabel-outlined:not(.MuiInputLabel-shrink)": {
+      transform: "translate(14px, 15px) scale(1)",
+    },
     "& .MuiInputLabel-root": {
       color: "#6b7280",
       fontWeight: 500,
@@ -287,9 +320,13 @@ const useStyles = makeStyles((theme) => ({
     position: "fixed",
     top: "20px",
     left: "20px",
+    [theme.breakpoints.down("xs")]: {
+      top: "16px",
+      left: "16px",
+    },
     zIndex: 1000,
-    background: theme.mode === "light" 
-      ? "rgba(255, 255, 255, 0.9)" 
+    background: theme.mode === "light"
+      ? "rgba(255, 255, 255, 0.9)"
       : "rgba(255, 255, 255, 0.1)",
     backdropFilter: "blur(10px)",
     borderRadius: "12px",
@@ -444,7 +481,7 @@ const Login = () => {
       .catch((error) => {
         console.log("Error reading setting", error);
       });
-    
+
     getPublicSetting("enabledLanguages", companyId)
       .then((langs) => {
         let arr = ["pt-BR", "en"];
@@ -539,23 +576,14 @@ const Login = () => {
         <title>{appName || "Multi100"}</title>
         <link rel="icon" href={appLogoFavicon || "/default-favicon.ico"} />
       </Helmet>
-      
+
       <div className={clsx(classes.root, "login-page")}
-      style={{   
-          width: "100vw !important",
-          height: "100vh !important",
-          display: "flex !important",
-          alignItems: "center !important",
-          justifyContent: "center !important",
-          padding: "0 !important",
-          margin: "0 !important",
-          boxSizing: "border-box !important",
-          overflow: "auto !important",
+      style={{
           backgroundColor: fondoEsImagen ? "transparent" : finalBackground,
           backgroundImage: fondoEsImagen ? finalBackground : "none",
-          backgroundRepeat: "no-repeat !important",
-          backgroundSize: "cover !important",
-          backgroundPosition: "center !important",
+          backgroundRepeat: "no-repeat",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
         }}
       >
         {/* Seletor de idioma */}
@@ -563,7 +591,7 @@ const Login = () => {
           ref={ref}
           className={classes.languageSelector}
         >
-          <button 
+          <button
             onClick={() => setOpen((o) => !o)}
             className={classes.languageDropdown}
           >
@@ -602,24 +630,20 @@ const Login = () => {
           )}
         </div>
 
-        <Container
-          component="main"
-          maxWidth="xs"
-          className={classes.containerLogin}
+        <IconButton
+          className={classes.iconButton}
+          onClick={colorMode.toggleColorMode}
         >
+          {mode === "dark" ? <Brightness7Icon /> : <Brightness4Icon />}
+        </IconButton>
+
+        <main className={classes.containerLogin}>
           <CssBaseline />
           <div className={classes.paper}>
-            <IconButton
-              className={classes.iconButton}
-              onClick={colorMode.toggleColorMode}
-            >
-              {mode === "dark" ? <Brightness7Icon /> : <Brightness4Icon />}
-            </IconButton>
-            
             <div>
               <img className={classes.logoImg} alt="logo" />
             </div>
-            
+
             <form className={classes.form} noValidate onSubmit={handlSubmit}>
               <TextField
                 variant="outlined"
@@ -722,7 +746,7 @@ const Login = () => {
               )}
             </form>
           </div>
-        </Container>
+        </main>
       </div>
     </>
   );
