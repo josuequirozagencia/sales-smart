@@ -1380,6 +1380,10 @@ const messages = {
           pipeline: "Embudo",
           name: "Nombre",
           color: "Color",
+          timeLane: "Minutos antes de pasar a la siguiente etapa",
+          nextLaneId: "Etapa siguiente",
+          greetingMessageLane: "Mensaje al entrar en la etapa",
+          rollbackLaneId: "Etapa a la que vuelve al retomar la conversación",
         },
         buttons: {
           okAdd: "Agregar",
