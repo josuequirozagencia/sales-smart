@@ -431,6 +431,27 @@ const App = () => {
               },
             },
 
+            // La etiqueta, colocada para el alto REAL del campo.
+            //
+            // El relleno de arriba deja los campos en 38px, pero MUI sitúa la
+            // etiqueta sin encoger a 20px del borde, que es lo que centra en
+            // los 56px de serie: quedaba montada sobre la línea de abajo en
+            // todos los campos con etiqueta flotante de la aplicación. 12px es
+            // el mismo valor que MUI usa para su variante densa, que tiene
+            // justo este alto.
+            MuiInputLabel: {
+              outlined: {
+                transform: 'translate(14px, 12px) scale(1)',
+                '&.MuiInputLabel-marginDense': {
+                  transform: 'translate(14px, 12px) scale(1)',
+                },
+                // Encogida sigue en su sitio: sobre el borde superior.
+                '&.MuiInputLabel-shrink': {
+                  transform: 'translate(14px, -6px) scale(0.75)',
+                },
+              },
+            },
+
             // El primario como COLOR DE TEXTO sobre superficie oscura.
             //
             // Un solo tono no puede servir para las dos cosas: el que lleva

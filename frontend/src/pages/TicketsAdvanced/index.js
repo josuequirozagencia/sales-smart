@@ -59,9 +59,6 @@ const TicketAdvanced = (props) => {
         if (currentTicket.id !== null) {
             setCurrentTicket({ id: currentTicket.id, code: '#open' })
         }
-        if (!ticketId) {
-            setOption(1)
-        }
         return () => {
             setCurrentTicket({ id: null, code: null })
         }
@@ -73,6 +70,19 @@ const TicketAdvanced = (props) => {
             setOption(0)
         }
     }, [currentTicket])
+
+    // Sin conversacion abierta, lo util es la lista.
+    //
+    // La comprobacion se hacia solo al montar la pantalla, asi que al volver
+    // atras desde una conversacion —la flecha de la cabecera lleva a /tickets,
+    // sin desmontar esto— el movil se quedaba en la pestana de conversacion
+    // mostrando "selecciona un ticket" y un boton para ir a la lista, que es
+    // justo lo que se acababa de pedir.
+    useEffect(() => {
+        if (!ticketId || ticketId === "undefined") {
+            setOption(1)
+        }
+    }, [ticketId])
 
     const renderPlaceholder = () => {
         return <Box className={classes.placeholderContainer}>

@@ -57,6 +57,14 @@ const useStyles = makeStyles((theme) => ({
     height: "100%",
     flexDirection: "column",
     overflow: "hidden",
+    // Las pestanas (Trabajando en / Esperando / Grupos) miden 48px de serie.
+    // En el movil es una de las cinco filas que hay por encima de la primera
+    // conversacion, asi que baja a 40.
+    [theme.breakpoints.down("xs")]: {
+      "& > .MuiTabs-root, & > .MuiTabs-root .MuiTab-root": {
+        minHeight: 40,
+      },
+    },
     borderTopRightRadius: 0,
     borderBottomRightRadius: 0,
   },
@@ -69,6 +77,10 @@ const useStyles = makeStyles((theme) => ({
     marginBottom: theme.spacing(0.5),
     marginLeft: theme.spacing(0.5),
     marginRight: theme.spacing(0.5),
+    [theme.breakpoints.down("xs")]: {
+      marginTop: theme.spacing(0.25),
+      marginBottom: theme.spacing(0.25),
+    },
   },
 
   settingsIcon: {
@@ -158,11 +170,26 @@ const useStyles = makeStyles((theme) => ({
     marginLeft: theme.spacing(1),
     marginRight: theme.spacing(1),
     padding: theme.spacing(0.5),
+    // En el movil, cada fila de controles compite con la lista por una
+    // pantalla que ya es estrecha.
+    [theme.breakpoints.down("xs")]: {
+      marginTop: theme.spacing(0.25),
+      marginBottom: theme.spacing(0.5),
+      marginLeft: theme.spacing(0.5),
+      marginRight: theme.spacing(0.5),
+      padding: theme.spacing(0.25),
+      "& .MuiIconButton-root": {
+        padding: 6,
+      },
+    },
   },
 
   serachInputWrapper: {
     flex: 1,
     height: 40,
+    [theme.breakpoints.down("xs")]: {
+      height: 36,
+    },
     display: "flex",
     alignItems: "center",
     // Relleno del sistema en vez de palette.total, una clave a medida que

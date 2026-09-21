@@ -77,6 +77,12 @@ const YouTubePreviewMemo = React.memo(({ videoUrl }) => {
   return <YouTubePreview videoUrl={videoUrl} />;
 });
 
+// Espacio reservado a la derecha del texto para la hora y el tic de entrega,
+// que van en posicion absoluta sobre la burbuja. Medido en pantalla: el bloque
+// ocupa 51px y se separa 5 del borde. Con los 80 de antes, un mensaje corto
+// como "Dime" ocupaba una burbuja con un hueco vacio de casi dos dedos.
+const ESPACIO_HORA = 62;
+
 const useStyles = makeStyles((theme) => ({
   messagesListWrapper: {
     overflow: "hidden",
@@ -209,7 +215,7 @@ const useStyles = makeStyles((theme) => ({
   },
 
   quotedContainerLeft: {
-    margin: "-3px -80px 6px -6px",
+    margin: `-3px -${ESPACIO_HORA}px 6px -6px`,
     overflow: "hidden",
     // Insercion de la cita dentro de la burbuja recibida: un peldano de
     // superficie por debajo, en vez de los grises de WhatsApp.
@@ -313,7 +319,7 @@ const useStyles = makeStyles((theme) => ({
   },
 
   quotedContainerRight: {
-    margin: "-3px -80px 6px -6px",
+    margin: `-3px -${ESPACIO_HORA}px 6px -6px`,
     overflowY: "hidden",
     // Esta cita va DENTRO de la burbuja propia, que ya es de marca: se usa
     // un paso mas de la misma escala para que se distinga sin salirse de
@@ -357,14 +363,14 @@ const useStyles = makeStyles((theme) => ({
 
   textContentItem: {
     overflowWrap: "break-word",
-    padding: "3px 80px 6px 6px",
+    padding: `3px ${ESPACIO_HORA}px 6px 6px`,
   },
 
   textContentItemDeleted: {
     fontStyle: "italic",
     color: "rgba(0, 0, 0, 0.36)",
     overflowWrap: "break-word",
-    padding: "3px 80px 6px 6px",
+    padding: `3px ${ESPACIO_HORA}px 6px 6px`,
   },
 
   messageMedia: {

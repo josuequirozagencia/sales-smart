@@ -150,7 +150,9 @@ const useStyles = makeStyles((theme) => ({
     // O padding e o rem alargam a insignia ~30%. Medido antes de mudar: as tres
     // insignias ocupavam 104px de 435px disponiveis no item, portanto ha folga
     // de sobra e nao ha risco de transbordar.
-    padding: "2px 6px",
+    // 1px 5px en vez de 2px 6px: se mantiene el tamano de letra, que ya se
+    // subio a 11px por legibilidad, y se recorta solo el aire de alrededor.
+    padding: "1px 5px",
     fontWeight: "bold",
     borderRadius: 4,
     fontSize: "0.6875rem",
@@ -822,9 +824,7 @@ const TicketListItemCustom = ({ setTabOpen, ticket }) => {
                     >
                       {ticket.whatsapp?.name.toUpperCase()}
                     </Badge>
-                  ) : (
-                    <br></br>
-                  )}
+                  ) : null}
                   {
                     <Badge
                       style={(() => {
@@ -857,8 +857,11 @@ const TicketListItemCustom = ({ setTabOpen, ticket }) => {
                       {ticket.user?.name.toUpperCase()}
                     </Badge>
                   )}
-                </span>
-                <span className={classes.secondaryContentSecond}>
+                  {/* Las etiquetas del contacto y las del ticket iban cada una
+                      en su propio contenedor flex, asi que cada grupo empezaba
+                      linea aunque cupiera al lado: una fila con conexion, cola,
+                      asesor y dos etiquetas gastaba tres lineas. Aqui van todas
+                      en el mismo contenedor y solo bajan cuando no caben. */}
                   {ticket?.contact?.tags?.map((tag) => {
                     return (
                       <ContactTag
@@ -867,13 +870,11 @@ const TicketListItemCustom = ({ setTabOpen, ticket }) => {
                       />
                     );
                   })}
-                </span>
-                <span className={classes.secondaryContentSecond}>
                   {ticket.tags?.map((tag) => {
                     return (
                       <ContactTag
                         tag={tag}
-                        key={`ticket-contact-tag-${ticket.id}-${tag.id}`}
+                        key={`ticket-tag-${ticket.id}-${tag.id}`}
                       />
                     );
                   })}
