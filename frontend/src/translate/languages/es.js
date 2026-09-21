@@ -3065,6 +3065,8 @@ const messages = {
         },
       },
       backendErrors: {
+        ERR_COMPANY_SETTING_INVALID_COLUMN: "Ese ajuste no existe.",
+        ERR_COMPANY_SETTING_INVALID_VALUE: "El valor de ese ajuste no es válido.",
         ERR_SESSION_INACTIVITY_INVALID: "El tiempo de inactividad debe estar entre 15 minutos y 24 horas.",
         ERR_COMPANY_SETTINGS_NOT_FOUND: "No se encontró la configuración de la empresa.",
         ERR_GHL_PLANTILLA_SIN_WORKFLOW: "Esta plantilla no tiene un Workflow de GoHighLevel asignado.",

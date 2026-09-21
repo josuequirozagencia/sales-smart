@@ -3115,6 +3115,8 @@ const messages = {
         },
       },
       backendErrors: {
+        ERR_COMPANY_SETTING_INVALID_COLUMN: "Essa configuração não existe.",
+        ERR_COMPANY_SETTING_INVALID_VALUE: "O valor dessa configuração não é válido.",
         ERR_SESSION_INACTIVITY_INVALID: "O tempo de inatividade deve estar entre 15 minutos e 24 horas.",
         ERR_COMPANY_SETTINGS_NOT_FOUND: "Configurações da empresa não encontradas.",
         ERR_GHL_PLANTILLA_SIN_WORKFLOW: "Este template não tem um Workflow do GoHighLevel atribuído.",
