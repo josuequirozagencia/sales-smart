@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import api from "./services/api";
 import "react-toastify/dist/ReactToastify.css";
 import { QueryClient, QueryClientProvider } from "react-query";
@@ -48,15 +48,27 @@ const App = () => {
   const [appLogoFavicon, setAppLogoFavicon] = useState(defaultLogoFavicon);
   const [appName, setAppName] = useState(appNameLocalStorage);
   const { getPublicSetting } = useSettings();
+  // El modo vigente, para el conmutador: leerlo de localStorage podia
+  // desincronizarse del estado y dejar el boton sin efecto.
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
 
   const colorMode = useMemo(
     () => ({
       toggleColorMode: () => {
-        setMode((prevMode) => {
-          const newMode = prevMode === "light" ? "dark" : "light";
-          window.localStorage.setItem("preferredTheme", newMode); // Persistindo o tema no localStorage
-          return newMode;
-        });
+        const newMode = modeRef.current === "light" ? "dark" : "light";
+        window.localStorage.setItem("preferredTheme", newMode);
+
+        // Cambiar de tema obliga a MUI v4 a regenerar los estilos de todo lo
+        // que hay montado: entre 250ms y 700ms segun la pagina. Durante esa
+        // pausa el navegador no pinta, y justo despues arrancaban a la vez
+        // todas las transiciones de color (menu, tarjetas, botones): el cambio
+        // se veia en dos tiempos, un tiron y luego un fundido. Apagarlas
+        // mientras dura el cambio lo deja en un solo paso.
+        const html = document.documentElement;
+        html.classList.add("cambiando-tema");
+        setMode(newMode);
+        setTimeout(() => html.classList.remove("cambiando-tema"), 120);
       },
       setPrimaryColorLight,
       setPrimaryColorDark,

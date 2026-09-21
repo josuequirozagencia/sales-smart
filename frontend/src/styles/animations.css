@@ -415,3 +415,11 @@
       left: 100%;
     }
   }
+
+/* Mientras se cambia de tema, ninguna transicion: el cambio se aplica de una
+   vez en lugar de encadenar un fundido por cada color. */
+html.cambiando-tema *,
+html.cambiando-tema *::before,
+html.cambiando-tema *::after {
+  transition: none !important;
+}
