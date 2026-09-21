@@ -43,7 +43,7 @@ import AnnouncementIcon from "@mui/icons-material/Announcement";
 import ForumIcon from "@mui/icons-material/Forum";
 import LocalAtmIcon from "@mui/icons-material/LocalAtm";
 import BusinessIcon from "@mui/icons-material/Business";
-import MonetizationOnOutlinedIcon from "@mui/icons-material/MonetizationOnOutlined";
+import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import {
   AllInclusive,
   AndroidOutlined,
@@ -57,7 +57,8 @@ import {
 // Iconos de las siete categorias.
 import ForumOutlined from "@mui/icons-material/ForumOutlined";
 import ContactsOutlined from "@mui/icons-material/ContactsOutlined";
-import PointOfSale from "@mui/icons-material/PointOfSale";
+// Categoria Ventas: moneda con el simbolo, no una caja registradora.
+import PaidOutlined from "@mui/icons-material/PaidOutlined";
 import SmartToyOutlined from "@mui/icons-material/SmartToyOutlined";
 import InsightsOutlined from "@mui/icons-material/InsightsOutlined";
 import HubOutlined from "@mui/icons-material/HubOutlined";
@@ -983,7 +984,7 @@ useEffect(() => {
       {hayVentas && (
         <GrupoMenu
           titulo={i18n.t("mainDrawer.groups.sales")}
-          icono={<PointOfSale />}
+          icono={<PaidOutlined />}
           {...grupo("ventas")}
         >
           {showKanban && (
@@ -1017,7 +1018,7 @@ useEffect(() => {
                   <ListItemLink
                     to="/sales"
                     primary={i18n.t("sales.title")}
-                    icon={<MonetizationOnOutlinedIcon />}
+                    icon={<AttachMoneyIcon />}
                     tooltip={collapsed}
                   />
                 )}
