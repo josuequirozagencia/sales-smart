@@ -266,8 +266,19 @@ const useStyles = makeStyles((theme) => ({
   emojiBox: {
     position: "absolute",
     bottom: 63,
-    width: 40,
-    borderTop: "1px solid #e8e8e8",
+    zIndex: 10,
+    borderTop: `1px solid ${theme.palette.tokens.border.border}`,
+    // En el movil ocupa el ancho de la pantalla menos un margen, con el
+    // teclado de emojis ajustado a esa caja.
+    [theme.breakpoints.down("xs")]: {
+      left: 8,
+      right: 8,
+      bottom: 56,
+      "& .emoji-mart": {
+        width: "100% !important",
+        maxWidth: "100%",
+      },
+    },
   },
   circleLoading: {
     color: green[500],
@@ -1942,6 +1953,36 @@ const MessageInput = ({
 
           {(replyingMessage && renderReplyingMessage(replyingMessage)) ||
             (editingMessage && renderReplyingMessage(editingMessage))}
+          {/* Selector de emojis.
+
+              Estaba DENTRO de la rama de escritorio, asi que en el movil la
+              opcion del menu cambiaba el estado y no se pintaba nada. Ahora es
+              uno solo, fuera de las dos ramas, y se adapta al ancho.
+
+              Al pulsar fuera se cierra; antes hacia setShowEmoji(true), que lo
+              dejaba abierto pasara lo que pasara. Los botones que lo abren se
+              excluyen: si no, el clic los cerraria y su propio onClick lo
+              volveria a abrir. */}
+          {showEmoji && (
+            <ClickAwayListener
+              onClickAway={(e) => {
+                if (e.target?.closest?.('[aria-label="emojiPicker"]')) return;
+                setShowEmoji(false);
+              }}
+            >
+              <div className={classes.emojiBox}>
+                <Picker
+                  perLine={isMobile ? 8 : 16}
+                  theme={"dark"}
+                  i18n={i18n}
+                  showPreview={!isMobile}
+                  showSkinTones={false}
+                  onSelect={handleAddEmoji}
+                />
+              </div>
+            </ClickAwayListener>
+          )}
+
           <div className={classes.newMessageBox}>
             {!isTicketPending() && (
               <Hidden only={["sm", "xs"]}>
@@ -1953,21 +1994,6 @@ const MessageInput = ({
                 >
                   <Mood className={classes.sendMessageIcons} />
                 </IconButton>
-                {showEmoji ? (
-                  <div className={classes.emojiBox}>
-                    <ClickAwayListener onClickAway={(e) => setShowEmoji(true)}>
-                      <Picker
-                        perLine={16}
-                        theme={"dark"}
-                        i18n={i18n}
-                        showPreview={true}
-                        showSkinTones={false}
-                        onSelect={handleAddEmoji}
-                      />
-                    </ClickAwayListener>
-                  </div>
-                ) : null}
-
                 <Fab
                   disabled={disableOption()}
                   aria-label="uploadMedias"
