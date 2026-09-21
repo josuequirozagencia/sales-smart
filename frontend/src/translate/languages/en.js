@@ -1501,6 +1501,9 @@ const messages = {
         title: "Register sale",
         tagHint: "Saving adds the “Venta” tag to the contact.",
         form: {
+          pipeline: "Pipeline",
+          stage: "Stage",
+          noStage: "No stage",
           product: "Product or service",
           productFree: "Product or service",
           noProduct: "No product",
@@ -2750,6 +2753,7 @@ const messages = {
       },
       contactDrawer: {
         kanbanStage: "Kanban stage",
+        kanbanPipeline: "Pipeline",
         info: {
           title: "Details",
           phone: "Phone",

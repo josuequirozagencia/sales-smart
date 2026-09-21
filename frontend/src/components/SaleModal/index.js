@@ -17,6 +17,7 @@ import { makeStyles } from "@material-ui/core/styles";
 
 import api from "../../services/api";
 import toastError from "../../errors/toastError";
+import useTicketPipelineStage from "../../hooks/useTicketPipelineStage";
 import { toast } from "react-toastify";
 import { i18n } from "../../translate/i18n";
 
@@ -79,6 +80,19 @@ const aNumero = v => {
 
 const SaleModal = ({ open, onClose, contact, ticket, onSaved }) => {
   const classes = useStyles();
+
+  // Embudo y etapa del ticket. Se ven y se cambian aqui para no tener que
+  // abrir la ficha del contacto aparte, pero son del TICKET, no de la venta:
+  // elegir una etapa la aplica en el momento, se guarde la venta o no. El
+  // payload de /sales no cambia.
+  const {
+    pipelines,
+    pipelineId,
+    setPipelineId,
+    stages,
+    stageId,
+    selectStage,
+  } = useTicketPipelineStage(ticket, open && Boolean(ticket?.id));
 
   const [productos, setProductos] = useState([]);
   const [productId, setProductId] = useState("");
@@ -163,6 +177,46 @@ const SaleModal = ({ open, onClose, contact, ticket, onSaved }) => {
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth scroll="paper">
       <DialogTitle>{i18n.t("saleModal.title")}</DialogTitle>
       <DialogContent dividers>
+        {/* Sin ticket no hay nada que mover, asi que la fila no aparece. */}
+        {ticket?.id && (
+          <div className={classes.fila}>
+            {pipelines.length > 1 && (
+              <FormControl variant="outlined" className={classes.campo} size="small">
+                <InputLabel>{i18n.t("saleModal.form.pipeline")}</InputLabel>
+                <Select
+                  value={pipelineId}
+                  onChange={e => setPipelineId(e.target.value)}
+                  label={i18n.t("saleModal.form.pipeline")}
+                >
+                  {pipelines.map(p => (
+                    <MenuItem key={p.id} value={p.id}>
+                      {p.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+
+            <FormControl variant="outlined" className={classes.campo} size="small">
+              <InputLabel>{i18n.t("saleModal.form.stage")}</InputLabel>
+              <Select
+                value={stageId}
+                onChange={e => selectStage(e.target.value)}
+                label={i18n.t("saleModal.form.stage")}
+              >
+                <MenuItem value="">
+                  <em>{i18n.t("saleModal.form.noStage")}</em>
+                </MenuItem>
+                {stages.map(t => (
+                  <MenuItem key={t.id} value={t.id}>
+                    {t.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </div>
+        )}
+
         <div className={classes.fila}>
           {queueId && productos.length > 0 ? (
             <FormControl variant="outlined" className={classes.campo} size="small">

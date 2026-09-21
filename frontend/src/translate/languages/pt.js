@@ -1512,6 +1512,9 @@ const messages = {
         title: "Registrar venda",
         tagHint: "Ao salvar, a etiqueta “Venta” é adicionada ao contato.",
         form: {
+          pipeline: "Funil",
+          stage: "Etapa",
+          noStage: "Sem etapa",
           product: "Produto ou serviço",
           productFree: "Produto ou serviço",
           noProduct: "Sem produto",
@@ -2792,6 +2795,7 @@ const messages = {
       },
       contactDrawer: {
         kanbanStage: "Etapa Kanban",
+        kanbanPipeline: "Funil",
         info: {
           title: "Detalhes",
           phone: "Telefone",

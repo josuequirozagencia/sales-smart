@@ -1620,6 +1620,9 @@ const messages = {
         title: "Registrar venta",
         tagHint: "Al guardar se añade la etiqueta «Venta» al contacto.",
         form: {
+          pipeline: "Embudo",
+          stage: "Etapa",
+          noStage: "Sin etapa",
           product: "Producto o servicio",
           productFree: "Producto o servicio",
           noProduct: "Sin producto",
@@ -2747,6 +2750,7 @@ const messages = {
       },
       contactDrawer: {
         kanbanStage: "Etapa Kanban",
+        kanbanPipeline: "Embudo",
         info: {
           title: "Detalles",
           phone: "Teléfono",
