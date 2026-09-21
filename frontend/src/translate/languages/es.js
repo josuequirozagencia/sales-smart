@@ -1377,6 +1377,7 @@ const messages = {
           editKanban: "Editar Lane",
         },
         form: {
+          pipeline: "Embudo",
           name: "Nombre",
           color: "Color",
         },
@@ -1980,6 +1981,13 @@ const messages = {
         },
       },
       kanban: {
+        create: "Crear",
+        newStage: "Nueva etapa",
+        newPipeline: "Nuevo embudo",
+        pipeline: "Embudo",
+        pipelineName: "Nombre del embudo",
+        searchPipeline: "Buscar embudo",
+        pipelineCreated: "Embudo creado. Agrégale etapas para armar el tablero.",
         title: "Kanban",
         searchPlaceholder: "Búsqueda",
         subMenus: {
@@ -3068,6 +3076,10 @@ const messages = {
         },
       },
       backendErrors: {
+        ERR_PIPELINE_NAME_INVALID: "El nombre del embudo debe tener entre 2 y 60 caracteres.",
+        ERR_PIPELINE_ORDER_INVALID: "El orden del embudo no es válido.",
+        ERR_PIPELINE_NOT_FOUND: "No se encontró ese embudo.",
+        ERR_PIPELINE_LAST_ONE: "No se puede borrar el único embudo: la empresa se quedaría sin tablero.",
         ERR_COMPANY_SETTING_INVALID_COLUMN: "Ese ajuste no existe.",
         ERR_COMPANY_SETTING_INVALID_VALUE: "El valor de ese ajuste no es válido.",
         ERR_SESSION_INACTIVITY_INVALID: "El tiempo de inactividad debe estar entre 15 minutos y 24 horas.",

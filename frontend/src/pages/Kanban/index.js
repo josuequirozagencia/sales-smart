@@ -5,7 +5,24 @@ import { AuthContext } from '../../context/Auth/AuthContext';
 import { toast } from 'react-toastify';
 import { i18n } from '../../translate/i18n';
 import { useHistory } from 'react-router-dom';
-import { Button, TextField, Paper, FormControl, InputLabel, Select } from '@material-ui/core';
+import {
+  Button,
+  TextField,
+  Paper,
+  FormControl,
+  InputLabel,
+  Select,
+  Menu,
+  MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  InputAdornment,
+} from '@material-ui/core';
+import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
+import SearchIcon from '@material-ui/icons/Search';
+import toastError from '../../errors/toastError';
 import { format } from 'date-fns';
 import { Can } from '../../components/Can';
 import MainContainer from '../../components/MainContainer';
@@ -39,13 +56,45 @@ const useStyles = makeStyles(theme => ({
       borderRadius: '10px',
     },
   },
+  // Selector de embudo en el sitio del titulo: el nombre del tablero activo
+  // con una flecha, como en GoHighLevel.
+  selectorEmbudo: {
+    textTransform: 'none',
+    fontSize: '1.25rem',
+    fontWeight: 700,
+    padding: theme.spacing(0.25, 1),
+    color: theme.palette.tokens.text.primary,
+  },
+  buscadorEmbudos: {
+    padding: theme.spacing(0.5, 1.5, 1),
+  },
+  vacio: {
+    padding: theme.spacing(4),
+    textAlign: 'center',
+    color: theme.palette.tokens.text.secondary,
+  },
 }));
+
+// Por encima de este numero de embudos, el menu trae buscador.
+const EMBUDOS_CON_BUSCADOR = 8;
+// Ultimo embudo abierto, por navegador: al volver al tablero se abre el mismo.
+const CLAVE_EMBUDO = 'kanbanPipelineId';
 
 const Kanban = () => {
   const classes = useStyles();
   const history = useHistory();
   const { user, socket } = useContext(AuthContext);
   const [tags, setTags] = useState([]);
+  const [pipelines, setPipelines] = useState([]);
+  const [pipelineId, setPipelineId] = useState(() => {
+    const guardado = Number(localStorage.getItem(CLAVE_EMBUDO));
+    return Number.isInteger(guardado) && guardado > 0 ? guardado : null;
+  });
+  const [menuEmbudos, setMenuEmbudos] = useState(null);
+  const [menuCrear, setMenuCrear] = useState(null);
+  const [buscaEmbudo, setBuscaEmbudo] = useState('');
+  const [nuevoEmbudo, setNuevoEmbudo] = useState(null);
+  const [guardandoEmbudo, setGuardandoEmbudo] = useState(false);
   const [tickets, setTickets] = useState([]);
   const [lanes, setLanes] = useState([]);
   const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -60,14 +109,40 @@ const Kanban = () => {
     localStorage.setItem('sortOrder', sortOrder);
   }, [sortOrder]);
 
+  // Embudos de la empresa. El activo es el ultimo que se abrio en este
+  // navegador; si ya no existe, el de referencia o el primero.
   useEffect(() => {
+    const cargarPipelines = async () => {
+      try {
+        const { data } = await api.get('/kanban/pipelines');
+        const lista = Array.isArray(data) ? data : [];
+        setPipelines(lista);
+        setPipelineId(previo => {
+          if (previo && lista.some(p => p.id === previo)) return previo;
+          const porDefecto = lista.find(p => p.isDefault) || lista[0];
+          return porDefecto ? porDefecto.id : null;
+        });
+      } catch (err) {
+        // Sin embudos el tablero sigue funcionando con todas las etapas.
+        setPipelines([]);
+      }
+    };
+    cargarPipelines();
+  }, []);
+
+  useEffect(() => {
+    if (pipelineId) localStorage.setItem(CLAVE_EMBUDO, String(pipelineId));
     fetchTags();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [pipelineId]);
 
   const fetchTags = async () => {
     try {
-      const response = await api.get('/tag/kanban/');
+      const response = await api.get('/tag/kanban/', {
+        // Sin embudo (empresa que aun no tiene ninguno) se piden todas, que es
+        // como se comportaba el tablero antes de los embudos.
+        params: pipelineId ? { pipelineId } : {},
+      });
       const fetchedTags = response.data.lista || [];
       setTags(fetchedTags);
       fetchTickets(fetchedTags);
@@ -206,9 +281,34 @@ const Kanban = () => {
     }
   };
 
+  // "Nueva etapa" lleva al mismo mantenimiento de siempre, con el embudo
+  // activo preseleccionado.
   const handleAddColumnClick = () => {
-    history.push('/tagsKanban');
+    setMenuCrear(null);
+    history.push(pipelineId ? `/tagsKanban?pipelineId=${pipelineId}` : '/tagsKanban');
   };
+
+  const handleCrearEmbudo = async () => {
+    const nombre = (nuevoEmbudo || '').trim();
+    if (nombre.length < 2) return;
+    setGuardandoEmbudo(true);
+    try {
+      const { data } = await api.post('/kanban/pipelines', { name: nombre });
+      setPipelines(previos => [...previos, data]);
+      setPipelineId(data.id);
+      setNuevoEmbudo(null);
+      toast.success(i18n.t('kanban.pipelineCreated'));
+    } catch (err) {
+      toastError(err);
+    } finally {
+      setGuardandoEmbudo(false);
+    }
+  };
+
+  const embudoActivo = pipelines.find(p => p.id === pipelineId);
+  const embudosFiltrados = pipelines.filter(p =>
+    p.name.toLowerCase().includes(buscaEmbudo.toLowerCase())
+  );
 
   const handleSortOrderChange = event => {
     setSortOrder(event.target.value);
@@ -217,7 +317,60 @@ const Kanban = () => {
   return (
     <MainContainer>
       <MainHeader>
-        <Title>{i18n.t('Kanban')}</Title>
+        {pipelines.length > 0 ? (
+          <>
+            <Button
+              className={classes.selectorEmbudo}
+              onClick={e => setMenuEmbudos(e.currentTarget)}
+              endIcon={<ArrowDropDownIcon />}
+            >
+              {embudoActivo ? embudoActivo.name : i18n.t('kanban.pipeline')}
+            </Button>
+            <Menu
+              anchorEl={menuEmbudos}
+              open={Boolean(menuEmbudos)}
+              onClose={() => setMenuEmbudos(null)}
+              getContentAnchorEl={null}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+            >
+              {pipelines.length > EMBUDOS_CON_BUSCADOR && (
+                <div className={classes.buscadorEmbudos}>
+                  <TextField
+                    size="small"
+                    variant="outlined"
+                    autoFocus
+                    fullWidth
+                    placeholder={i18n.t('kanban.searchPipeline')}
+                    value={buscaEmbudo}
+                    onChange={e => setBuscaEmbudo(e.target.value)}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SearchIcon fontSize="small" />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </div>
+              )}
+              {embudosFiltrados.map(p => (
+                <MenuItem
+                  key={p.id}
+                  selected={p.id === pipelineId}
+                  onClick={() => {
+                    setPipelineId(p.id);
+                    setMenuEmbudos(null);
+                    setBuscaEmbudo('');
+                  }}
+                >
+                  {p.name}
+                </MenuItem>
+              ))}
+            </Menu>
+          </>
+        ) : (
+          <Title>{i18n.t('Kanban')}</Title>
+        )}
         <MainHeaderButtonsWrapper>
           <FormControl
             variant="outlined"
@@ -276,18 +429,77 @@ const Kanban = () => {
             role={user.profile}
             perform="dashboard:view"
             yes={() => (
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleAddColumnClick}
-                className={classes.button}
-              >
-                {i18n.t('kanban.addColumns')}
-              </Button>
+              <>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={e => setMenuCrear(e.currentTarget)}
+                  className={classes.button}
+                  endIcon={<ArrowDropDownIcon />}
+                >
+                  {i18n.t('kanban.create')}
+                </Button>
+                <Menu
+                  anchorEl={menuCrear}
+                  open={Boolean(menuCrear)}
+                  onClose={() => setMenuCrear(null)}
+                  getContentAnchorEl={null}
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                  transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                >
+                  <MenuItem onClick={handleAddColumnClick}>
+                    {i18n.t('kanban.newStage')}
+                  </MenuItem>
+                  <MenuItem
+                    onClick={() => {
+                      setMenuCrear(null);
+                      setNuevoEmbudo('');
+                    }}
+                  >
+                    {i18n.t('kanban.newPipeline')}
+                  </MenuItem>
+                </Menu>
+              </>
             )}
           />
         </MainHeaderButtonsWrapper>
       </MainHeader>
+      <Dialog
+        open={nuevoEmbudo !== null}
+        onClose={() => setNuevoEmbudo(null)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>{i18n.t('kanban.newPipeline')}</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            fullWidth
+            variant="outlined"
+            size="small"
+            label={i18n.t('kanban.pipelineName')}
+            value={nuevoEmbudo || ''}
+            onChange={e => setNuevoEmbudo(e.target.value)}
+            onKeyPress={e => {
+              if (e.key === 'Enter') handleCrearEmbudo();
+            }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setNuevoEmbudo(null)} disabled={guardandoEmbudo}>
+            {i18n.t('kanban.cancel')}
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleCrearEmbudo}
+            disabled={guardandoEmbudo || (nuevoEmbudo || '').trim().length < 2}
+          >
+            {i18n.t('kanban.saveValue')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Paper variant="outlined" className={classes.mainPaper}>
         <KanbanBoard
           lanes={lanes}

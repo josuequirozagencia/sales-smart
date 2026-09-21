@@ -1268,6 +1268,7 @@ const messages = {
           editKanban: "Editar Lane",
         },
         form: {
+          pipeline: "Funil",
           name: "Nome",
           color: "Cor",
           timeLane: "Tempo em minutos para redirecionar para lane",
@@ -1898,6 +1899,13 @@ const messages = {
       },
 
       kanban: {
+        create: "Criar",
+        newStage: "Nova etapa",
+        newPipeline: "Novo funil",
+        pipeline: "Funil",
+        pipelineName: "Nome do funil",
+        searchPipeline: "Buscar funil",
+        pipelineCreated: "Funil criado. Adicione etapas para montar o quadro.",
         title: "Kanban",
         searchPlaceholder: "Pesquisa",
         subMenus: {
@@ -3118,6 +3126,10 @@ const messages = {
         },
       },
       backendErrors: {
+        ERR_PIPELINE_NAME_INVALID: "O nome do funil deve ter entre 2 e 60 caracteres.",
+        ERR_PIPELINE_ORDER_INVALID: "A ordem do funil não é válida.",
+        ERR_PIPELINE_NOT_FOUND: "Funil não encontrado.",
+        ERR_PIPELINE_LAST_ONE: "Não dá para excluir o único funil: a empresa ficaria sem quadro.",
         ERR_COMPANY_SETTING_INVALID_COLUMN: "Essa configuração não existe.",
         ERR_COMPANY_SETTING_INVALID_VALUE: "O valor dessa configuração não é válido.",
         ERR_SESSION_INACTIVITY_INVALID: "O tempo de inatividade deve estar entre 15 minutos e 24 horas.",

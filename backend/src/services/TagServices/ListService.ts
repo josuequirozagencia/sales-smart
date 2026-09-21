@@ -12,6 +12,9 @@ interface Request {
   pageNumber?: string | number;
   kanban?: number;
   tagId?: number;
+  // Embudo del Kanban: con varios tableros, la pantalla de etapas muestra las
+  // de uno solo en vez de mezclarlas todas.
+  pipelineId?: number | string;
 }
 
 interface Response {
@@ -25,7 +28,8 @@ const ListService = async ({
   searchParam = "",
   pageNumber = "1",
   kanban = 0,
-  tagId = 0
+  tagId = 0,
+  pipelineId
 }: Request): Promise<Response> => {
   let whereCondition = {};
 
@@ -106,6 +110,11 @@ const ListService = async ({
         ...whereCondition,
         id: { [Op.ne]: [tagId] }
       }
+    }
+
+    const embudo = Number(pipelineId);
+    if (Number.isInteger(embudo) && embudo > 0) {
+      whereCondition = { ...whereCondition, pipelineId: embudo };
     }
 
     // console.log(whereCondition)

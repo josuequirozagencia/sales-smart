@@ -16,6 +16,7 @@ import Ticket from "./Ticket";
 import TicketTag from "./TicketTag";
 import Contact from "./Contact";
 import ContactTag from "./ContactTag";
+import KanbanPipeline from "./KanbanPipeline";
 
 @Table
 class Tag extends Model<Tag> {
@@ -51,6 +52,15 @@ class Tag extends Model<Tag> {
 
   @BelongsTo(() => Company)
   company: Company;
+
+  // Embudo del Kanban al que pertenece esta etapa. Nulo en las etiquetas
+  // normales (kanban = 0), que no son columnas de ningun tablero.
+  @ForeignKey(() => KanbanPipeline)
+  @Column
+  pipelineId: number;
+
+  @BelongsTo(() => KanbanPipeline)
+  pipeline: KanbanPipeline;
 
   @CreatedAt
   createdAt: Date;

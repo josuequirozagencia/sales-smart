@@ -1260,6 +1260,7 @@ const messages = {
           backToKanban: "BACK TO KANBAN",
         },
         form: {
+          pipeline: "Pipeline",
           name: "Name",
           color: "Color",
           timeLane: "Time in minutes to redirect to lane",
@@ -1865,6 +1866,13 @@ const messages = {
         },
       },
       kanban: {
+        create: "Create",
+        newStage: "New stage",
+        newPipeline: "New pipeline",
+        pipeline: "Pipeline",
+        pipelineName: "Pipeline name",
+        searchPipeline: "Search pipeline",
+        pipelineCreated: "Pipeline created. Add stages to build the board.",
         title: "Kanban",
         searchPlaceholder: "Search",
         subMenus: {
@@ -3075,6 +3083,10 @@ const messages = {
         },
       },
       backendErrors: {
+        ERR_PIPELINE_NAME_INVALID: "The pipeline name must be 2 to 60 characters.",
+        ERR_PIPELINE_ORDER_INVALID: "The pipeline order is not valid.",
+        ERR_PIPELINE_NOT_FOUND: "Pipeline not found.",
+        ERR_PIPELINE_LAST_ONE: "The only pipeline cannot be deleted: the company would be left without a board.",
         ERR_COMPANY_SETTING_INVALID_COLUMN: "That setting does not exist.",
         ERR_COMPANY_SETTING_INVALID_VALUE: "That setting's value is not valid.",
         ERR_SESSION_INACTIVITY_INVALID: "Inactivity time must be between 15 minutes and 24 hours.",

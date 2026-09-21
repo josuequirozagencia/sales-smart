@@ -12,6 +12,8 @@ interface Request {
   nextLaneId?: number;
   greetingMessageLane?: string;
   rollbackLaneId?: number;
+  // Embudo del Kanban al que pertenece la etapa.
+  pipelineId?: number;
 }
 
 const CreateService = async ({
@@ -22,7 +24,8 @@ const CreateService = async ({
   timeLane = null,
   nextLaneId = null,
   greetingMessageLane = "",
-  rollbackLaneId = null
+  rollbackLaneId = null,
+  pipelineId = null
 }: Request): Promise<Tag> => {
   const schema = Yup.object().shape({
     name: Yup.string().required().min(3)
@@ -34,10 +37,16 @@ const CreateService = async ({
     throw new AppError(err.message);
   }
 
+  const embudo =
+    String(pipelineId) === "" || pipelineId === undefined ? null : pipelineId;
+
+  // El embudo entra en la busqueda: dos tableros pueden tener una etapa con el
+  // mismo nombre y color sin pisarse.
   const [tag] = await Tag.findOrCreate({
-    where: { name, color, kanban, companyId },
+    where: { name, color, kanban, companyId, pipelineId: embudo },
     defaults: {
       name, color, kanban, companyId,
+      pipelineId: embudo,
       timeLane,
       nextLaneId: String(nextLaneId) === "" ? null : nextLaneId,
       greetingMessageLane,

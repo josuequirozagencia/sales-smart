@@ -56,6 +56,7 @@ import configSnapshotRoutes from "./configSnapshotRoutes";
 import metaRoutes from "./metaRoutes";
 import aiAgentRoutes from "./aiAgentRoutes";
 import sessionSettingsRoutes from "./sessionSettingsRoutes";
+import kanbanPipelineRoutes from "./kanbanPipelineRoutes";
 
 import ChatController from "../controllers/ChatController";
 
@@ -75,6 +76,7 @@ routes.use(ghlRoutes);
 routes.use(metaRoutes);
 routes.use(aiAgentRoutes);
 routes.use(sessionSettingsRoutes);
+routes.use(kanbanPipelineRoutes);
 routes.use("/api/messages", apiRoutes);
 routes.use(settingRoutes);
 routes.use(contactRoutes);

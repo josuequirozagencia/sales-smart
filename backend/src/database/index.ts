@@ -18,6 +18,7 @@ import TicketTraking from "../models/TicketTraking";
 import UserRating from "../models/UserRating";
 import Schedule from "../models/Schedule";
 import Tag from "../models/Tag";
+import KanbanPipeline from "../models/KanbanPipeline";
 import TicketTag from "../models/TicketTag";
 import ContactList from "../models/ContactList";
 import ContactListItem from "../models/ContactListItem";
@@ -103,6 +104,7 @@ const models = [
   UserRating,
   Schedule,
   Tag,
+  KanbanPipeline,
   TicketTag,
   ContactList,
   ContactListItem,

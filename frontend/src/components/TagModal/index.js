@@ -64,7 +64,7 @@ const TagSchema = Yup.object().shape({
 		.required(i18n.t("tagModal.validation.required"))
 });
 
-const TagModal = ({ open, onClose, tagId, kanban }) => {
+const TagModal = ({ open, onClose, tagId, kanban, pipelineId }) => {
 	const classes = useStyles();
 	const { user } = useContext(AuthContext);
 	const [colorPickerModalOpen, setColorPickerModalOpen] = useState(false);
@@ -72,11 +72,16 @@ const TagModal = ({ open, onClose, tagId, kanban }) => {
 	const [loading, setLoading] = useState(false);
 	const [selectedLane, setSelectedLane] = useState(null);
 	const [selectedRollbackLane, setSelectedRollbackLane] = useState(null);
+	// Embudos del Kanban: una etapa pertenece a uno, y desde aqui se puede
+	// mover de tablero sin tocar sus tickets.
+	const [pipelines, setPipelines] = useState([]);
+	const [selectedPipeline, setSelectedPipeline] = useState(pipelineId || "");
 
 	const initialState = {
 		name: "",
 		color: getRandomHexColor(),
 		kanban: kanban || 0,
+		pipelineId: pipelineId || "",
 		timeLane: 0,
 		nextLaneId: 0,
 		greetingMessageLane: "",
@@ -99,11 +104,22 @@ const TagModal = ({ open, onClose, tagId, kanban }) => {
 			}
 		};
 
+		const fetchPipelines = async () => {
+			try {
+				const { data } = await api.get("/kanban/pipelines");
+				setPipelines(Array.isArray(data) ? data : []);
+			} catch (err) {
+				// Sin embudos el formulario funciona como antes.
+				setPipelines([]);
+			}
+		};
+
 		if (open) {
 			setLoading(true);
 			fetchLanes();
+			if (kanban === 1) fetchPipelines();
 		}
-	}, [open, tagId]);
+	}, [open, tagId, kanban]);
 
 	useEffect(() => {
 		const fetchTag = async () => {
@@ -112,6 +128,7 @@ const TagModal = ({ open, onClose, tagId, kanban }) => {
 				setFormData(prev => ({ ...initialState, ...data }));
 				setSelectedLane(data.nextLaneId || null);
 				setSelectedRollbackLane(data.rollbackLaneId || null);
+				setSelectedPipeline(data.pipelineId || pipelineId || "");
 			} catch (err) {
 				toastError(err);
 			}
@@ -123,7 +140,9 @@ const TagModal = ({ open, onClose, tagId, kanban }) => {
 			setFormData(initialState);
 			setSelectedLane(null);
 			setSelectedRollbackLane(null);
+			setSelectedPipeline(pipelineId || "");
 		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [tagId, open]);
 
 	const handleClose = () => {
@@ -140,7 +159,8 @@ const TagModal = ({ open, onClose, tagId, kanban }) => {
 			userId: user?.id,
 			kanban: kanban,
 			nextLaneId: selectedLane,
-			rollbackLaneId: selectedRollbackLane
+			rollbackLaneId: selectedRollbackLane,
+			...(kanban === 1 ? { pipelineId: selectedPipeline || null } : {})
 		};
 
 		try {
@@ -210,6 +230,27 @@ const TagModal = ({ open, onClose, tagId, kanban }) => {
 											autoFocus
 										/>
 									</Grid>
+									{kanban === 1 && pipelines.length > 0 && (
+										<Grid item xs={12}>
+											<FormControl variant="outlined" margin="dense" fullWidth>
+												<InputLabel id="pipeline-label">
+													{i18n.t("tagModal.form.pipeline")}
+												</InputLabel>
+												<Select
+													labelId="pipeline-label"
+													label={i18n.t("tagModal.form.pipeline")}
+													value={selectedPipeline}
+													onChange={e => setSelectedPipeline(e.target.value)}
+												>
+													{pipelines.map(p => (
+														<MenuItem key={p.id} value={p.id}>
+															{p.name}
+														</MenuItem>
+													))}
+												</Select>
+											</FormControl>
+										</Grid>
+									)}
 									<Grid item xs={12}>
 										<Field
 											as={TextField}

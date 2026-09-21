@@ -4,39 +4,82 @@ import { Droppable } from 'react-beautiful-dnd';
 import KanbanCard from './KanbanCard';
 import { Typography } from '@material-ui/core';
 import { useCurrency } from '../../utils/currencyUtils';
-import { i18n } from '../../translate/i18n';
+
+// Columna del tablero.
+//
+// Antes el color de la etapa pintaba el DIV ENTERO —encabezado y tarjetas—, y
+// el tablero quedaba como un mosaico de bloques de color donde las tarjetas
+// blancas competian con el fondo. Ahora el color va solo en una barra sobre el
+// encabezado, como en un tablero de GoHighLevel, y el cuerpo queda en un gris
+// neutro. El total, que ocupaba un renglon propio, va en la misma linea del
+// titulo junto al numero de tarjetas.
 
 const useStyles = makeStyles(theme => ({
-  column: props => ({
-    backgroundColor: props.color || '#ebecf0',
+  column: {
+    backgroundColor:
+      theme.mode === 'light'
+        ? theme.palette.tokens.surface.surfaceSecondary
+        : theme.palette.tokens.surface.surface,
+    border: `1px solid ${theme.palette.tokens.border.border}`,
     borderRadius: 8,
-    minWidth: 272,
-    maxWidth: 272,
-    padding: theme.spacing(1),
+    // 244 en vez de 272: entran dos columnas mas en una pantalla de 1366.
+    minWidth: 244,
+    maxWidth: 244,
     marginRight: theme.spacing(1),
     display: 'flex',
     flexDirection: 'column',
     flexShrink: 0,
+    overflow: 'hidden',
+  },
+  // La barra de color es lo unico que lleva el color de la etapa.
+  barraColor: props => ({
+    height: 6,
+    backgroundColor: props.color || theme.palette.tokens.text.muted,
+    flexShrink: 0,
   }),
+  columnHeader: {
+    padding: theme.spacing(1, 1.25, 0.75),
+  },
+  tituloFila: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing(0.75),
+    minWidth: 0,
+  },
   columnTitle: {
-    marginBottom: theme.spacing(1),
-    fontWeight: 'bold',
-    fontSize: '1rem',
-    color: "#D6D6D6",
+    fontWeight: 700,
+    fontSize: '0.8125rem',
+    textTransform: 'uppercase',
+    letterSpacing: '0.03em',
+    color: theme.palette.tokens.text.primary,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  conteo: {
+    fontSize: '0.6875rem',
+    fontWeight: 700,
+    color: theme.palette.tokens.text.secondary,
+    backgroundColor: theme.palette.tokens.surface.surface,
+    border: `1px solid ${theme.palette.tokens.border.border}`,
+    borderRadius: 999,
+    padding: '0 6px',
+    flexShrink: 0,
+  },
+  totalValue: {
+    marginLeft: 'auto',
+    fontSize: '0.75rem',
+    fontWeight: 600,
+    color: theme.palette.tokens.text.secondary,
+    fontVariantNumeric: 'tabular-nums',
+    flexShrink: 0,
   },
   cardList: {
     flexGrow: 1,
     overflowY: 'auto',
     ...theme.scrollbarStyles,
     maxHeight: 'calc(100vh - 200px)',
-  },
-  totalValue: {
-    fontSize: '1rem',
-    color: "#D6D6D6",
-    fontWeight: 'bold',
-  },
-  columnHeader: {
-    marginBottom: theme.spacing(1),
+    padding: theme.spacing(0, 1, 1),
   },
 }));
 
@@ -59,11 +102,17 @@ const KanbanColumn = ({ id, title, tickets, color, updateTicket }) => {
           ref={provided.innerRef}
           {...provided.droppableProps}
         >
+          <div className={classes.barraColor} />
           <div className={classes.columnHeader}>
-            <Typography className={classes.columnTitle}>{title}</Typography>
-            <Typography className={classes.totalValue}>
-              {i18n.t('kanban.total')}: {formatCurrency(totalValue)}
-            </Typography>
+            <div className={classes.tituloFila}>
+              <Typography className={classes.columnTitle} title={title}>
+                {title}
+              </Typography>
+              <span className={classes.conteo}>{tickets.length}</span>
+              <span className={classes.totalValue}>
+                {formatCurrency(totalValue)}
+              </span>
+            </div>
           </div>
           <div className={classes.cardList}>
             {tickets.map((ticket, index) => (
