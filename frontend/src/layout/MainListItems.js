@@ -13,42 +13,54 @@ import List from "@material-ui/core/List";
 import Tooltip from "@material-ui/core/Tooltip";
 import Typography from "@material-ui/core/Typography";
 
-import DashboardOutlinedIcon from "@material-ui/icons/DashboardOutlined";
-import WhatsAppIcon from "@material-ui/icons/WhatsApp";
-import SyncAltIcon from "@material-ui/icons/SyncAlt";
-import LinkIcon from "@material-ui/icons/Link";
-import SettingsOutlinedIcon from "@material-ui/icons/SettingsOutlined";
-import PeopleAltOutlinedIcon from "@material-ui/icons/PeopleAltOutlined";
-import ContactPhoneOutlinedIcon from "@material-ui/icons/ContactPhoneOutlined";
-import AccountBalanceWalletIcon from "@material-ui/icons/AccountBalanceWallet";
-import AccountTreeOutlinedIcon from "@material-ui/icons/AccountTreeOutlined";
-import FlashOnIcon from "@material-ui/icons/FlashOn";
-import HelpOutlineIcon from "@material-ui/icons/HelpOutline";
-import CodeRoundedIcon from "@material-ui/icons/CodeRounded";
+// Iconografia: todo de @mui/icons-material.
+//
+// El archivo mezclaba las dos librerias que hay instaladas —@material-ui/icons
+// (v4) y @mui/icons-material (v5)— segun el icono. Los nombres son los mismos
+// en las dos, asi que unificar en la v5 no cambia ningun dibujo y deja de
+// arrastrar dos juegos de iconos en la misma pantalla.
+import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
+import WhatsAppIcon from "@mui/icons-material/WhatsApp";
+import SyncAltIcon from "@mui/icons-material/SyncAlt";
+import LinkIcon from "@mui/icons-material/Link";
+import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
+import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
+import ContactPhoneOutlinedIcon from "@mui/icons-material/ContactPhoneOutlined";
+import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
+import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
+import FlashOnIcon from "@mui/icons-material/FlashOn";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
+import CodeRoundedIcon from "@mui/icons-material/CodeRounded";
 import ViewKanban from "@mui/icons-material/ViewKanban";
-import Schedule from "@material-ui/icons/Schedule";
-import LocalOfferIcon from "@material-ui/icons/LocalOffer";
-import EventAvailableIcon from "@material-ui/icons/EventAvailable";
-import ExpandLessIcon from "@material-ui/icons/ExpandLess";
-import ExpandMoreIcon from "@material-ui/icons/ExpandMore";
-import PeopleIcon from "@material-ui/icons/People";
-import ListIcon from "@material-ui/icons/ListAlt";
-import AnnouncementIcon from "@material-ui/icons/Announcement";
-import ForumIcon from "@material-ui/icons/Forum";
-import LocalAtmIcon from "@material-ui/icons/LocalAtm";
-import BusinessIcon from "@material-ui/icons/Business";
-import CakeIcon from "@material-ui/icons/Cake";
-import MonetizationOnOutlinedIcon from "@material-ui/icons/MonetizationOnOutlined";
+import Schedule from "@mui/icons-material/Schedule";
+import LocalOfferIcon from "@mui/icons-material/LocalOffer";
+import EventAvailableIcon from "@mui/icons-material/EventAvailable";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import PeopleIcon from "@mui/icons-material/People";
+import ListIcon from "@mui/icons-material/ListAlt";
+import AnnouncementIcon from "@mui/icons-material/Announcement";
+import ForumIcon from "@mui/icons-material/Forum";
+import LocalAtmIcon from "@mui/icons-material/LocalAtm";
+import BusinessIcon from "@mui/icons-material/Business";
+import MonetizationOnOutlinedIcon from "@mui/icons-material/MonetizationOnOutlined";
 import {
   AllInclusive,
   AndroidOutlined,
   AttachFile,
-  Dashboard,
   Description,
   DeviceHubOutlined,
   GridOn,
   PhonelinkSetup,
-} from "@material-ui/icons";
+} from "@mui/icons-material";
+
+// Iconos de las siete categorias.
+import ForumOutlined from "@mui/icons-material/ForumOutlined";
+import ContactsOutlined from "@mui/icons-material/ContactsOutlined";
+import PointOfSale from "@mui/icons-material/PointOfSale";
+import SmartToyOutlined from "@mui/icons-material/SmartToyOutlined";
+import InsightsOutlined from "@mui/icons-material/InsightsOutlined";
+import HubOutlined from "@mui/icons-material/HubOutlined";
 
 import { WhatsAppsContext } from "../context/WhatsApp/WhatsAppsContext";
 import { AuthContext } from "../context/Auth/AuthContext";
@@ -61,8 +73,7 @@ import api from "../services/api";
 import toastError from "../errors/toastError";
 import usePlans from "../hooks/usePlans";
 import { i18n } from "../translate/i18n";
-import { Campaign, ShapeLine, Webhook } from "@mui/icons-material";
-import SupportAgent from "@mui/icons-material/SupportAgent";
+import { ShapeLine, Webhook } from "@mui/icons-material";
 import AdminPanelSettingsOutlined from "@mui/icons-material/AdminPanelSettingsOutlined";
 
 import useCompanySettings from "../hooks/useSettings/companySettings";
@@ -71,11 +82,19 @@ const useStyles = makeStyles((theme) => ({
   // La navegacion vive sobre el bloque oscuro, asi que sus colores salen de
   // los tokens del sidebar y no del modo claro/oscuro general. Antes el texto
   // era "#666" en modo claro: sobre fondo oscuro habria quedado ilegible.
+  // Fila de pagina dentro de una categoria: mas baja y con la letra un paso
+  // por debajo de la cabecera, para que se lea la jerarquia de un vistazo.
   listItem: {
-    height: "44px",
+    minHeight: 32,
     width: "auto",
     borderRadius: theme.palette.tokens.radius.md,
-    marginBottom: 2,
+    marginBottom: 1,
+    paddingTop: 0,
+    paddingBottom: 0,
+    paddingLeft: theme.palette.tokens.space.sm,
+    "& .MuiListItemIcon-root": {
+      minWidth: 34,
+    },
     "&:hover": {
       // Velo tenue en vez de un cambio de color: no compite con el estado
       // activo. Sale de los tokens porque el menu sigue al modo claro/oscuro.
@@ -92,14 +111,46 @@ const useStyles = makeStyles((theme) => ({
   },
 
   listItemText: {
-    fontSize: "14px",
+    fontSize: "0.8125rem",
     color: theme.palette.tokens.sidebar.text,
     transition: "color 180ms ease",
-    fontWeight: 500,
+    fontWeight: 400,
+    lineHeight: 1.3,
     "& .MuiTypography-root": {
       fontFamily: "'Inter', 'Roboto', sans-serif",
-      fontSize: "0.875rem",
+      fontSize: "0.8125rem",
     },
+  },
+
+  // Cabecera de categoria: 42px de alto, texto de 13px en semibold.
+  grupoHeader: {
+    minHeight: 42,
+    borderRadius: theme.palette.tokens.radius.md,
+    marginBottom: 1,
+    paddingLeft: theme.palette.tokens.space.sm,
+    "& .MuiListItemIcon-root": {
+      minWidth: 38,
+    },
+    "&:hover": {
+      backgroundColor: theme.palette.tokens.sidebar.hover,
+    },
+  },
+
+  grupoTexto: {
+    fontSize: "0.8125rem",
+    fontWeight: 600,
+    color: theme.palette.tokens.sidebar.text,
+    letterSpacing: "0.01em",
+    "& .MuiTypography-root": {
+      fontFamily: "'Inter', 'Roboto', sans-serif",
+      fontSize: "0.8125rem",
+      fontWeight: 600,
+    },
+  },
+
+  chevron: {
+    fontSize: 18,
+    color: theme.palette.tokens.sidebar.textMuted,
   },
 
   // Titulos de los grupos del menu: medidos en el navegador, piden entre 127 y
@@ -119,13 +170,14 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: "transparent",
   },
 
+  // Icono de una pagina: 28px de circulo con el dibujo a 17.
   iconHoverActive: {
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: "50%", // Mantém circular original
-    height: 36, // Mantém tamanho original
-    width: 36,  // Mantém tamanho original
+    borderRadius: "50%",
+    height: 28,
+    width: 28,
     backgroundColor: theme.palette.tokens.sidebar.iconBackground,
     color: theme.palette.tokens.sidebar.text,
     transition: "background-color 180ms ease, color 180ms ease",
@@ -136,12 +188,21 @@ const useStyles = makeStyles((theme) => ({
       // emborrona el circulo.
     },
     "& .MuiSvgIcon-root": {
-      fontSize: "1.4rem", // Mantém tamanho original
+      fontSize: 17,
       transition: "transform 0.3s ease",
     },
     "&:hover .MuiSvgIcon-root": {
       transform: "none", // sin zoom: en una lista de 21 elementos, distrae
     }
+  },
+
+  // El icono de una categoria va un punto mas grande que el de sus paginas.
+  iconoGrupo: {
+    height: 32,
+    width: 32,
+    "& .MuiSvgIcon-root": {
+      fontSize: 20,
+    },
   },
 
   // Badge melhorado mas mantendo funcionalidade
@@ -332,13 +393,14 @@ function GrupoMenu({ titulo, icono, abierto, onToggle, activo, collapsed, childr
         <ListItem
           dense
           button
+          className={classes.grupoHeader}
           onClick={onToggle}
           onMouseEnter={() => setHover(true)}
           onMouseLeave={() => setHover(false)}
         >
           <ListItemIcon>
             <Avatar
-              className={`${classes.iconHoverActive} ${activo || hover ? "active" : ""}`}
+              className={`${classes.iconHoverActive} ${classes.iconoGrupo} ${activo || hover ? "active" : ""}`}
             >
               {icono}
             </Avatar>
@@ -346,13 +408,17 @@ function GrupoMenu({ titulo, icono, abierto, onToggle, activo, collapsed, childr
           <ListItemText
             primary={
               <Typography
-                className={`${classes.listItemText} ${collapsed ? "" : classes.grupoTitulo}`}
+                className={`${classes.grupoTexto} ${collapsed ? "" : classes.grupoTitulo}`}
               >
                 {titulo}
               </Typography>
             }
           />
-          {abierto ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+          {abierto ? (
+            <ExpandLessIcon className={classes.chevron} />
+          ) : (
+            <ExpandMoreIcon className={classes.chevron} />
+          )}
         </ListItem>
       </Tooltip>
       <Collapse
@@ -374,16 +440,28 @@ function GrupoMenu({ titulo, icono, abierto, onToggle, activo, collapsed, childr
 
 // Rutas de cada grupo. Sirven para abrir el grupo que contiene la pagina
 // actual (al cargar y al navegar desde fuera del menu), nunca para cerrarlo.
-const RUTAS_DIARIO = ["/kanban", "/quick-messages", "/contacts", "/tags", "/schedules", "/chats", "/helps"];
-const RUTAS_SUPERVISION = [
-  "/", "/reports", "/sales", "/response-time", "/moments", "/wallets",
-  "/campaigns", "/contact-lists", "/campaigns-config", "/files",
-  "/phrase-lists", "/flowbuilders", "/prompts", "/ai-agents", "/queue-integration",
-];
-const RUTAS_ADMINISTRACION = [
-  "/users", "/queues", "/connections", "/whatsapp-templates", "/gohighlevel", "/allConnections",
-  "/financeiro", "/settings", "/messages-api", "/announcements", "/companies",
-];
+// Rutas de cada categoria. Sirven para abrir la que contiene la pagina actual
+// (al cargar y al navegar desde fuera del menu), nunca para cerrarla.
+const RUTAS_POR_GRUPO = {
+  conversaciones: ["/chats", "/quick-messages", "/queues", "/helps"],
+  clientes: ["/contacts", "/tags"],
+  ventas: ["/kanban", "/schedules", "/sales"],
+  automatizacion: [
+    "/flowbuilders", "/phrase-lists", "/ai-agents", "/prompts",
+    "/campaigns", "/contact-lists", "/campaigns-config", "/files",
+    "/queue-integration",
+  ],
+  analitica: ["/", "/reports", "/response-time", "/moments", "/wallets"],
+  conexiones: [
+    "/connections", "/whatsapp-templates", "/gohighlevel", "/allConnections",
+    "/messages-api",
+  ],
+  administracion: [
+    "/users", "/financeiro", "/settings", "/announcements", "/companies",
+  ],
+};
+
+const GRUPOS = Object.keys(RUTAS_POR_GRUPO);
 
 const rutaEnGrupo = (pathname, rutas) =>
   rutas.some((ruta) =>
@@ -457,15 +535,17 @@ const MainListItems = ({ collapsed, drawerClose }) => {
 
   const [connectionWarning, setConnectionWarning] = useState(false);
   const [openCampaignSubmenu, setOpenCampaignSubmenu] = useState(false);
-  // Uso diario abierto por defecto; los otros dos cerrados, salvo que la
-  // pagina con la que se entra sea suya.
-  const [grupoDiarioAbierto, setGrupoDiarioAbierto] = useState(true);
-  const [grupoSupervisionAbierto, setGrupoSupervisionAbierto] = useState(() =>
-    rutaEnGrupo(location.pathname, RUTAS_SUPERVISION)
+  // Las siete categorias arrancan abiertas; la que contiene la pagina actual
+  // se abre igualmente al navegar desde fuera del menu.
+  const [gruposAbiertos, setGruposAbiertos] = useState(() =>
+    GRUPOS.reduce((acc, clave) => ({ ...acc, [clave]: true }), {})
   );
-  const [grupoAdministracionAbierto, setGrupoAdministracionAbierto] = useState(() =>
-    rutaEnGrupo(location.pathname, RUTAS_ADMINISTRACION)
-  );
+  const alternarGrupo = (clave) =>
+    setGruposAbiertos((previo) => ({ ...previo, [clave]: !previo[clave] }));
+  const abrirGrupo = (clave) =>
+    setGruposAbiertos((previo) =>
+      previo[clave] ? previo : { ...previo, [clave]: true }
+    );
   const [showCampaigns, setShowCampaigns] = useState(false);
   const [showKanban, setShowKanban] = useState(false);
   const [showOpenAi, setShowOpenAi] = useState(false);
@@ -545,9 +625,9 @@ const MainListItems = ({ collapsed, drawerClose }) => {
   // se vea el item activo. Nunca se cierra nada por navegar.
   useEffect(() => {
     const ruta = location.pathname;
-    if (rutaEnGrupo(ruta, RUTAS_DIARIO)) setGrupoDiarioAbierto(true);
-    if (rutaEnGrupo(ruta, RUTAS_SUPERVISION)) setGrupoSupervisionAbierto(true);
-    if (rutaEnGrupo(ruta, RUTAS_ADMINISTRACION)) setGrupoAdministracionAbierto(true);
+    GRUPOS.forEach((clave) => {
+      if (rutaEnGrupo(ruta, RUTAS_POR_GRUPO[clave])) abrirGrupo(clave);
+    });
     if (rutaEnGrupo(ruta, ["/campaigns", "/contact-lists", "/campaigns-config", "/files"])) {
       setOpenCampaignSubmenu(true);
     }
@@ -588,7 +668,20 @@ const MainListItems = ({ collapsed, drawerClose }) => {
     check(rolAdministracion, "dashboard:view") &&
     (showOpenAi || showIntegrations) &&
     check(user.profile, "dashboard:view");
-  const mostrarSupervision = hayGestion || hayCampanas || hayFlujos || hayIaIntegraciones;
+
+  // Permisos ya calculados, en forma de booleano, para saber si una categoria
+  // tiene algo que mostrar. Son las MISMAS expresiones que envuelven a cada
+  // item mas abajo: aqui solo deciden si se pinta la cabecera del grupo, nunca
+  // si se ve la pagina.
+  const puedeAdmin = check(rolAdministracion, "dashboard:view");
+  const puedeAdminItems = check(rolAdministracion, "drawer-admin-items:view");
+  const puedePerfil = check(user.profile, "dashboard:view");
+
+  const hayVentas =
+    showKanban || showSchedules || (hayGestion && check(rolDashboard, "drawer-admin-items:view"));
+  const hayConexiones =
+    puedeAdmin && (puedeAdminItems || user.super || (showExternalApi && puedePerfil));
+  const hayAdministracion = puedeAdmin && (puedePerfil || user.super);
 
   useEffect(() => {
     if (location.pathname.startsWith("/tickets")) {
@@ -723,6 +816,16 @@ useEffect(() => {
     }
   };
 
+  // Cada categoria repite el mismo patron: GrupoMenu + los items que ya
+  // existian, cada uno con SU condicion y SUS <Can> tal cual estaban. Lo unico
+  // que cambia es en que grupo aparece cada item.
+  const grupo = (clave) => ({
+    abierto: gruposAbiertos[clave],
+    onToggle: () => alternarGrupo(clave),
+    activo: rutaEnGrupo(location.pathname, RUTAS_POR_GRUPO[clave]),
+    collapsed,
+  });
+
   return (
     <div onClick={drawerClose}>
       {/* La bandeja va fija arriba, fuera de los grupos: es lo que mas se usa. */}
@@ -733,24 +836,23 @@ useEffect(() => {
         tooltip={collapsed}
       />
 
-      {/* Uso diario (asesor) */}
+      {/* CONVERSACIONES */}
       <GrupoMenu
-        titulo={i18n.t("mainDrawer.groups.daily")}
-        icono={<SupportAgent />}
-        abierto={grupoDiarioAbierto}
-        onToggle={() => setGrupoDiarioAbierto((prev) => !prev)}
-        activo={rutaEnGrupo(location.pathname, RUTAS_DIARIO)}
-        collapsed={collapsed}
+        titulo={i18n.t("mainDrawer.groups.conversations")}
+        icono={<ForumOutlined />}
+        {...grupo("conversaciones")}
       >
-        {showKanban && (
-          <>
-            <ListItemLink
-              to="/kanban"
-              primary={i18n.t("mainDrawer.listItems.kanban")}
-              icon={<ViewKanban />}
-              tooltip={collapsed}
-            />
-          </>
+        {showInternalChat && (
+          <ListItemLink
+            to="/chats"
+            primary={i18n.t("mainDrawer.listItems.chats")}
+            icon={
+              <Badge color="secondary" variant="dot" invisible={invisible}>
+                <ForumIcon />
+              </Badge>
+            }
+            tooltip={collapsed}
+          />
         )}
 
         <ListItemLink
@@ -760,6 +862,43 @@ useEffect(() => {
           tooltip={collapsed}
         />
 
+        {/* Departamentos (antes "Colas y Chatbot") venia de Administracion:
+            cambia de grupo y de nombre, con los mismos dos <Can> de siempre. */}
+        <Can
+          role={rolAdministracion}
+          perform="dashboard:view"
+          yes={() => (
+            <Can
+              role={user.profile}
+              perform="dashboard:view"
+              yes={() => (
+                <ListItemLink
+                  to="/queues"
+                  primary={i18n.t("mainDrawer.listItems.queues")}
+                  icon={<AccountTreeOutlinedIcon />}
+                  tooltip={collapsed}
+                />
+              )}
+            />
+          )}
+        />
+
+        {hasHelps && (
+          <ListItemLink
+            to="/helps"
+            primary={i18n.t("mainDrawer.listItems.helps")}
+            icon={<HelpOutlineIcon />}
+            tooltip={collapsed}
+          />
+        )}
+      </GrupoMenu>
+
+      {/* CLIENTES */}
+      <GrupoMenu
+        titulo={i18n.t("mainDrawer.groups.clients")}
+        icono={<ContactsOutlined />}
+        {...grupo("clientes")}
+      >
         {user.showContacts === "enabled" && (
           <ListItemLink
             to="/contacts"
@@ -775,130 +914,169 @@ useEffect(() => {
           icon={<LocalOfferIcon />}
           tooltip={collapsed}
         />
+      </GrupoMenu>
 
-        {showSchedules && (
-          <>
+      {/* VENTAS */}
+      {hayVentas && (
+        <GrupoMenu
+          titulo={i18n.t("mainDrawer.groups.sales")}
+          icono={<PointOfSale />}
+          {...grupo("ventas")}
+        >
+          {showKanban && (
+            <ListItemLink
+              to="/kanban"
+              primary={i18n.t("mainDrawer.listItems.kanban")}
+              icon={<ViewKanban />}
+              tooltip={collapsed}
+            />
+          )}
+
+          {/* Agendamientos venia de Automatizacion, sin condicion de rol: la ven
+              todos los que tengan el plan con agenda, asesores incluidos. */}
+          {showSchedules && (
             <ListItemLink
               to="/schedules"
               primary={i18n.t("mainDrawer.listItems.schedules")}
               icon={<Schedule />}
               tooltip={collapsed}
             />
-          </>
-        )}
+          )}
 
-        {showInternalChat && (
-          <>
-            <ListItemLink
-              to="/chats"
-              primary={i18n.t("mainDrawer.listItems.chats")}
-              icon={
-                <Badge color="secondary" variant="dot" invisible={invisible}>
-                  <ForumIcon />
-                </Badge>
-              }
-              tooltip={collapsed}
-            />
-          </>
-        )}
-
-        {/*
-        <ListItemLink
-          to="/todolist"
-          primary={i18n.t("ToDoList")}
-          icon={<EventAvailableIcon />}
-        />
-        */}
-
-        {hasHelps && (
-          <ListItemLink
-            to="/helps"
-            primary={i18n.t("mainDrawer.listItems.helps")}
-            icon={<HelpOutlineIcon />}
-            tooltip={collapsed}
-          />
-        )}
-      </GrupoMenu>
-
-      {/* Supervision y crecimiento: el antiguo submenu "Gestion", Campanas,
-          Constructor de flujos, Prompts IA e Integracion de colas. Cada bloque
-          conserva su condicion y sus <Can> tal cual. */}
-      {mostrarSupervision && (
-        <GrupoMenu
-          titulo={i18n.t("mainDrawer.groups.supervision")}
-          icono={<Dashboard />}
-          abierto={grupoSupervisionAbierto}
-          onToggle={() => setGrupoSupervisionAbierto((prev) => !prev)}
-          activo={rutaEnGrupo(location.pathname, RUTAS_SUPERVISION)}
-          collapsed={collapsed}
-        >
           <Can
             role={rolGestion}
             perform={"drawer-admin-items:view"}
             yes={() => (
+              <Can
+                role={rolDashboard}
+                perform={"drawer-admin-items:view"}
+                yes={() => (
+                  <ListItemLink
+                    to="/sales"
+                    primary={i18n.t("sales.title")}
+                    icon={<MonetizationOnOutlinedIcon />}
+                    tooltip={collapsed}
+                  />
+                )}
+              />
+            )}
+          />
+        </GrupoMenu>
+      )}
+
+      {/* AUTOMATIZACION */}
+      {(hayFlujos || hayIaIntegraciones || hayCampanas) && (
+        <GrupoMenu
+          titulo={i18n.t("mainDrawer.groups.automation")}
+          icono={<SmartToyOutlined />}
+          {...grupo("automatizacion")}
+        >
+          {/* FLOWBUILDER */}
+          {user.showFlow === "enabled" && (
+            <>
+              <Tooltip
+                title={collapsed ? i18n.t("mainDrawer.submenuLabels.flowbuilder") : ""}
+                placement="right"
+              >
+                <ListItem
+                  dense
+                  button
+                  className={classes.grupoHeader}
+                  onClick={() => setOpenFlowSubmenu((prev) => !prev)}
+                  onMouseEnter={() => setFlowHover(true)}
+                  onMouseLeave={() => setFlowHover(false)}
+                >
+                  <ListItemIcon>
+                    <Avatar
+                      className={`${classes.iconHoverActive} ${isFlowbuilderRouteActive || flowHover ? "active" : ""}`}
+                    >
+                      <Webhook />
+                    </Avatar>
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={
+                      <Typography className={classes.listItemText}>
+                        {i18n.t("mainDrawer.submenuLabels.flowbuilder")}
+                      </Typography>
+                    }
+                  />
+                  {openFlowSubmenu ? (
+                    <ExpandLessIcon className={classes.chevron} />
+                  ) : (
+                    <ExpandMoreIcon className={classes.chevron} />
+                  )}
+                </ListItem>
+              </Tooltip>
+
+              <Collapse
+                in={openFlowSubmenu}
+                timeout="auto"
+                unmountOnExit
+                style={{
+                  backgroundColor:
+                    theme.mode === "light"
+                      ? "rgba(120,120,120,0.1)"
+                      : "rgba(120,120,120,0.5)",
+                }}
+              >
+                <List dense component="div" disablePadding>
+                  <ListItemLink
+                    to="/phrase-lists"
+                    primary={i18n.t("mainDrawer.submenuLabels.flowCampaign")}
+                    icon={<EventAvailableIcon />}
+                    tooltip={collapsed}
+                  />
+
+                  <ListItemLink
+                    to="/flowbuilders"
+                    primary={i18n.t("mainDrawer.submenuLabels.flowConversation")}
+                    icon={<ShapeLine />}
+                    tooltip={collapsed}
+                  />
+                </List>
+              </Collapse>
+            </>
+          )}
+
+          <Can
+            role={rolAdministracion}
+            perform="dashboard:view"
+            yes={() => (
               <>
-                <Can
-                  role={rolDashboard}
-                  perform={"drawer-admin-items:view"}
-                  yes={() => (
-                    <>
+                {showOpenAi && (
+                  <Can
+                    role={user.profile}
+                    perform="dashboard:view"
+                    yes={() => (
                       <ListItemLink
-                        small
-                        to="/"
-                        primary="Dashboard"
-                        icon={<DashboardOutlinedIcon />}
+                        to="/ai-agents"
+                        primary={i18n.t("mainDrawer.listItems.aiAgents")}
+                        icon={<AndroidOutlined />}
                         tooltip={collapsed}
                       />
+                    )}
+                  />
+                )}
+
+                {showOpenAi && (
+                  <Can
+                    role={user.profile}
+                    perform="dashboard:view"
+                    yes={() => (
                       <ListItemLink
-                        small
-                        to="/reports"
-                        primary={i18n.t("mainDrawer.listItems.reports")}
-                        icon={<Description />}
+                        to="/prompts"
+                        primary={i18n.t("mainDrawer.listItems.prompts")}
+                        icon={<AllInclusive />}
                         tooltip={collapsed}
                       />
-                      <ListItemLink
-                        small
-                        to="/sales"
-                        primary={i18n.t("sales.title")}
-                        icon={<MonetizationOnOutlinedIcon />}
-                        tooltip={collapsed}
-                      />
-                      <ListItemLink
-                        small
-                        to="/response-time"
-                        primary={i18n.t("responseTime.title")}
-                        icon={<Description />}
-                        tooltip={collapsed}
-                      />
-                    </>
-                  )}
-                />
-                <Can
-                  role={rolTiempoReal}
-                  perform={"drawer-admin-items:view"}
-                  yes={() => (
-                    <ListItemLink
-                      to="/moments"
-                      primary={i18n.t("mainDrawer.listItems.chatsTempoReal")}
-                      icon={<GridOn />}
-                      tooltip={collapsed}
-                    />
-                  )}
-                />
-                {user.profile === "admin" && showWallets && (
-                  <>
-                    <ListItemLink
-                      to="/wallets"
-                      primary={i18n.t("mainDrawer.listItems.wallets")}
-                      icon={<AccountBalanceWalletIcon />}
-                      tooltip={collapsed}
-                    />
-                  </>
+                    )}
+                  />
                 )}
               </>
             )}
           />
 
+          {/* Campanas Masivas */}
           {user?.showCampaign === "enabled" && showCampaigns && (
             <>
               <Tooltip
@@ -908,6 +1086,7 @@ useEffect(() => {
                 <ListItem
                   dense
                   button
+                  className={classes.grupoHeader}
                   onClick={() => setOpenCampaignSubmenu((prev) => !prev)}
                   onMouseEnter={() => setCampaignHover(true)}
                   onMouseLeave={() => setCampaignHover(false)}
@@ -926,7 +1105,11 @@ useEffect(() => {
                       </Typography>
                     }
                   />
-                  {openCampaignSubmenu ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                  {openCampaignSubmenu ? (
+                    <ExpandLessIcon className={classes.chevron} />
+                  ) : (
+                    <ExpandMoreIcon className={classes.chevron} />
+                  )}
                 </ListItem>
               </Tooltip>
               <Collapse
@@ -976,116 +1159,11 @@ useEffect(() => {
             </>
           )}
 
-          {/* FLOWBUILDER */}
-          {user.showFlow === "enabled" && (
-            <>
-              <Tooltip
-                title={
-                  collapsed ? i18n.t("mainDrawer.listItems.campaigns") : ""
-                }
-                placement="right"
-              >
-                <ListItem
-                  dense
-                  button
-                  onClick={() => setOpenFlowSubmenu((prev) => !prev)}
-                  onMouseEnter={() => setFlowHover(true)}
-                  onMouseLeave={() => setFlowHover(false)}
-                >
-                  <ListItemIcon>
-                    <Avatar
-                      className={`${classes.iconHoverActive} ${isFlowbuilderRouteActive || flowHover
-                        ? "active"
-                        : ""
-                        }`}
-                    >
-                      <Webhook />
-                    </Avatar>
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={
-                      <Typography className={classes.listItemText}>
-                        {i18n.t("mainDrawer.submenuLabels.flowbuilder")}
-                      </Typography>
-                    }
-                  />
-                  {openFlowSubmenu ? (
-                    <ExpandLessIcon />
-                  ) : (
-                    <ExpandMoreIcon />
-                  )}
-                </ListItem>
-              </Tooltip>
-
-              <Collapse
-                in={openFlowSubmenu}
-                timeout="auto"
-                unmountOnExit
-                style={{
-                  backgroundColor:
-                    theme.mode === "light"
-                      ? "rgba(120,120,120,0.1)"
-                      : "rgba(120,120,120,0.5)",
-                }}
-              >
-                <List dense component="div" disablePadding>
-                  <ListItemLink
-                    to="/phrase-lists"
-                    primary={i18n.t("mainDrawer.submenuLabels.flowCampaign")}
-                    icon={<EventAvailableIcon />}
-                    tooltip={collapsed}
-                  />
-
-                  <ListItemLink
-                    to="/flowbuilders"
-                    primary={i18n.t("mainDrawer.submenuLabels.flowConversation")}
-                    icon={<ShapeLine />}
-                    tooltip={collapsed}
-                  />
-                </List>
-              </Collapse>
-            </>
-          )}
-
-          {/* Prompts IA e Integracion de colas estaban dentro del bloque de
-              Administracion: se mueven con ese mismo <Can> exterior. */}
           <Can
             role={rolAdministracion}
             perform="dashboard:view"
             yes={() => (
               <>
-                {showOpenAi && (
-                  <Can
-                    role={user.profile}
-                    perform="dashboard:view"
-                    yes={() => (
-                      <ListItemLink
-                        to="/prompts"
-                        primary={i18n.t("mainDrawer.listItems.prompts")}
-                        icon={<AllInclusive />}
-                        tooltip={collapsed}
-                      />
-                    )}
-                  />
-                )}
-
-                {/* Agentes IA: mismas condiciones que Prompts IA, porque es la
-                    evolucion de lo mismo y depende del mismo plan. */}
-                {showOpenAi && (
-                  <Can
-                    role={user.profile}
-                    perform="dashboard:view"
-                    yes={() => (
-                      <ListItemLink
-                        to="/ai-agents"
-                        primary={i18n.t("mainDrawer.listItems.aiAgents")}
-                        icon={<AndroidOutlined />}
-                        tooltip={collapsed}
-                      />
-                    )}
-                  />
-                )}
-
                 {showIntegrations && (
                   <Can
                     role={user.profile}
@@ -1106,147 +1184,208 @@ useEffect(() => {
         </GrupoMenu>
       )}
 
-      {/* Administracion de la cuenta: la misma condicion que tenia la seccion
-          "Administracion" (divisor y subtitulo), ahora como grupo. */}
-      <Can
-        role={rolAdministracion}
-        perform="dashboard:view"
-        yes={() => (
-          <GrupoMenu
-            titulo={i18n.t("mainDrawer.groups.administration")}
-            icono={<AdminPanelSettingsOutlined />}
-            abierto={grupoAdministracionAbierto}
-            onToggle={() => setGrupoAdministracionAbierto((prev) => !prev)}
-            activo={rutaEnGrupo(location.pathname, RUTAS_ADMINISTRACION)}
-            collapsed={collapsed}
-          >
-            <Can
-              role={user.profile}
-              perform="dashboard:view"
-              yes={() => (
-                <ListItemLink
-                  to="/users"
-                  primary={i18n.t("mainDrawer.listItems.users")}
-                  icon={<PeopleAltOutlinedIcon />}
-                  tooltip={collapsed}
+      {/* ANALITICA */}
+      {hayGestion && (
+        <GrupoMenu
+          titulo={i18n.t("mainDrawer.groups.analytics")}
+          icono={<InsightsOutlined />}
+          {...grupo("analitica")}
+        >
+          <Can
+            role={rolGestion}
+            perform={"drawer-admin-items:view"}
+            yes={() => (
+              <>
+                <Can
+                  role={rolDashboard}
+                  perform={"drawer-admin-items:view"}
+                  yes={() => (
+                    <>
+                      <ListItemLink
+                        small
+                        to="/"
+                        primary="Dashboard"
+                        icon={<DashboardOutlinedIcon />}
+                        tooltip={collapsed}
+                      />
+                      <ListItemLink
+                        small
+                        to="/reports"
+                        primary={i18n.t("mainDrawer.listItems.reports")}
+                        icon={<Description />}
+                        tooltip={collapsed}
+                      />
+                      <ListItemLink
+                        small
+                        to="/response-time"
+                        primary={i18n.t("responseTime.title")}
+                        icon={<Description />}
+                        tooltip={collapsed}
+                      />
+                    </>
+                  )}
                 />
-              )}
-            />
-
-            <Can
-              role={user.profile}
-              perform="dashboard:view"
-              yes={() => (
-                <ListItemLink
-                  to="/queues"
-                  primary={i18n.t("mainDrawer.listItems.queues")}
-                  icon={<AccountTreeOutlinedIcon />}
-                  tooltip={collapsed}
+                <Can
+                  role={rolTiempoReal}
+                  perform={"drawer-admin-items:view"}
+                  yes={() => (
+                    <ListItemLink
+                      to="/moments"
+                      primary={i18n.t("mainDrawer.listItems.chatsTempoReal")}
+                      icon={<GridOn />}
+                      tooltip={collapsed}
+                    />
+                  )}
                 />
-              )}
-            />
-
-            <Can
-              role={rolAdministracion}
-              perform={"drawer-admin-items:view"}
-              yes={() => (
-                <>
+                {user.profile === "admin" && showWallets && (
                   <ListItemLink
-                    to="/connections"
-                    primary={i18n.t("mainDrawer.listItems.connections")}
-                    icon={<SyncAltIcon />}
-                    showBadge={connectionWarning}
+                    to="/wallets"
+                    primary={i18n.t("mainDrawer.listItems.wallets")}
+                    icon={<AccountBalanceWalletIcon />}
                     tooltip={collapsed}
                   />
-                  {/* Catalogo real de plantillas aprobadas por Meta, junto a
-                      Conexiones y con sus mismos permisos. */}
-                  <ListItemLink
-                    to="/whatsapp-templates"
-                    primary={i18n.t("mainDrawer.listItems.whatsappTemplates")}
-                    icon={<WhatsAppIcon />}
-                    tooltip={collapsed}
-                  />
-                  {/* Tenia el mismo SyncAltIcon que Conexiones y no se
-                      distinguian: GoHighLevel es una integracion externa. */}
-                  <ListItemLink
-                    to="/gohighlevel"
-                    primary={i18n.t("mainDrawer.listItems.goHighLevel")}
-                    icon={<LinkIcon />}
-                    tooltip={collapsed}
-                  />
-                </>
-              )}
-            />
-            {user.super && (
-              <ListItemLink
-                to="/allConnections"
-                primary={i18n.t("mainDrawer.listItems.allConnections")}
-                icon={<PhonelinkSetup />}
-                tooltip={collapsed}
-              />
+                )}
+              </>
             )}
-            <Can
-              role={user.profile}
-              perform="dashboard:view"
-              yes={() => (
-                <ListItemLink
-                  to="/financeiro"
-                  primary={i18n.t("mainDrawer.listItems.financeiro")}
-                  icon={<LocalAtmIcon />}
-                  tooltip={collapsed}
-                />
-              )}
-            />
-            <Can
-              role={user.profile}
-              perform="dashboard:view"
-              yes={() => (
-                <ListItemLink
-                  to="/settings"
-                  primary={i18n.t("mainDrawer.listItems.settings")}
-                  icon={<SettingsOutlinedIcon />}
-                  tooltip={collapsed}
-                />
-              )}
-            />
+          />
+        </GrupoMenu>
+      )}
 
-            {showExternalApi && (
+      {/* CONEXIONES */}
+      {hayConexiones && (
+        <GrupoMenu
+          titulo={i18n.t("mainDrawer.groups.connections")}
+          icono={<HubOutlined />}
+          {...grupo("conexiones")}
+        >
+          <Can
+            role={rolAdministracion}
+            perform="dashboard:view"
+            yes={() => (
+              <>
+                <Can
+                  role={rolAdministracion}
+                  perform={"drawer-admin-items:view"}
+                  yes={() => (
+                    <>
+                      <ListItemLink
+                        to="/connections"
+                        primary={i18n.t("mainDrawer.listItems.connections")}
+                        icon={<SyncAltIcon />}
+                        showBadge={connectionWarning}
+                        tooltip={collapsed}
+                      />
+                      {/* Catalogo real de plantillas aprobadas por Meta, junto a
+                          Conexiones y con sus mismos permisos. */}
+                      <ListItemLink
+                        to="/whatsapp-templates"
+                        primary={i18n.t("mainDrawer.listItems.whatsappTemplates")}
+                        icon={<WhatsAppIcon />}
+                        tooltip={collapsed}
+                      />
+                      {/* Tenia el mismo SyncAltIcon que Conexiones y no se
+                          distinguian: GoHighLevel es una integracion externa. */}
+                      <ListItemLink
+                        to="/gohighlevel"
+                        primary={i18n.t("mainDrawer.listItems.goHighLevel")}
+                        icon={<LinkIcon />}
+                        tooltip={collapsed}
+                      />
+                    </>
+                  )}
+                />
+
+                {user.super && (
+                  <ListItemLink
+                    to="/allConnections"
+                    primary={i18n.t("mainDrawer.listItems.allConnections")}
+                    icon={<PhonelinkSetup />}
+                    tooltip={collapsed}
+                  />
+                )}
+
+                {showExternalApi && (
+                  <Can
+                    role={user.profile}
+                    perform="dashboard:view"
+                    yes={() => (
+                      <ListItemLink
+                        to="/messages-api"
+                        primary={i18n.t("mainDrawer.listItems.messagesAPI")}
+                        icon={<CodeRoundedIcon />}
+                        tooltip={collapsed}
+                      />
+                    )}
+                  />
+                )}
+              </>
+            )}
+          />
+        </GrupoMenu>
+      )}
+
+      {/* ADMINISTRACION */}
+      {hayAdministracion && (
+        <GrupoMenu
+          titulo={i18n.t("mainDrawer.groups.administration")}
+          icono={<AdminPanelSettingsOutlined />}
+          {...grupo("administracion")}
+        >
+          <Can
+            role={rolAdministracion}
+            perform="dashboard:view"
+            yes={() => (
               <>
                 <Can
                   role={user.profile}
                   perform="dashboard:view"
                   yes={() => (
-                    <ListItemLink
-                      to="/messages-api"
-                      primary={i18n.t("mainDrawer.listItems.messagesAPI")}
-                      icon={<CodeRoundedIcon />}
-                      tooltip={collapsed}
-                    />
+                    <>
+                      <ListItemLink
+                        to="/users"
+                        primary={i18n.t("mainDrawer.listItems.users")}
+                        icon={<PeopleAltOutlinedIcon />}
+                        tooltip={collapsed}
+                      />
+                      <ListItemLink
+                        to="/financeiro"
+                        primary={i18n.t("mainDrawer.listItems.financeiro")}
+                        icon={<LocalAtmIcon />}
+                        tooltip={collapsed}
+                      />
+                      <ListItemLink
+                        to="/settings"
+                        primary={i18n.t("mainDrawer.listItems.settings")}
+                        icon={<SettingsOutlinedIcon />}
+                        tooltip={collapsed}
+                      />
+                    </>
                   )}
                 />
+
+                {user.super && (
+                  <ListItemLink
+                    to="/announcements"
+                    primary={i18n.t("mainDrawer.listItems.annoucements")}
+                    icon={<AnnouncementIcon />}
+                    tooltip={collapsed}
+                  />
+                )}
+
+                {user.super && (
+                  <ListItemLink
+                    to="/companies"
+                    primary={i18n.t("mainDrawer.listItems.companies")}
+                    icon={<BusinessIcon />}
+                    tooltip={collapsed}
+                  />
+                )}
               </>
             )}
+          />
+        </GrupoMenu>
+      )}
 
-            {user.super && (
-              <ListItemLink
-                to="/announcements"
-                primary={i18n.t("mainDrawer.listItems.annoucements")}
-                icon={<AnnouncementIcon />}
-                tooltip={collapsed}
-              />
-            )}
-
-            {user.super && (
-              <ListItemLink
-                to="/companies"
-                primary={i18n.t("mainDrawer.listItems.companies")}
-                icon={<BusinessIcon />}
-                tooltip={collapsed}
-              />
-            )}
-          </GrupoMenu>
-        )}
-      />
       {!collapsed && (
         <React.Fragment>
           <Divider />

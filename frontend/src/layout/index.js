@@ -57,7 +57,9 @@ import logo from "../assets/logo.png";
 import logoBlack from "../assets/logo-black.png";
 
 const backendUrl = getBackendUrl();
-const drawerWidth = 240;
+// 264 y no 240: con siete categorias los titulos pedian mas sitio y a 240 se
+// partian en dos lineas. El ancho plegado (72px) no cambia.
+const drawerWidth = 264;
 
 
 const useStyles = makeStyles((theme) => ({
@@ -99,6 +101,49 @@ const useStyles = makeStyles((theme) => ({
 
   avatar: {
     width: "100%",
+  },
+
+  // Pie del menu lateral: quien ha iniciado sesion y como salir.
+  //
+  // Estaba en la barra superior, entre las notificaciones y el idioma, donde
+  // competia con acciones que no tienen que ver con la cuenta. Aqui cierra la
+  // columna de navegacion, que es donde se busca.
+  pieUsuario: {
+    marginTop: "auto",
+    borderTop: `1px solid ${theme.palette.tokens.sidebar.border}`,
+    backgroundColor: theme.palette.tokens.sidebar.background,
+    padding: theme.palette.tokens.space.sm,
+    display: "flex",
+    alignItems: "center",
+    gap: theme.palette.tokens.space.sm,
+    cursor: "pointer",
+    transition: "background-color 180ms ease",
+    "&:hover": {
+      backgroundColor: theme.palette.tokens.sidebar.hover,
+    },
+  },
+  pieUsuarioPlegado: {
+    justifyContent: "center",
+    padding: theme.palette.tokens.space.xs,
+  },
+  pieDatos: {
+    minWidth: 0,
+    flex: 1,
+  },
+  pieNombre: {
+    fontSize: "0.8125rem",
+    fontWeight: 600,
+    color: theme.palette.tokens.sidebar.textActive,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  pieEmpresa: {
+    fontSize: "0.6875rem",
+    color: theme.palette.tokens.sidebar.textMuted,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
   },
 
   // Cabecera y barra lateral forman una sola pieza alrededor del contenido.
@@ -831,7 +876,32 @@ useEffect(() => {
           {/* {mainListItems} */}
           <MainListItems collapsed={!drawerOpen} />
         </List>
-        <Divider />
+
+        {/* Pie de usuario: el mismo menu de Perfil / Cerrar sesion que estaba
+            en la barra superior, con su mismo anchorEl y sus mismos handlers.
+            Plegado deja solo el avatar. */}
+        <div
+          className={clsx(
+            classes.pieUsuario,
+            !drawerOpen && classes.pieUsuarioPlegado
+          )}
+          onClick={handleMenu}
+          title={!drawerOpen ? user?.name : undefined}
+        >
+          <StyledBadge
+            overlap="circular"
+            anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+            variant="dot"
+          >
+            <Avatar alt={user?.name} className={classes.avatar2} src={profileUrl} />
+          </StyledBadge>
+          {drawerOpen && (
+            <div className={classes.pieDatos}>
+              <div className={classes.pieNombre}>{user?.name}</div>
+              <div className={classes.pieEmpresa}>{user?.company?.name}</div>
+            </div>
+          )}
+        </div>
       </Drawer>
 
       <AppBar
@@ -921,22 +991,6 @@ useEffect(() => {
           <ChatPopover />
 
           <div className="user-menu-wrapper">
-            <StyledBadge
-              overlap="circular"
-              anchorOrigin={{
-                vertical: "bottom",
-                horizontal: "right",
-              }}
-              variant="dot"
-              onClick={handleMenu}
-            >
-              <Avatar
-                alt="Multi100"
-                className={classes.avatar2}
-                src={profileUrl}
-              />
-            </StyledBadge>
-
             <UserModal
               open={userModalOpen}
               onClose={() => setUserModalOpen(false)}
