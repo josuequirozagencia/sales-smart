@@ -22,16 +22,46 @@ const validarNombre = async (name: unknown) => {
   return String(name).trim();
 };
 
+/**
+ * Embudos de la empresa.
+ *
+ * Si no tiene ninguno —empresa creada antes de que existieran los embudos y
+ * que nunca uso el tablero— se le da el suyo de salida en vez de devolver una
+ * lista vacia: cada empresa tiene sus propios embudos y sus propias etapas, y
+ * el tablero tiene que poder usarse sin preparar nada antes.
+ */
 export const listarPipelines = async (
   companyId: number
-): Promise<KanbanPipeline[]> =>
-  KanbanPipeline.findAll({
+): Promise<KanbanPipeline[]> => {
+  const pipelines = await KanbanPipeline.findAll({
     where: { companyId },
     order: [
       ["order", "ASC"],
       ["id", "ASC"]
     ]
   });
+
+  if (pipelines.length > 0) return pipelines;
+
+  const [pipeline] = await KanbanPipeline.findOrCreate({
+    where: { companyId, isDefault: true },
+    defaults: {
+      name: "Proceso de venta",
+      companyId,
+      order: 0,
+      isDefault: true
+    } as any
+  });
+
+  // Las etapas que la empresa ya tuviera sueltas (creadas antes de los
+  // embudos) pasan a este, que si no no se verian en ningun tablero.
+  await Tag.update(
+    { pipelineId: pipeline.id } as any,
+    { where: { companyId, kanban: 1, pipelineId: null } }
+  );
+
+  return [pipeline];
+};
 
 const buscarPipeline = async (
   id: number | string,

@@ -4,6 +4,7 @@ import Company from "../../models/Company";
 import User from "../../models/User";
 import sequelize from "../../database";
 import CompaniesSettings from "../../models/CompaniesSettings";
+import KanbanPipeline from "../../models/KanbanPipeline";
 import axios from "axios";
 
 interface CompanyData {
@@ -161,7 +162,17 @@ if (document && document.trim() !== "") {
           closeTicketOnTransfer: false,
           DirectTicketsToWallets: false
     },{ transaction: t })
-    
+
+    // Embudo del Kanban de la empresa. Cada empresa tiene los suyos: uno de
+    // salida para que el tablero exista desde el primer dia y se le puedan
+    // agregar etapas sin crear nada antes.
+    await KanbanPipeline.create({
+      name: "Proceso de venta",
+      companyId: company.id,
+      order: 0,
+      isDefault: true
+    } as any, { transaction: t });
+
     await t.commit();
 
     return company;

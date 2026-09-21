@@ -80,6 +80,43 @@ describe("listarPipelines", () => {
   });
 });
 
+describe("cada empresa con lo suyo", () => {
+  it("una empresa sin embudos recibe el suyo, no el de otra", async () => {
+    const nueva = await crearEmpresa();
+    const sueltaAntes = await crearEtapa(nueva.id, null, "Etapa suelta");
+
+    const suyos = await listarPipelines(nueva.id);
+
+    expect(suyos).toHaveLength(1);
+    expect(suyos[0].companyId).toBe(nueva.id);
+    expect(suyos[0].isDefault).toBe(true);
+
+    // Y sus etapas sueltas quedan dentro de ese embudo, no fuera del tablero.
+    await sueltaAntes.reload();
+    expect(sueltaAntes.pipelineId).toBe(suyos[0].id);
+
+    // Nada de lo suyo aparece en otra empresa.
+    const deA = await listarPipelines(empresaA.id);
+    expect(deA.map(p => p.id)).not.toContain(suyos[0].id);
+
+    await Tag.destroy({ where: { companyId: nueva.id } });
+    await KanbanPipeline.destroy({ where: { companyId: nueva.id } });
+    await Company.destroy({ where: { id: nueva.id } });
+  });
+
+  it("dos empresas pueden tener embudos con el mismo nombre sin mezclarse", async () => {
+    const otra = await crearEmpresa();
+    const suyo = await crearPipeline(otra.id, "Proceso de venta");
+    const mio = (await listarPipelines(empresaA.id)).find(p => p.isDefault);
+
+    expect(suyo.id).not.toBe(mio?.id);
+    expect((await listarPipelines(otra.id)).every(p => p.companyId === otra.id)).toBe(true);
+
+    await KanbanPipeline.destroy({ where: { companyId: otra.id } });
+    await Company.destroy({ where: { id: otra.id } });
+  });
+});
+
 describe("actualizarPipeline", () => {
   it("renombra y reordena", async () => {
     const [primero] = await listarPipelines(empresaA.id);
