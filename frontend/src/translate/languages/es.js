@@ -3033,6 +3033,9 @@ const messages = {
           meet: "Enviar link para videollamada",
         },
         type: {
+          emoji: "Emoji",
+          document: "Documento",
+          triggerFlow: "Disparar flujo",
           imageVideo: "Fotos y videos",
           cam: "Cámara",
           contact: "Contacto",

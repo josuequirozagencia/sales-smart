@@ -237,6 +237,19 @@ const useStyles = makeStyles((theme) => ({
     color: grey[700],
     transform: "scaleX(-1)",
   },
+  // Icono de cada opcion del menu del movil: al ras del texto, sin el boton
+  // redondo de la barra de escritorio, que dentro de un menu solo anade ruido.
+  iconoMenuMovil: {
+    marginRight: 12,
+    color: theme.palette.tokens.text.secondary,
+  },
+  etiquetaMenuMovil: {
+    display: "flex",
+    alignItems: "center",
+    width: "100%",
+    cursor: "pointer",
+  },
+
   uploadInput: {
     display: "none",
   },
@@ -2137,6 +2150,22 @@ const MessageInput = ({
               </Hidden>
             )}
 
+            {/* Menu del movil.
+
+                En el movil no hay barra de iconos: todo cuelga de este boton.
+                Tenia solo emoji y adjuntar, los dos SIN texto, mas la firma y
+                el comentario privado sueltos —iconos que ni siquiera eran
+                opciones del menu— y "Disparar Fluxo" escrito a mano en
+                portugues. Se veia como un menu vacio, y desde el movil no se
+                podia mandar una foto de la camara, un documento, un contacto,
+                un enlace de videollamada ni una plantilla: esas opciones solo
+                existian en la barra de escritorio.
+
+                Ahora ofrece las mismas acciones que el escritorio, cada una
+                con su nombre. Los identificadores de los campos de archivo
+                llevan sufijo porque la barra de escritorio sigue en el DOM
+                (Hidden la oculta con CSS) y un id repetido dejaria sin efecto
+                a la etiqueta que lo acompana. */}
             {!isTicketPending() && (
               <Hidden only={["md", "lg", "xl"]}>
                 <IconButton
@@ -2152,100 +2181,111 @@ const MessageInput = ({
                   open={Boolean(anchorEl)}
                   onClose={handleMenuItemClick}
                 >
-                  <MenuItem onClick={handleMenuItemClick}>
-                    <IconButton
-                      aria-label="emojiPicker"
-                      component="span"
-                      disabled={disableOption()}
-                      onClick={(e) => setShowEmoji((prevState) => !prevState)}
-                    >
-                      <Mood className={classes.sendMessageIcons} />
-                    </IconButton>
+                  <MenuItem
+                    disabled={disableOption()}
+                    onClick={() => {
+                      handleMenuItemClick();
+                      setShowEmoji((prevState) => !prevState);
+                    }}
+                  >
+                    <Mood className={classes.iconoMenuMovil} />
+                    {i18n.t("messageInput.type.emoji")}
                   </MenuItem>
-                  <MenuItem onClick={handleMenuItemClick}>
+
+                  <MenuItem onClick={handleMenuItemClick} disabled={disableOption()}>
                     <input
                       multiple
                       type="file"
-                      id="upload-button"
+                      id="upload-img-button-movil"
+                      accept="image/*, video/*, audio/* "
                       disabled={disableOption()}
                       className={classes.uploadInput}
                       onChange={handleChangeMedias}
                     />
-                    <label htmlFor="upload-button">
-                      <IconButton
-                        aria-label="upload"
-                        component="span"
-                        disabled={disableOption()}
-                      >
-                        <AttachFile className={classes.sendMessageIcons} />
-                      </IconButton>
+                    <label htmlFor="upload-img-button-movil" className={classes.etiquetaMenuMovil}>
+                      <PermMedia className={classes.iconoMenuMovil} />
+                      {i18n.t("messageInput.type.imageVideo")}
                     </label>
                   </MenuItem>
-                  {signMessagePar && (
-                    <Tooltip title="Habilitar/Desabilitar Assinatura">
-                      <IconButton
-                        aria-label="send-upload"
-                        component="span"
-                        onClick={handleChangeSign}
-                      >
-                        {signMessage === true ? (
-                          <Create
-                            style={{
-                              color:
-                                theme.mode === "light"
-                                  ? theme.palette.primary.main
-                                  : "#EEE",
-                            }}
-                          />
-                        ) : (
-                          <Create style={{ color: "grey" }} />
-                        )}
-                      </IconButton>
-                    </Tooltip>
-                  )}
 
-                  {/* NOVO ITEM DE MENU MOBILE PARA TRIGGER FLOW */}
-                  {ticketStatus === "open" && (
-                    <MenuItem onClick={() => {
-                      handleMenuItemClick();
-                      handleTriggerFlowClick();
-                    }}>
-                      <IconButton
-                        aria-label="trigger-flow"
-                        component="span"
-                      >
-                        <AccountTree
-                          style={{
-                            color: theme.mode === "light"
-                              ? theme.palette.secondary.main
-                              : "#EEE"
-                          }}
-                        />
-                      </IconButton>
-                      Disparar Fluxo
+                  <MenuItem onClick={handleCameraModalOpen} disabled={disableOption()}>
+                    <CameraAlt className={classes.iconoMenuMovil} />
+                    {i18n.t("messageInput.type.cam")}
+                  </MenuItem>
+
+                  <MenuItem onClick={handleMenuItemClick} disabled={disableOption()}>
+                    <input
+                      multiple
+                      type="file"
+                      id="upload-doc-button-movil"
+                      accept="application/*, text/*, .odt, .ods, .odp, .odg, .xml, .ofx, .zip, .rar, .7z, .tar, .gz, .bz2, .msg, .key, .numbers, .pages"
+                      disabled={disableOption()}
+                      className={classes.uploadInput}
+                      onChange={handleChangeMedias}
+                    />
+                    <label htmlFor="upload-doc-button-movil" className={classes.etiquetaMenuMovil}>
+                      <Description className={classes.iconoMenuMovil} />
+                      {i18n.t("messageInput.type.document")}
+                    </label>
+                  </MenuItem>
+
+                  <MenuItem onClick={handleSendContactModalOpen} disabled={disableOption()}>
+                    <Person className={classes.iconoMenuMovil} />
+                    {i18n.t("messageInput.type.contact")}
+                  </MenuItem>
+
+                  <MenuItem onClick={handleSendLinkVideo} disabled={disableOption()}>
+                    <Duo className={classes.iconoMenuMovil} />
+                    {i18n.t("messageInput.type.meet")}
+                  </MenuItem>
+
+                  {((useWhatsappOfficial && ticketChannel === "whatsapp_oficial") ||
+                    ticketChannel === "ghl") && (
+                      <MenuItem onClick={handleSendTemplate} disabled={disableOption()}>
+                        <WhatsApp className={classes.iconoMenuMovil} />
+                        {i18n.t("messageInput.type.template")}
+                      </MenuItem>
+                    )}
+
+                  {signMessagePar && (
+                    <MenuItem
+                      onClick={() => {
+                        handleMenuItemClick();
+                        handleChangeSign();
+                      }}
+                    >
+                      <Create
+                        className={classes.iconoMenuMovil}
+                        color={signMessage ? "primary" : "inherit"}
+                      />
+                      {i18n.t("messageInput.tooltip.signature")}
                     </MenuItem>
                   )}
 
-                  <Tooltip title="Habilitar/Desabilitar Comentários">
-                    <IconButton
-                      aria-label="send-upload"
-                      component="span"
-                      onClick={handlePrivateMessage}
+                  <MenuItem
+                    onClick={() => {
+                      handleMenuItemClick();
+                      handlePrivateMessage();
+                    }}
+                  >
+                    <Comment
+                      className={classes.iconoMenuMovil}
+                      color={privateMessage ? "primary" : "inherit"}
+                    />
+                    {i18n.t("messageInput.tooltip.privateMessage")}
+                  </MenuItem>
+
+                  {ticketStatus === "open" && (
+                    <MenuItem
+                      onClick={() => {
+                        handleMenuItemClick();
+                        handleTriggerFlowClick();
+                      }}
                     >
-                      {privateMessage === true ? (
-                        <Comment
-                          style={{
-                            color:
-                              theme.mode === "light"
-                                ? theme.palette.primary.main
-                                : "#EEE",
-                          }}
-                        />
-                      ) : (
-                        <Comment style={{ color: "grey" }} />
-                      )}
-                    </IconButton>
-                  </Tooltip>
+                      <AccountTree className={classes.iconoMenuMovil} />
+                      {i18n.t("messageInput.type.triggerFlow")}
+                    </MenuItem>
+                  )}
                 </Menu>
               </Hidden>
             )}

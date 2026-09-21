@@ -3034,6 +3034,9 @@ const messages = {
           meet: "Send video conference link",
         },
         type: {
+          emoji: "Emoji",
+          document: "Document",
+          triggerFlow: "Trigger flow",
           imageVideo: "Photos and Videos",
           cam: "Camera",
           contact: "Contact",

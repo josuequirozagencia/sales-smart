@@ -78,6 +78,7 @@ import toastError from "../../errors/toastError";
 import api from "../../services/api";
 import { toast } from "react-toastify";
 import { TagsKanbanContainer } from "../TagsKanbanContainer";
+import { TagsContainer } from "../TagsContainer";
 import GhlWorkflowModal from "../GhlWorkflowModal";
 // El mismo modal que usan la lista y las acciones del ticket: cambiar de
 // responsable ya existe, aqui solo se le da otra puerta de entrada.
@@ -1594,6 +1595,18 @@ const fetchGroupParticipants = async () => {
 							<>
 								<TabPanel value={tabValue} index={0} classes={classes}>
 									<TagsKanbanContainer ticket={ticket} className={classes.contactTags} />
+
+									{/* Etiquetas del contacto.
+									    Solo estaban en la franja de encima de los mensajes, que en
+									    el movil va plegada; aqui, en la ficha, es donde se buscan
+									    los datos del contacto. Es el mismo control, asi que se
+									    pueden ver, anadir y quitar desde los dos sitios. */}
+									<Paper square variant="outlined" className={classes.infoBlock}>
+										<div className={classes.infoTitle}>
+											{i18n.t("tags.title")}
+										</div>
+										<TagsContainer contact={contact} />
+									</Paper>
 
 									{/* Datos del ticket como pares etiqueta/valor alineados.
 									    Todos salen de campos que el ticket ya devuelve; el

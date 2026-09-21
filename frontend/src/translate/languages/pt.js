@@ -3083,6 +3083,9 @@ const messages = {
           triggerFlow: "Disparar Fluxo",
         },
         type: {
+          emoji: "Emoji",
+          document: "Documento",
+          triggerFlow: "Disparar fluxo",
           imageVideo: "Fotos e vídeos",
           cam: "Câmera",
           contact: "Contato",

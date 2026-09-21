@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import { makeStyles } from "@material-ui/core/styles";
-import { Button, CircularProgress, Tooltip, Typography } from "@material-ui/core";
+import { CircularProgress, Switch, Tooltip, Typography } from "@material-ui/core";
+import clsx from "clsx";
 
 import api from "../../services/api";
 import toastError from "../../errors/toastError";
@@ -10,6 +11,11 @@ import { AuthContext } from "../../context/Auth/AuthContext";
 // Control del Agente IA en la conversacion. Activar o pausar la IA solo cambia
 // si la IA responde: no toca a quien esta asignado el ticket, ni su estado, ni
 // la fila. Solo aparece si la conexion del ticket tiene un agente.
+//
+// Es un interruptor y no un boton: el boton decia la accion ("Activar Agente
+// IA") mientras la insignia de al lado decia el estado, dos cosas distintas
+// compitiendo en la misma franja, y en el movil se llevaba una linea entera.
+// Un interruptor dice estado y accion a la vez y cabe al final de la fila.
 
 const useStyles = makeStyles((theme) => {
   const s = theme.palette.tokens?.semantic;
@@ -17,41 +23,45 @@ const useStyles = makeStyles((theme) => {
     franja: {
       display: "flex",
       alignItems: "center",
-      flexWrap: "wrap",
       gap: theme.spacing(1),
-      padding: theme.spacing(0.75, 2),
+      padding: theme.spacing(0.25, 2),
       borderBottom: `1px solid ${theme.palette.divider}`,
       backgroundColor: theme.palette.background.paper,
+      [theme.breakpoints.down("xs")]: {
+        padding: theme.spacing(0, 1),
+        gap: theme.spacing(0.5),
+      },
+    },
+    robot: {
+      fontSize: "0.9375rem",
+      lineHeight: 1,
+      flexShrink: 0,
+    },
+    // Todo el texto en una sola linea que se recorta: el nombre del agente o
+    // el motivo de la pausa son datos de apoyo y no deben empujar la franja.
+    texto: {
+      flex: 1,
+      minWidth: 0,
+      color: theme.palette.text.secondary,
     },
     estado: {
-      display: "inline-flex",
-      alignItems: "center",
-      gap: theme.spacing(0.75),
-      padding: theme.spacing(0.25, 1),
-      borderRadius: 999,
-      fontWeight: 600,
-      fontSize: "0.8125rem",
-      whiteSpace: "nowrap",
+      fontWeight: 700,
     },
     activo: {
       color: s?.success.text || theme.palette.success.dark,
-      backgroundColor: s?.success.soft || theme.palette.success.light,
     },
     pausado: {
       color: s?.warning.text || theme.palette.warning.dark,
-      backgroundColor: s?.warning.soft || theme.palette.warning.light,
-    },
-    detalle: {
-      flex: "1 1 180px",
-      minWidth: 0,
-      color: theme.palette.text.secondary,
     },
     aviso: {
       color: s?.warning.text || theme.palette.warning.dark,
     },
-    boton: {
+    control: {
       marginLeft: "auto",
-      whiteSpace: "nowrap",
+      display: "inline-flex",
+      alignItems: "center",
+      gap: theme.spacing(0.5),
+      flexShrink: 0,
     },
   };
 });
@@ -108,19 +118,21 @@ const AiAgentTicketControl = ({ ticket, contact }) => {
   const detalle = !estado.enabled && estado.reason
     ? i18n.t(`aiAgentControl.reasons.${estado.reason}`)
     : estado.agentName;
+  const textoEstado = estado.enabled
+    ? i18n.t("aiAgentControl.active")
+    : i18n.t("aiAgentControl.paused");
 
   return (
     <div className={classes.franja} role="region" aria-label={i18n.t("aiAgentControl.label")}>
-      <span
-        className={`${classes.estado} ${estado.enabled ? classes.activo : classes.pausado}`}
-        aria-live="polite"
-      >
-        <span aria-hidden="true">🤖</span>
-        {i18n.t("aiAgentControl.label")}: {estado.enabled ? i18n.t("aiAgentControl.active") : i18n.t("aiAgentControl.paused")}
-      </span>
+      <span className={classes.robot} aria-hidden="true">🤖</span>
 
-      <Typography variant="caption" className={classes.detalle} noWrap>
-        {detalle}
+      <Typography variant="caption" className={classes.texto} noWrap aria-live="polite">
+        <span
+          className={clsx(classes.estado, estado.enabled ? classes.activo : classes.pausado)}
+        >
+          {i18n.t("aiAgentControl.label")}: {textoEstado}
+        </span>
+        {detalle ? ` · ${detalle}` : ""}
         {estado.enabled && disableBot && (
           <span className={classes.aviso}> · {i18n.t("aiAgentControl.disableBot")}</span>
         )}
@@ -130,17 +142,18 @@ const AiAgentTicketControl = ({ ticket, contact }) => {
       </Typography>
 
       <Tooltip title={i18n.t("aiAgentControl.keepsAssignment")}>
-        <span className={classes.boton}>
-          <Button
+        <span className={classes.control}>
+          {guardando && <CircularProgress size={14} color="inherit" />}
+          <Switch
             size="small"
-            variant={estado.enabled ? "outlined" : "contained"}
             color="primary"
+            checked={!!estado.enabled}
+            onChange={cambiar}
             disabled={guardando}
-            onClick={cambiar}
-            startIcon={guardando ? <CircularProgress size={14} color="inherit" /> : null}
-          >
-            {estado.enabled ? i18n.t("aiAgentControl.pause") : i18n.t("aiAgentControl.activate")}
-          </Button>
+            inputProps={{
+              "aria-label": `${i18n.t("aiAgentControl.label")}: ${textoEstado}`,
+            }}
+          />
         </span>
       </Tooltip>
     </div>
