@@ -217,6 +217,30 @@ const useStyles = makeStyles((theme) => ({
     }
   },
 
+  // Plegado: solo iconos, centrados. El texto seguia en el DOM y se veia
+  // cortado contra el borde de los 72px ("Conversac...", "Respues...").
+  itemPlegado: {
+    justifyContent: "center",
+    paddingLeft: 0,
+    paddingRight: 0,
+    "& .MuiListItemIcon-root": {
+      minWidth: 0,
+    },
+  },
+
+  // Las paginas de una categoria van sangradas: asi se ve de un vistazo que
+  // cuelgan del titulo y no que son hermanas suyas.
+  grupoContenido: {
+    paddingLeft: theme.palette.tokens.space.lg,
+    borderLeft: `1px solid ${theme.palette.tokens.sidebar.border}`,
+    marginLeft: theme.palette.tokens.space.lg,
+  },
+  grupoContenidoPlegado: {
+    paddingLeft: 0,
+    marginLeft: 0,
+    borderLeft: "none",
+  },
+
   // El icono de una categoria va un punto mas grande que el de sus paginas.
   iconoGrupo: {
     height: 32,
@@ -362,7 +386,7 @@ function ListItemLink(props) {
         <ListItem
           button
           component={renderLink}
-          className={`${classes.listItem} ${isActive ? classes.itemActivo : ""}`}
+          className={`${classes.listItem} ${isActive ? classes.itemActivo : ""} ${tooltip ? classes.itemPlegado : ""}`}
         >
           {icon ? (
             <ListItemIcon>
@@ -390,13 +414,15 @@ function ListItemLink(props) {
               )}
             </ListItemIcon>
           ) : null}
-          <ListItemText
-            primary={
-              <Typography className={classes.listItemText}>
-                {primary}
-              </Typography>
-            }
-          />
+          {!tooltip && (
+            <ListItemText
+              primary={
+                <Typography className={classes.listItemText}>
+                  {primary}
+                </Typography>
+              }
+            />
+          )}
         </ListItem>
       </li>
     </ConditionalTooltip>
@@ -418,7 +444,7 @@ function GrupoMenu({ titulo, icono, abierto, onToggle, activo, collapsed, childr
         <ListItem
           dense
           button
-          className={`${classes.grupoHeader} ${activo ? classes.grupoHeaderActivo : ""}`}
+          className={`${classes.grupoHeader} ${activo ? classes.grupoHeaderActivo : ""} ${collapsed ? classes.itemPlegado : ""}`}
           onClick={onToggle}
           onMouseEnter={() => setHover(true)}
           onMouseLeave={() => setHover(false)}
@@ -430,20 +456,21 @@ function GrupoMenu({ titulo, icono, abierto, onToggle, activo, collapsed, childr
               {icono}
             </Avatar>
           </ListItemIcon>
-          <ListItemText
-            primary={
-              <Typography
-                className={`${classes.grupoTexto} ${collapsed ? "" : classes.grupoTitulo}`}
-              >
-                {titulo}
-              </Typography>
-            }
-          />
-          {abierto ? (
-            <ExpandLessIcon className={classes.chevron} />
-          ) : (
-            <ExpandMoreIcon className={classes.chevron} />
+          {!collapsed && (
+            <ListItemText
+              primary={
+                <Typography className={`${classes.grupoTexto} ${classes.grupoTitulo}`}>
+                  {titulo}
+                </Typography>
+              }
+            />
           )}
+          {!collapsed &&
+            (abierto ? (
+              <ExpandLessIcon className={classes.chevron} />
+            ) : (
+              <ExpandMoreIcon className={classes.chevron} />
+            ))}
         </ListItem>
       </Tooltip>
       <Collapse
@@ -457,7 +484,11 @@ function GrupoMenu({ titulo, icono, abierto, onToggle, activo, collapsed, childr
               : "rgba(120,120,120,0.5)",
         }}
       >
-        {children}
+        <div
+          className={`${classes.grupoContenido} ${collapsed ? classes.grupoContenidoPlegado : ""}`}
+        >
+          {children}
+        </div>
       </Collapse>
     </>
   );
@@ -560,10 +591,17 @@ const MainListItems = ({ collapsed, drawerClose }) => {
 
   const [connectionWarning, setConnectionWarning] = useState(false);
   const [openCampaignSubmenu, setOpenCampaignSubmenu] = useState(false);
-  // Las siete categorias arrancan abiertas; la que contiene la pagina actual
-  // se abre igualmente al navegar desde fuera del menu.
+  // Las siete categorias arrancan RECOGIDAS: abiertas de golpe son mas de
+  // treinta filas y hay que hacer scroll para ver el final. Solo se abre sola
+  // la que contiene la pagina en la que se esta.
   const [gruposAbiertos, setGruposAbiertos] = useState(() =>
-    GRUPOS.reduce((acc, clave) => ({ ...acc, [clave]: true }), {})
+    GRUPOS.reduce(
+      (acc, clave) => ({
+        ...acc,
+        [clave]: rutaEnGrupo(location.pathname, RUTAS_POR_GRUPO[clave]),
+      }),
+      {}
+    )
   );
   const alternarGrupo = (clave) =>
     setGruposAbiertos((previo) => ({ ...previo, [clave]: !previo[clave] }));
