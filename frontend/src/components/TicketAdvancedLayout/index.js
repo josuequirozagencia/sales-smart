@@ -1,30 +1,16 @@
 import { styled } from '@material-ui/core/styles';
 import Paper from '@material-ui/core/Paper';
 
-// 44px y no 56 para el conmutador de arriba.
+// Una sola fila: dentro va la lista o la conversacion.
 //
-// En un movil de 393x852 se iban 258px en barras antes de la primera
-// conversacion: la del sistema, esta, la busqueda, los iconos y las pestanas.
-// Cada fila que se recorta es media conversacion mas a la vista.
+// Tenia dos, la primera para un conmutador propio ("Ticket" / "Atenciones")
+// que se retiro: en un movil de 852px de alto se iban 229 en barras antes de
+// la primera conversacion, y ese control era redundante con tocar una
+// conversacion para abrirla y con la flecha de volver.
 const TicketAdvancedLayout = styled(Paper)({
     height: `calc(100% - 48px)`,
     display: "grid",
-    gridTemplateRows: "44px 1fr",
-    "& .MuiBottomNavigation-root": {
-        height: 44,
-    },
-    // La etiqueta de serie sube de 12 a 14px al seleccionarse y descoloca la
-    // fila entera; con la barra mas baja se nota mas.
-    "& .MuiBottomNavigationAction-label": {
-        fontSize: "0.75rem",
-        "&.Mui-selected": {
-            fontSize: "0.75rem",
-        },
-    },
-    "& .MuiBottomNavigationAction-root": {
-        paddingTop: 2,
-        minWidth: 0,
-    },
+    gridTemplateRows: "1fr"
 })
 
 export default TicketAdvancedLayout;

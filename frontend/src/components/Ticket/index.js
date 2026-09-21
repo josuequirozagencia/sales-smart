@@ -1,11 +1,23 @@
 import React, { useState, useEffect, useContext, useRef, useCallback } from "react";
 import { useParams, useHistory } from "react-router-dom";
 
-import { makeStyles, useTheme, Paper, IconButton, Tooltip, useMediaQuery } from "@material-ui/core";
+import {
+  makeStyles,
+  useTheme,
+  Paper,
+  IconButton,
+  Tooltip,
+  useMediaQuery,
+  ButtonBase,
+  Collapse,
+} from "@material-ui/core";
+import LocalOfferOutlinedIcon from "@material-ui/icons/LocalOfferOutlined";
+import ExpandMoreIcon from "@material-ui/icons/ExpandMore";
 // Del set propio del proyecto, como el resto de esta seccion: el boton
 // quedaba con un icono relleno de Material-UI entre iconos de trazo.
 import { InfoOutlined as InfoOutlinedIcon } from "../Icons";
 
+import clsx from "clsx";
 import { i18n } from "../../translate/i18n";
 import ContactDrawer from "../ContactDrawer";
 import MessageInput from "../MessageInput/";
@@ -48,6 +60,26 @@ const guardarFichaAbierta = (abierta) => {
 };
 
 const useStyles = makeStyles((theme) => ({
+  // Etiquetas plegadas en movil: el campo ocupaba una fila entera —48px— por
+  // encima de los mensajes, en una pantalla donde el hilo es lo que importa.
+  // En escritorio se sigue viendo siempre.
+  etiquetasBoton: {
+    width: "100%",
+    justifyContent: "flex-start",
+    gap: theme.palette.tokens.space.sm,
+    padding: theme.spacing(0.75, 1.5),
+    fontSize: "0.8125rem",
+    fontWeight: 600,
+    color: theme.palette.tokens.text.secondary,
+  },
+  etiquetasFlecha: {
+    marginLeft: "auto",
+    transition: "transform 180ms ease",
+  },
+  etiquetasFlechaAbierta: {
+    transform: "rotate(180deg)",
+  },
+
   root: {
     display: "flex",
     height: "100%",
@@ -94,6 +126,8 @@ const Ticket = () => {
   // noSsr para que el primer render ya sepa si es superpuesto: el estado
   // inicial de la ficha depende de ello.
   const panelSuperpuesto = useMediaQuery(theme.breakpoints.down("sm"), { noSsr: true });
+  const esMovil = useMediaQuery(theme.breakpoints.down("xs"), { noSsr: true });
+  const [etiquetasAbiertas, setEtiquetasAbiertas] = useState(false);
 
   // Superpuesta arranca cerrada, para no tapar el chat al entrar. Acoplada, lo
   // que el asesor dejo la ultima vez en este navegador; si nunca lo toco,
@@ -291,7 +325,30 @@ const Ticket = () => {
             asignacion: solo aparece si la conexion tiene agente. */}
         <AiAgentTicketControl ticket={ticket} contact={contact} />
         <Paper>
-          <TagsContainer contact={contact} />
+          {esMovil ? (
+            <>
+              <ButtonBase
+                className={classes.etiquetasBoton}
+                onClick={() => setEtiquetasAbiertas((abiertas) => !abiertas)}
+                aria-expanded={etiquetasAbiertas}
+              >
+                <LocalOfferOutlinedIcon fontSize="small" />
+                {i18n.t("tags.title")}
+                {contact?.tags?.length ? ` (${contact.tags.length})` : ""}
+                <ExpandMoreIcon
+                  fontSize="small"
+                  className={clsx(classes.etiquetasFlecha, {
+                    [classes.etiquetasFlechaAbierta]: etiquetasAbiertas,
+                  })}
+                />
+              </ButtonBase>
+              <Collapse in={etiquetasAbiertas} unmountOnExit>
+                <TagsContainer contact={contact} />
+              </Collapse>
+            </>
+          ) : (
+            <TagsContainer contact={contact} />
+          )}
         </Paper>
         <ReplyMessageProvider>
           <ForwardMessageProvider>
