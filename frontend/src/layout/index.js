@@ -224,6 +224,11 @@ const useStyles = makeStyles((theme) => ({
   },
 
   appBar: {
+    // El fondo lo pintaba el primario de la empresa (color="primary"), que en
+    // la empresa 1 es #D3D1DC: un gris lila apagado que no combina con nada.
+    // La barra superior es la misma pieza que el menu lateral, asi que comparte
+    // su superficie.
+    backgroundColor: theme.palette.tokens.sidebar.background,
     zIndex: theme.zIndex.drawer + 1,
     transition: theme.transitions.create(["width", "margin"], {
       easing: theme.transitions.easing.sharp,

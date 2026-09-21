@@ -110,6 +110,20 @@ const useStyles = makeStyles((theme) => ({
     transition: "background-color 180ms ease",
   },
 
+  // Pagina abierta: fondo tenido y texto en el acento. Antes solo cambiaba el
+  // circulo del icono, asi que en una lista de treinta y tantas filas costaba
+  // ver donde estabas.
+  itemActivo: {
+    backgroundColor: theme.palette.tokens.sidebar.accentSoft,
+    "& $listItemText": {
+      color: theme.palette.tokens.sidebar.accentText,
+      fontWeight: 600,
+    },
+    "&:hover": {
+      backgroundColor: theme.palette.tokens.sidebar.accentSoft,
+    },
+  },
+
   listItemText: {
     fontSize: "0.8125rem",
     color: theme.palette.tokens.sidebar.text,
@@ -123,6 +137,12 @@ const useStyles = makeStyles((theme) => ({
   },
 
   // Cabecera de categoria: 42px de alto, texto de 13px en semibold.
+  grupoHeaderActivo: {
+    "& $grupoTexto": {
+      color: theme.palette.tokens.sidebar.accentText,
+    },
+  },
+
   grupoHeader: {
     minHeight: 42,
     borderRadius: theme.palette.tokens.radius.md,
@@ -140,6 +160,7 @@ const useStyles = makeStyles((theme) => ({
     fontSize: "0.8125rem",
     fontWeight: 600,
     color: theme.palette.tokens.sidebar.text,
+    transition: "color 180ms ease",
     letterSpacing: "0.01em",
     "& .MuiTypography-root": {
       fontFamily: "'Inter', 'Roboto', sans-serif",
@@ -182,8 +203,8 @@ const useStyles = makeStyles((theme) => ({
     color: theme.palette.tokens.sidebar.text,
     transition: "background-color 180ms ease, color 180ms ease",
     "&:hover, &.active": {
-      backgroundColor: theme.palette.primary.main,
-      color: theme.palette.tokens.brand.onPrimary,
+      backgroundColor: theme.palette.tokens.sidebar.accent,
+      color: theme.palette.tokens.onColor(theme.palette.tokens.sidebar.accent),
       // Se retira la sombra de color: sobre fondo oscuro no se percibe y solo
       // emborrona el circulo.
     },
@@ -338,7 +359,11 @@ function ListItemLink(props) {
   return (
     <ConditionalTooltip tooltipEnabled={!!tooltip}>
       <li>
-        <ListItem button component={renderLink} className={classes.listItem}>
+        <ListItem
+          button
+          component={renderLink}
+          className={`${classes.listItem} ${isActive ? classes.itemActivo : ""}`}
+        >
           {icon ? (
             <ListItemIcon>
               {showBadge ? (
@@ -393,7 +418,7 @@ function GrupoMenu({ titulo, icono, abierto, onToggle, activo, collapsed, childr
         <ListItem
           dense
           button
-          className={classes.grupoHeader}
+          className={`${classes.grupoHeader} ${activo ? classes.grupoHeaderActivo : ""}`}
           onClick={onToggle}
           onMouseEnter={() => setHover(true)}
           onMouseLeave={() => setHover(false)}

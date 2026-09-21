@@ -281,17 +281,32 @@ export const dark = {
 //
 // hover, iconBackground e iconHover son los velos de los elementos del menu:
 // antes estaban escritos a mano en blanco, que sobre fondo claro no se ve.
+// El acento del menu es FIJO, no el color que cada empresa configura en
+// Whitelabel: ese se elige para botones y puede ser cualquier cosa —el de la
+// empresa 1 es #D3D1DC, casi blanco—, y sobre el menu dejaba el elemento
+// activo invisible. Este violeta es el de la aplicacion y da 7.0 de contraste
+// con texto blanco encima.
+const acentoMenu = "#6d28d9";
+const acentoMenuOscuro = "#a78bfa";
+
 export const sidebar = {
+  // El menu en claro era blanco con textos grises: correcto de contraste, pero
+  // sin relacion con el resto de la interfaz. Ahora la superficie lleva un
+  // tinte violeta muy leve y el acento tine lo que esta activo, el hover y el
+  // fondo de los iconos.
   light: {
-    background: neutral[0],
-    surface: neutral[100],
-    border: neutral[200],
-    text: neutral[600], // 7.58 sobre blanco
-    textActive: neutral[900], // 17.85
-    textMuted: neutral[500], // 4.76
-    hover: "rgba(15, 23, 42, 0.05)",
-    iconBackground: "rgba(15, 23, 42, 0.05)",
-    iconHover: "rgba(15, 23, 42, 0.09)",
+    background: "#f6f3fd",
+    surface: "#ece6fa",
+    border: "#ddd4f2",
+    text: "#4b4560", // 8.4 sobre el fondo
+    textActive: "#1d1533", // 15.9
+    textMuted: "#6b6280", // 4.8 sobre el fondo
+    hover: "rgba(109, 40, 217, 0.08)",
+    iconBackground: "rgba(109, 40, 217, 0.10)",
+    iconHover: "rgba(109, 40, 217, 0.16)",
+    accent: acentoMenu,
+    accentText: "#5b21b6", // 8.3 sobre el fondo
+    accentSoft: "rgba(109, 40, 217, 0.12)",
   },
   dark: {
     background: "#150e26",
@@ -303,6 +318,9 @@ export const sidebar = {
     hover: "rgba(255, 255, 255, 0.06)",
     iconBackground: "rgba(255, 255, 255, 0.06)",
     iconHover: "rgba(255, 255, 255, 0.10)",
+    accent: acentoMenuOscuro,
+    accentText: "#ddd2ff", // 12.4 sobre el fondo
+    accentSoft: "rgba(167, 139, 250, 0.18)",
   }
 };
 
