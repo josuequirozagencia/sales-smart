@@ -1157,6 +1157,8 @@ const messages = {
           removeImage: "Excluir imagem",
         },
         form: {
+          super: "Super Admin",
+          superAyuda: "Ve e administra TODAS as empresas, nao apenas esta. Conceda apenas a quem opera a plataforma inteira.",
           finalizationWithSaleValue: "Finalização com Valor de Venda",
           distributionWeight: "Peso na distribuição de leads",
           distributionWeightHelp: "100 = normal · 50 = metade dos leads · 0 = não recebe",
@@ -2366,6 +2368,11 @@ const messages = {
         },
       },
       users: {
+        roles: {
+          super: "Super Admin",
+          admin: "Administrador",
+          user: "Usuario",
+        },
         title: "Usuários",
         table: {
           status: "Status",
@@ -3135,6 +3142,10 @@ const messages = {
         },
       },
       backendErrors: {
+        ERR_LAST_SUPER_USER: "Nao e possivel excluir o ultimo Super Admin: ninguem poderia administrar a plataforma.",
+        ERR_CANNOT_DELETE_OWN_COMPANY: "Voce nao pode excluir a empresa a que pertence: ficaria sem acesso.",
+        ERR_COMPANY_HAS_SUPER_USER: "Essa empresa tem um Super Admin dentro. Mova-o ou exclua-o antes de excluir a empresa.",
+        ERR_CANNOT_REMOVE_OWN_SUPER: "Voce nao pode remover seu proprio papel de Super Admin. Peca a outro Super Admin.",
         ERR_PIPELINE_NAME_INVALID: "O nome do funil deve ter entre 2 e 60 caracteres.",
         ERR_PIPELINE_ORDER_INVALID: "A ordem do funil não é válida.",
         ERR_PIPELINE_NOT_FOUND: "Funil não encontrado.",

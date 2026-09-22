@@ -17,6 +17,9 @@ import Select from "@material-ui/core/Select";
 import InputLabel from "@material-ui/core/InputLabel";
 import MenuItem from "@material-ui/core/MenuItem";
 import FormControl from "@material-ui/core/FormControl";
+import FormControlLabel from "@material-ui/core/FormControlLabel";
+import FormHelperText from "@material-ui/core/FormHelperText";
+import Switch from "@material-ui/core/Switch";
 import whatsappIcon from "../../assets/nopicture.png";
 import { i18n } from "../../translate/i18n";
 
@@ -145,6 +148,8 @@ const UserModal = ({ open, onClose, userId }) => {
     password: "",
     birthDate: "",
     profile: "user",
+    // Rol de instalacion. Solo lo ve y lo cambia otro Super Admin.
+    super: false,
     startWork: "00:00",
     endWork: "23:59",
     farewellMessage: "",
@@ -335,7 +340,7 @@ const handleSaveUser = async (values) => {
             }, 400);
           }}
         >
-          {({ touched, errors, isSubmitting, setFieldValue }) => (
+          {({ touched, errors, isSubmitting, setFieldValue, values }) => (
             <Form>
               <Paper className={classes.mainPaper} elevation={1}>
                 <Tabs
@@ -457,8 +462,12 @@ const handleSaveUser = async (values) => {
                                   id="profile-selection"
                                   required
                                 >
-                                  <MenuItem value="admin">Admin</MenuItem>
-                                  <MenuItem value="user">User</MenuItem>
+                                  <MenuItem value="admin">
+                                    {i18n.t("users.roles.admin")}
+                                  </MenuItem>
+                                  <MenuItem value="user">
+                                    {i18n.t("users.roles.user")}
+                                  </MenuItem>
                                 </Field>
                               </>
                             )}
@@ -466,6 +475,34 @@ const handleSaveUser = async (values) => {
                         </FormControl>
                       </Grid>
                     </Grid>
+
+                    {/* El rol de Super Admin solo lo reparte otro Super Admin:
+                        da acceso a TODAS las empresas, no solo a la suya. Por
+                        eso ni se muestra al resto. El backend lo comprueba
+                        igualmente, que esconder un control no es protegerlo. */}
+                    {loggedInUser.super && (
+                      <Grid container spacing={1}>
+                        <Grid item xs={12}>
+                          <FormControlLabel
+                            control={
+                              <Switch
+                                checked={Boolean(values.super)}
+                                onChange={(e) =>
+                                  setFieldValue("super", e.target.checked)
+                                }
+                                name="super"
+                                color="primary"
+                              />
+                            }
+                            label={i18n.t("userModal.form.super")}
+                          />
+                          <FormHelperText>
+                            {i18n.t("userModal.form.superAyuda")}
+                          </FormHelperText>
+                        </Grid>
+                      </Grid>
+                    )}
+
                     <Grid container spacing={1}>
                       <Grid item xs={12} md={12} xl={12}>
                         <Can

@@ -97,6 +97,29 @@ const useStyles = makeStyles((theme) => ({
     width: theme.spacing(6),
     height: theme.spacing(6),
   },
+
+  // El rol se mostraba con el valor crudo de la base —"admin" o "user"— y el
+  // superadministrador no se distinguia de un admin cualquiera, aunque ve y
+  // administra TODAS las empresas. Ahora es una etiqueta con nombre propio y
+  // color por nivel.
+  rol: {
+    display: "inline-block",
+    padding: "2px 8px",
+    borderRadius: theme.palette.tokens.radius.sm,
+    fontSize: "0.6875rem",
+    fontWeight: 600,
+    whiteSpace: "nowrap",
+    backgroundColor: theme.palette.tokens.surface.surfaceSecondary,
+    color: theme.palette.tokens.text.secondary,
+  },
+  rolSuper: {
+    backgroundColor: theme.palette.tokens.sidebar.accentSoft,
+    color: theme.palette.tokens.sidebar.accentText,
+  },
+  rolAdmin: {
+    backgroundColor: theme.palette.tokens.semantic.info.soft,
+    color: theme.palette.tokens.semantic.info.text,
+  },
   avatarDiv: {
     display: "flex",
     alignItems: "center",
@@ -434,7 +457,23 @@ const renderProfileImage = (user) => {
                       </TableCell>
                       <TableCell align="center">{user.name}</TableCell>
                       <TableCell align="center">{user.email}</TableCell>
-                      <TableCell align="center">{user.profile}</TableCell>
+                      <TableCell align="center">
+                        <span
+                          className={`${classes.rol} ${
+                            user.super
+                              ? classes.rolSuper
+                              : user.profile === "admin"
+                              ? classes.rolAdmin
+                              : ""
+                          }`}
+                        >
+                          {user.super
+                            ? i18n.t("users.roles.super")
+                            : user.profile === "admin"
+                            ? i18n.t("users.roles.admin")
+                            : i18n.t("users.roles.user")}
+                        </span>
+                      </TableCell>
                       <TableCell align="center">{user.startWork}</TableCell>
                       <TableCell align="center">{user.endWork}</TableCell>
                       <TableCell align="center">

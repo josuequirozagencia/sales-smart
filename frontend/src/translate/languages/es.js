@@ -1265,6 +1265,8 @@ const messages = {
           removeImage: "Eliminar Imagen",
         },
         form: {
+          super: "Super Admin",
+          superAyuda: "Ve y administra TODAS las empresas, no solo esta. Concedelo solo a quien deba operar la plataforma entera.",
           allowSeeMessagesInPendingTickets: "Ver mensajes de tickets pendientes",
           allowConnections: "Permitir acciones en las conexiones",
           allowRealTime: "Ver panel de atenciones",
@@ -2330,6 +2332,11 @@ const messages = {
         },
       },
       users: {
+        roles: {
+          super: "Super Admin",
+          admin: "Administrador",
+          user: "Usuario",
+        },
         title: "Usuarios",
         table: {
           status: "Status",
@@ -3089,6 +3096,10 @@ const messages = {
         },
       },
       backendErrors: {
+        ERR_LAST_SUPER_USER: "No se puede eliminar al ultimo Super Admin: nadie podria volver a administrar la plataforma.",
+        ERR_CANNOT_DELETE_OWN_COMPANY: "No puedes eliminar la empresa a la que perteneces: te quedarias sin acceso.",
+        ERR_COMPANY_HAS_SUPER_USER: "Esa empresa tiene un Super Admin dentro. Muevelo o eliminalo antes de borrar la empresa.",
+        ERR_CANNOT_REMOVE_OWN_SUPER: "No puedes quitarte a ti mismo el rol de Super Admin. Pideselo a otro Super Admin.",
         ERR_PIPELINE_NAME_INVALID: "El nombre del embudo debe tener entre 2 y 60 caracteres.",
         ERR_PIPELINE_ORDER_INVALID: "El orden del embudo no es válido.",
         ERR_PIPELINE_NOT_FOUND: "No se encontró ese embudo.",

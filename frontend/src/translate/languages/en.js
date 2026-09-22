@@ -1148,6 +1148,8 @@ const messages = {
           removeImage: "Delete Image",
         },
         form: {
+          super: "Super Admin",
+          superAyuda: "Sees and manages ALL companies, not just this one. Grant it only to whoever runs the whole platform.",
           allowSeeMessagesInPendingTickets: "See messages in pending tickets",
           showFlow: "View flows",
           finalizationWithSaleValue: "Close with sale value",
@@ -2333,6 +2335,11 @@ const messages = {
         },
       },
       users: {
+        roles: {
+          super: "Super Admin",
+          admin: "Administrator",
+          user: "User",
+        },
         title: "Users",
         table: {
           status: "Status",
@@ -3092,6 +3099,10 @@ const messages = {
         },
       },
       backendErrors: {
+        ERR_LAST_SUPER_USER: "The last Super Admin cannot be deleted: nobody would be able to administer the platform.",
+        ERR_CANNOT_DELETE_OWN_COMPANY: "You cannot delete the company you belong to: you would lose access.",
+        ERR_COMPANY_HAS_SUPER_USER: "That company has a Super Admin in it. Move or delete them before deleting the company.",
+        ERR_CANNOT_REMOVE_OWN_SUPER: "You cannot remove your own Super Admin role. Ask another Super Admin to do it.",
         ERR_PIPELINE_NAME_INVALID: "The pipeline name must be 2 to 60 characters.",
         ERR_PIPELINE_ORDER_INVALID: "The pipeline order is not valid.",
         ERR_PIPELINE_NOT_FOUND: "Pipeline not found.",
