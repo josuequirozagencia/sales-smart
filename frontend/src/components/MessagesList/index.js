@@ -84,6 +84,30 @@ const YouTubePreviewMemo = React.memo(({ videoUrl }) => {
 const ESPACIO_HORA = 62;
 
 const useStyles = makeStyles((theme) => ({
+  // Aviso de la ventana de 24h de Meta. Estaba escrito a mano con un azul
+  // claro fijo y sin color de texto: en modo oscuro heredaba el blanco del
+  // tema y quedaba ilegible sobre ese fondo. Ademas se llevaba 40px de alto
+  // justo encima del campo de escribir, que es donde hace falta el sitio.
+  aviso24h: {
+    width: "100%",
+    display: "flex",
+    alignItems: "center",
+    gap: theme.palette.tokens.space.sm,
+    padding: "5px 12px",
+    fontSize: "0.75rem",
+    lineHeight: 1.35,
+    backgroundColor:
+      theme.mode === "dark"
+        ? "rgba(59, 130, 246, 0.16)"
+        : theme.palette.tokens.semantic.info.soft,
+    color:
+      theme.mode === "dark" ? "#bfdbfe" : theme.palette.tokens.semantic.info.text,
+    "& svg": {
+      fontSize: 16,
+      flexShrink: 0,
+    },
+  },
+
   messagesListWrapper: {
     overflow: "hidden",
     position: "relative",
@@ -1475,15 +1499,7 @@ const shouldBlurMessages = ticketStatus === "pending" && user.allowSeeMessagesIn
 </div>
 
       {(channel !== "whatsapp" && channel !== undefined) && (
-        <div
-          style={{
-            width: "100%",
-            display: "flex",
-            padding: "10px",
-            alignItems: "center",
-            backgroundColor: "#E1F3FB",
-          }}
-        >
+        <div className={classes.aviso24h}>
           {channel === "facebook" ? (
             <Facebook />
           ) : channel === "instagram" ? (
@@ -1492,10 +1508,7 @@ const shouldBlurMessages = ticketStatus === "pending" && user.allowSeeMessagesIn
             <WhatsApp />
           )}
 
-          <span>
-            Você tem 24h para responder após receber uma mensagem, de acordo
-            com as políticas da Meta.
-          </span>
+          <span>{i18n.t("messagesList.ventana24h")}</span>
         </div>
       )}
       

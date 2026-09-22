@@ -2760,6 +2760,7 @@ const messages = {
         },
       },
       messagesList: {
+        ventana24h: "Você tem 24h para responder após receber uma mensagem, de acordo com as políticas da Meta.",
         header: {
           assignedTo: "Atribuído à:",
           dialogRatingTitle:

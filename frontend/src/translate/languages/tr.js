@@ -1013,6 +1013,7 @@ const messages = {
         }
       },
       messagesList: {
+        ventana24h: "Meta politikaları gereği, müşteri yazdıktan sonra yanıtlamak için 24 saatiniz var.",
         header: {
           assignedTo: "İlgilenen :",
           buttons: {

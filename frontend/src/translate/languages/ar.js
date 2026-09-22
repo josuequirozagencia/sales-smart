@@ -1868,6 +1868,7 @@ const messages = {
         },
       },
       messagesList: {
+        ventana24h: "لديك 24 ساعة للرد بعد رسالة العميل، وفقًا لسياسات Meta.",
         header: {
           assignedTo: "مخصص لـ:",
           dialogRatingTitle: "هل تريد ترك تقييم للخدمة للعميل؟",
