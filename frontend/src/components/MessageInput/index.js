@@ -140,17 +140,25 @@ const useStyles = makeStyles((theme) => ({
     padding: "7px",
     alignItems: "center",
 
-    // En movil los tres botones de accion —emoji, adjuntar y enviar— se
-    // llevaban 144px de los 375 de pantalla, dejando 188 para escribir: la
-    // mitad del ancho para tres iconos.
+    // Los botones de la barra se llevaban el sitio de escribir. Con la ficha
+    // del contacto abierta la columna del chat baja de 500px; siete botones
+    // con el relleno de serie del MUI (12px por lado, 48px cada uno) dejaban
+    // menos de 200px para el texto, y el marcador de posicion no cabia.
     //
-    // No se quita ninguno. Se recorta su relleno, que es lo que sobra, y el
-    // area de escritura recupera unos 24px sin que los botones bajen de un
-    // tamano comodo para el dedo.
+    // No se quita ninguno: se recorta el relleno, que es lo que sobra. Cada
+    // boton queda en 36px, comodo para el dedo, y la caja de escribir gana
+    // unos 84px.
+    "& .MuiIconButton-root": {
+      padding: 8,
+    },
+    "& .MuiIconButton-root .MuiSvgIcon-root": {
+      fontSize: 20,
+    },
+
     [theme.breakpoints.down("xs")]: {
       padding: "4px",
       "& .MuiIconButton-root": {
-        padding: 8,
+        padding: 6,
       },
     },
   },
