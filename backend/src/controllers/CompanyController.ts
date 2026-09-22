@@ -370,7 +370,7 @@ export const remove = async (
   const requestUser = await User.findByPk(requestUserId);
 
   if (requestUser.super === true) {
-    const company = await DeleteCompanyService(id);
+    const company = await DeleteCompanyService(id, companyId);
     
     // Invalidar cache da empresa removida
     invalidateCompanyCache(parseInt(id));

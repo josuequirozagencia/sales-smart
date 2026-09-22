@@ -1,5 +1,6 @@
 // src/services/UserServices/UpdateUserService.ts - ATUALIZADO COM NOVA COLUNA
 import * as Yup from "yup";
+import { Op } from "sequelize";
 
 import AppError from "../../errors/AppError";
 import ShowUserService from "./ShowUserService";
@@ -36,6 +37,11 @@ interface UserData {
   finalizacaoComValorVendaAtiva?: boolean;
   birthDate?: Date | string;
   allowSeeMessagesInPendingTickets?: string; // 🆕 NOVO CAMPO ADICIONADO
+  /**
+   * Rol de instalacion, por encima del perfil de empresa. Solo lo puede
+   * cambiar otro super; ver las reglas donde se aplica.
+   */
+  super?: boolean;
 }
 
 interface Request {
@@ -105,7 +111,8 @@ const UpdateUserService = async ({
     profileImage,
     finalizacaoComValorVendaAtiva,
     birthDate,
-    allowSeeMessagesInPendingTickets
+    allowSeeMessagesInPendingTickets,
+    super: superPedido
   } = userData;
 
   try {
@@ -136,10 +143,46 @@ const UpdateUserService = async ({
     }
   }
 
+  // Quien es super se decide aqui, y con tres reglas.
+  //
+  // Hasta ahora no se podia cambiar desde ningun sitio: ni el formulario lo
+  // ofrecia ni este servicio aceptaba el campo, asi que el unico modo de
+  // nombrar un super era escribir en la base a mano. Eso dejaba a la
+  // instalacion con un solo super y sin forma de preparar un relevo.
+  let superFinal = user.super;
+
+  if (superPedido !== undefined && Boolean(superPedido) !== user.super) {
+    // 1. Solo un super reparte el rol. Si no, cualquier admin se ascenderia
+    //    a si mismo y vería las empresas de todos los clientes.
+    if (!requestUser.super) {
+      throw new AppError("ERR_NO_PERMISSION", 403);
+    }
+
+    // 2. Nadie se quita el super a si mismo: es la forma mas facil de
+    //    quedarse fuera del panel sin querer.
+    if (!superPedido && Number(user.id) === Number(requestUser.id)) {
+      throw new AppError("ERR_CANNOT_REMOVE_OWN_SUPER", 400);
+    }
+
+    // 3. No puede quedarse la instalacion sin ninguno.
+    if (!superPedido) {
+      const otrosSupers = await User.count({
+        where: { super: true, id: { [Op.ne]: user.id } }
+      });
+
+      if (otrosSupers === 0) {
+        throw new AppError("ERR_LAST_SUPER_USER", 400);
+      }
+    }
+
+    superFinal = Boolean(superPedido);
+  }
+
   await user.update({
     email,
     password,
     profile,
+    super: superFinal,
     name,
     startWork,
     endWork,
