@@ -336,19 +336,17 @@ const useStyles = makeStyles((theme) => ({
   content: {
     flex: 1,
     overflow: "auto",
-    // El contenido tenia padding 0 y margen 0: todo pegado al borde de la
-    // pantalla. Es lo que hacia que la interfaz se viera comprimida.
+    // El marco de TODAS las paginas. Eran 24px que se sumaban al relleno
+    // propio de cada pantalla: en Chat Interno el panel empezaba a 112px del
+    // menu y a 88 del borde de arriba, y en el Kanban la primera columna a
+    // 96. La bandeja de conversaciones, que va a 0, se veia mucho mas amplia
+    // que el resto, y esa es la que Josue puso de referencia.
     //
-    // Escala por tamano: en movil el espacio es caro y un padding de
-    // escritorio se come el ancho util; en escritorio hace falta para que el
-    // contenido no toque el borde.
-    padding: theme.palette.tokens.space.xl, // 24px en escritorio
+    // 8px: lo justo para que el contenido no toque el borde del menu.
+    padding: theme.palette.tokens.space.sm, // 8px en escritorio
     backgroundColor: theme.palette.tokens.surface.background,
-    [theme.breakpoints.down("md")]: {
-      padding: theme.palette.tokens.space.lg, // 16px en tablet
-    },
     [theme.breakpoints.down("xs")]: {
-      padding: theme.palette.tokens.space.md, // 12px en movil
+      padding: theme.palette.tokens.space.xs, // 4px en movil
     },
   },
 
