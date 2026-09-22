@@ -17,6 +17,7 @@ import { StartWhatsAppSession } from "../services/WbotServices/StartWhatsAppSess
 
 import CreateWhatsAppService from "../services/WhatsappService/CreateWhatsAppService";
 import DeleteWhatsAppService from "../services/WhatsappService/DeleteWhatsAppService";
+import { eliminarConexion } from "../services/WhatsappService/EliminarConexionService";
 import ListWhatsAppsService from "../services/WhatsappService/ListWhatsAppsService";
 import ShowWhatsAppService from "../services/WhatsappService/ShowWhatsAppService";
 import UpdateWhatsAppService from "../services/WhatsappService/UpdateWhatsAppService";
@@ -508,58 +509,17 @@ export const remove = async (
 
   const whatsapp = await ShowWhatsAppService(whatsappId, companyId);
 
-  if (whatsapp.channel === "whatsapp") {
-    await DeleteBaileysService(whatsappId);
-    await DeleteWhatsAppService(whatsappId);
-    await cacheLayer.delFromPattern(`sessions:${whatsappId}:*`);
-    removeWbot(+whatsappId);
+  // Cada canal tenia aqui su propio "if", y el que no estaba en la lista no
+  // se borraba: la API respondia 200 y la conexion seguia ahi. Le pasaba a
+  // GoHighLevel. Ahora la decision vive en un solo sitio y el caso por
+  // defecto es borrar.
+  const borradas = await eliminarConexion(whatsapp);
 
+  for (const id of borradas) {
     io.of(String(companyId)).emit(`company-${companyId}-whatsapp`, {
       action: "delete",
-      whatsappId: +whatsappId
+      whatsappId: id
     });
-  }
-
-  if (whatsapp.channel === "whatsapp_oficial") {
-    await Whatsapp.destroy({
-      where: {
-        id: +whatsappId
-      }
-    });
-
-    try {
-      await DeleteConnectionWhatsAppOficial(whatsapp.waba_webhook_id);
-    } catch (error) {
-      logger.info("ERROR", error);
-    }
-
-    io.of(String(companyId)).emit(`company-${companyId}-whatsapp`, {
-      action: "delete",
-      whatsappId: +whatsappId
-    });
-  }
-
-  if (whatsapp.channel === "facebook" || whatsapp.channel === "instagram") {
-    const { facebookUserToken } = whatsapp;
-
-    const getAllSameToken = await Whatsapp.findAll({
-      where: {
-        facebookUserToken
-      }
-    });
-
-    await Whatsapp.destroy({
-      where: {
-        facebookUserToken
-      }
-    });
-
-    for await (const whatsapp of getAllSameToken) {
-      io.of(String(companyId)).emit(`company-${companyId}-whatsapp`, {
-        action: "delete",
-        whatsappId: whatsapp.id
-      });
-    }
   }
 
   return res.status(200).json({ message: "Session disconnected." });
@@ -633,39 +593,15 @@ export const removeAdmin = async (
   console.log("REMOVING WHATSAPP ADMIN", whatsappId);
   const whatsapp = await ShowWhatsAppService(whatsappId, companyId);
 
-  if (whatsapp.channel === "whatsapp") {
-    await DeleteBaileysService(whatsappId);
-    await DeleteWhatsAppService(whatsappId);
-    await cacheLayer.delFromPattern(`sessions:${whatsappId}:*`);
-    removeWbot(+whatsappId);
+  // Aqui faltaban ademas la API oficial y GoHighLevel: desde administracion
+  // no se podia borrar ninguna de las dos.
+  const borradas = await eliminarConexion(whatsapp);
 
+  for (const id of borradas) {
     io.of(String(companyId)).emit(`admin-whatsapp`, {
       action: "delete",
-      whatsappId: +whatsappId
+      whatsappId: id
     });
-  }
-
-  if (whatsapp.channel === "facebook" || whatsapp.channel === "instagram") {
-    const { facebookUserToken } = whatsapp;
-
-    const getAllSameToken = await Whatsapp.findAll({
-      where: {
-        facebookUserToken
-      }
-    });
-
-    await Whatsapp.destroy({
-      where: {
-        facebookUserToken
-      }
-    });
-
-    for await (const whatsapp of getAllSameToken) {
-      io.of(String(companyId)).emit(`company-${companyId}-whatsapp`, {
-        action: "delete",
-        whatsappId: whatsapp.id
-      });
-    }
   }
 
   return res.status(200).json({ message: "Session disconnected." });
