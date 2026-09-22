@@ -30,9 +30,9 @@ const App = () => {
   const appColorLocalStorage =
     localStorage.getItem("primaryColorLight") ||
     localStorage.getItem("primaryColorDark") ||
-    // Violeta de la marca. Es solo el valor mientras el backend responde;
-    // si la empresa tiene color configurado, ese gana.
-    tokens.brandScale[600];
+    // Azul por defecto. Es solo el valor mientras el backend responde; si la
+    // empresa tiene color configurado en Whitelabel, ese gana.
+    tokens.primaryDefault;
   const appNameLocalStorage = localStorage.getItem("appName") || "";
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
   const preferredTheme = window.localStorage.getItem("preferredTheme");

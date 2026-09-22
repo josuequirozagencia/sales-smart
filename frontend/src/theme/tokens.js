@@ -60,11 +60,20 @@ export const neutral = {
 // hover de otro color.
 //
 // El valor de abajo es solo el que se usa cuando el backend no devuelve
-// nada. Hoy ese valor por defecto es "#0000FF", azul puro, que es el azul
-// de enlace sin estilar de los años noventa. #2563eb es el mismo tono
-// familiar pero utilizable: contraste 5.17 sobre blanco, y admite texto
-// blanco encima con 5.17.
-export const primaryDefault = "#2563eb";
+// nada.
+//
+// Es el azul de la interfaz de referencia que eligio Josue (#198fcc,
+// muestreado de su captura), oscurecido un 15 %: el original da 3.59 con
+// texto blanco encima y un boton primario lleva texto blanco. A este tono
+// le corresponden 4.75, que ya pasa, y a simple vista es el mismo azul.
+export const primaryDefault = "#157aad";
+
+/**
+ * El azul de la referencia sin oscurecer. Solo para rellenos sin texto
+ * encima —iconos, indicadores, graficos—, donde 3.59 basta segun la WCAG.
+ * Para cualquier cosa con letras encima va primaryDefault.
+ */
+export const acentoReferencia = "#198fcc";
 
 // El secundario NO se configura desde el backend hoy; solo existe el primario.
 // Se elige un slate en lugar de un color con carácter por una razón concreta:
@@ -238,19 +247,23 @@ export const semantic = {
 // ---------------------------------------------------------------------------
 // SUPERFICIES Y TEXTO
 // ---------------------------------------------------------------------------
+// Los valores claros salen de la captura de referencia, contados sobre la
+// imagen: el fondo de trabajo ocupa el 48 % de la pantalla y es #f6f8f9, los
+// paneles el 40 % y son blancos, y los bordes son #e5e7eb con #d6dce1 para
+// los que separan zonas.
 export const light = {
-  background: neutral[50],
+  background: "#f6f8f9",
   surface: neutral[0],
-  surfaceSecondary: neutral[100],
+  surfaceSecondary: "#edf1f3",
   // Tercer nivel de superficie. La referencia apila fondo, tarjeta y tarjeta
   // destacada; con solo dos niveles no hay forma de decir que algo está por
   // encima de otra cosa sin recurrir a una sombra pesada.
   surfaceElevated: neutral[0],
-  border: neutral[200],
-  borderStrong: neutral[300],
-  textPrimary: neutral[900], // 17.85 sobre surface
-  textSecondary: neutral[600], // 7.58 — hoy es 4.59, que pasa sin margen
-  textMuted: neutral[500], // 4.76
+  border: "#e5e7eb",
+  borderStrong: "#d6dce1",
+  textPrimary: "#0c2c45", // 14.37 sobre surface — el azul oscuro de la referencia
+  textSecondary: "#45535f", // 8.90
+  textMuted: "#5b6b7a", // 5.48
 };
 
 export const dark = {
@@ -284,29 +297,32 @@ export const dark = {
 // El acento del menu es FIJO, no el color que cada empresa configura en
 // Whitelabel: ese se elige para botones y puede ser cualquier cosa —el de la
 // empresa 1 es #D3D1DC, casi blanco—, y sobre el menu dejaba el elemento
-// activo invisible. Este violeta es el de la aplicacion y da 7.0 de contraste
-// con texto blanco encima.
-const acentoMenu = "#6d28d9";
-const acentoMenuOscuro = "#a78bfa";
+// activo invisible.
+//
+// Hasta el 21 sep 2026 fue el violeta de la marca. Josue paso una captura de
+// otra herramienta como referencia y pidio esos colores por defecto: azul
+// sobre blanco. Se usa el mismo tono oscurecido que el primario, porque el
+// icono activo lleva el fondo del acento y un simbolo blanco encima.
+const acentoMenu = primaryDefault;
+const acentoMenuOscuro = "#67c3ef";
 
 export const sidebar = {
-  // El menu en claro era blanco con textos grises: correcto de contraste, pero
-  // sin relacion con el resto de la interfaz. Ahora la superficie lleva un
-  // tinte violeta muy leve y el acento tine lo que esta activo, el hover y el
-  // fondo de los iconos.
+  // Como la referencia: el menu y la barra superior son blancos, el area de
+  // trabajo es el gris frio de al lado, y lo que esta abierto se marca con un
+  // azul muy lavado en vez de con un bloque de color.
   light: {
-    background: "#f6f3fd",
-    surface: "#ece6fa",
-    border: "#ddd4f2",
-    text: "#4b4560", // 8.4 sobre el fondo
-    textActive: "#1d1533", // 15.9
-    textMuted: "#6b6280", // 4.8 sobre el fondo
-    hover: "rgba(109, 40, 217, 0.08)",
-    iconBackground: "rgba(109, 40, 217, 0.10)",
-    iconHover: "rgba(109, 40, 217, 0.16)",
+    background: "#ffffff",
+    surface: "#f6f8f9",
+    border: "#e5e7eb",
+    text: "#45535f", // 8.9 sobre el fondo
+    textActive: "#0c2c45", // 14.4
+    textMuted: "#5b6b7a", // 5.5
+    hover: "rgba(25, 143, 204, 0.08)",
+    iconBackground: "rgba(25, 143, 204, 0.10)",
+    iconHover: "rgba(25, 143, 204, 0.16)",
     accent: acentoMenu,
-    accentText: "#5b21b6", // 8.3 sobre el fondo
-    accentSoft: "rgba(109, 40, 217, 0.12)",
+    accentText: "#12648f", // 6.5 sobre el fondo
+    accentSoft: "#e8f4fb",
   },
   dark: {
     background: "#150e26",
@@ -319,8 +335,8 @@ export const sidebar = {
     iconBackground: "rgba(255, 255, 255, 0.06)",
     iconHover: "rgba(255, 255, 255, 0.10)",
     accent: acentoMenuOscuro,
-    accentText: "#ddd2ff", // 12.4 sobre el fondo
-    accentSoft: "rgba(167, 139, 250, 0.18)",
+    accentText: "#bfe4f7", // 12.0 sobre el fondo
+    accentSoft: "rgba(103, 195, 239, 0.18)",
   }
 };
 
