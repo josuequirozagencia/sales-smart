@@ -58,12 +58,13 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: "column",
     overflow: "hidden",
     // Las pestanas (Trabajando en / Esperando / Grupos) miden 48px de serie.
-    // En el movil es una de las cinco filas que hay por encima de la primera
-    // conversacion, asi que baja a 40.
-    [theme.breakpoints.down("xs")]: {
-      "& > .MuiTabs-root, & > .MuiTabs-root .MuiTab-root": {
-        minHeight: 40,
-      },
+    // Son una de las cuatro filas que hay por encima de la primera
+    // conversacion: entre todas se llevaban 157px de los 715 de pantalla
+    // antes de ensenar un solo ticket. En la interfaz que Josue paso como
+    // referencia, esa cabecera son 64px. Bajan a 40 en cualquier tamano, no
+    // solo en el movil.
+    "& > .MuiTabs-root, & > .MuiTabs-root .MuiTab-root": {
+      minHeight: 40,
     },
     borderTopRightRadius: 0,
     borderBottomRightRadius: 0,
@@ -130,6 +131,13 @@ const useStyles = makeStyles((theme) => ({
     minWidth: "33%",
     fontSize: 11,
     marginLeft: 0,
+
+    // El contador va anclado a la esquina del icono y sobresale unos 12px a
+    // la derecha, justo donde empieza el texto: "13" tapaba la T de
+    // "Trabajando en". Se separan las dos celdas.
+    "& .MuiGrid-item:first-child": {
+      marginRight: 18,
+    },
   },
 
   tabIndicator: {
@@ -165,19 +173,16 @@ const useStyles = makeStyles((theme) => ({
     borderColor: theme.palette.tokens.border.border,
     borderWidth: "1px",
     borderStyle: "solid",
-    marginTop: theme.spacing(0.5),
-    marginBottom: theme.spacing(1),
+    marginTop: theme.spacing(0.25),
+    marginBottom: theme.spacing(0.5),
     marginLeft: theme.spacing(1),
     marginRight: theme.spacing(1),
-    padding: theme.spacing(0.5),
-    // En el movil, cada fila de controles compite con la lista por una
-    // pantalla que ya es estrecha.
+    padding: theme.spacing(0.25),
+    // Cada fila de controles compite con la lista por la pantalla, en el
+    // movil y tambien en el escritorio.
     [theme.breakpoints.down("xs")]: {
-      marginTop: theme.spacing(0.25),
-      marginBottom: theme.spacing(0.5),
       marginLeft: theme.spacing(0.5),
       marginRight: theme.spacing(0.5),
-      padding: theme.spacing(0.25),
       "& .MuiIconButton-root": {
         padding: 6,
       },
@@ -186,10 +191,9 @@ const useStyles = makeStyles((theme) => ({
 
   serachInputWrapper: {
     flex: 1,
-    height: 40,
-    [theme.breakpoints.down("xs")]: {
-      height: 36,
-    },
+    // 36 en vez de 40: con el icono de lupa dentro, el campo sigue siendo
+    // comodo y la lista gana la diferencia.
+    height: 36,
     display: "flex",
     alignItems: "center",
     // Relleno del sistema en vez de palette.total, una clave a medida que

@@ -57,6 +57,18 @@ const useStyles = makeStyles((theme) => ({
     position: "relative",
     transition: "background-color 180ms ease",
 
+    // La fila media 80px: 20 del nombre, 19 de la vista previa, 22 de las
+    // etiquetas y 19 repartidos en margenes que no dicen nada. Se recortan
+    // esos margenes —los del bloque de texto y los de la propia fila— y la
+    // fila baja a unos 66 sin quitar ni un dato. En una pantalla de 715px
+    // son dos conversaciones mas a la vista.
+    paddingTop: 2,
+    paddingBottom: 2,
+    "& .MuiListItemText-multiline": {
+      marginTop: 2,
+      marginBottom: 2,
+    },
+
     // Hover. Un velo tenue en vez de un cambio de color: funciona igual en
     // claro y en oscuro, y no compite con el estado seleccionado.
     "&:hover": {
@@ -723,16 +735,17 @@ const TicketListItemCustom = ({ setTabOpen, ticket }) => {
         )}
         {/* Tenia marginLeft -15px sobre el relleno de 16 del elemento: el circulo
             quedaba a 1px del borde, encima de la barra de color de 3px. Ahora
-            queda a 12px, y pasa de 50 a 42px; el hueco hasta el texto se ajusta
-            para no quitarle ancho a la conversacion. */}
-        <ListItemAvatar style={{ marginLeft: -4, minWidth: 52 }}>
+            queda a 12px, y pasa de 50 a 36px —el tamano de la interfaz de
+            referencia—; el hueco hasta el texto se ajusta para no quitarle
+            ancho a la conversacion. */}
+        <ListItemAvatar style={{ marginLeft: -4, minWidth: 46 }}>
           {/* Sin foto sale un circulo de color con las iniciales, y no el
               icono generico de persona que pintaba MUI: era el mismo para
               todos los contactos, asi que no ayudaba a distinguirlos. El
               color va por contacto y es siempre el mismo. */}
           <ContactAvatar
             contact={ticket?.contact}
-            size={42}
+            size={36}
             className={classes.clickableAvatar}
             onClick={handleImageClick}
           />
