@@ -326,26 +326,39 @@ const useAuth = () => {
       localStorage.setItem("profileImage", data.user.profileImage);
 
       moment.locale("pt-br");
-      let dueDate;
-      if (data.user.company.id === 1) {
-        dueDate = "2999-12-31T00:00:00.000Z";
-      } else {
-        dueDate = data.user.company.dueDate;
-      }
-      
-      const hoje = moment(moment()).format("DD/MM/yyyy");
-      const vencimento = moment(dueDate).format("DD/MM/yyyy");
 
-      var diff = moment(dueDate).diff(moment(moment()).format());
-      var before = moment(moment().format()).isBefore(dueDate);
-      var dias = moment.duration(diff).asDays();
+      // Sin fecha de vencimiento NO hay corte.
+      //
+      // Antes se leia la fecha tal cual y se comparaba con
+      // moment().isBefore(dueDate); cuando la fecha es nula eso devuelve
+      // false, o sea "vencida". Una empresa recien creada, que nace sin
+      // fecha, encerraba al usuario en la pantalla de facturacion nada mas
+      // entrar, sin manera de salir.
+      //
+      // Tambien desaparece el apano de eximir a la empresa id 1: era un caso
+      // escrito a mano que dejo de valer en cuanto esa empresa no existio.
+      // Quien no tiene vencimiento no vence, sea cual sea su id.
+      const dueDate = data.user.company?.dueDate || null;
+      const sinVencimiento = !dueDate;
 
-      if (before === true) {
+      const vencimento = sinVencimiento
+        ? ""
+        : moment(dueDate).format("DD/MM/yyyy");
+      const dias = sinVencimiento
+        ? Infinity
+        : moment.duration(moment(dueDate).diff(moment())).asDays();
+      const vigente = sinVencimiento || moment().isBefore(dueDate);
+
+      if (vigente === true) {
         // La cuenta de inactividad empieza de cero con cada inicio de sesion:
         // sin esto, la marca de una sesion anterior la cerraria al instante.
         marcarActividad();
         localStorage.setItem("token", JSON.stringify(data.token));
-        localStorage.setItem("companyDueDate", vencimento);
+        if (!sinVencimiento) {
+          localStorage.setItem("companyDueDate", vencimento);
+        } else {
+          localStorage.removeItem("companyDueDate");
+        }
         api.defaults.headers.Authorization = `Bearer ${data.token}`;
         setUser(data.user || data);
         setIsAuth(true);
