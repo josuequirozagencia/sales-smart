@@ -102,6 +102,7 @@ import WhatsappLidMap from "../../models/WhatsapplidMap";
 import { getJidOf } from "./getJidOf";
 import { contactoCreadoDesde, registrarLeadEntrante } from "../ConversionServices/ConversionService";
 import { verifyContact } from "./verifyContact";
+import { telefonoDeClave } from "../../helpers/LidTelefono";
 import { atenderMensajeEntrante } from "../AiAgentServices/AtenderConAgente";
 import { pausarPorMensajeHumano } from "../AiAgentServices/EstadoIaTicket";
 // import { verifyContact } from "./verifyContact";
@@ -444,14 +445,20 @@ const getContactMessage = async (msg: proto.IWebMessageInfo, wbot: Session) => {
   // Usa o identificador normalizado que considera o lid
   // const normalizedId = normalizeContactIdentifier(msg);
 
+  // El telefono que WhatsApp adjunta cuando direcciona por LID. Va junto al
+  // identificador para que verifyContact no tenga que adivinarlo.
+  const pn = telefonoDeClave(msg.key as any);
+
   return isGroup
     ? {
       id: getSenderMessage(msg, wbot),
-      name: msg.pushName
+      name: msg.pushName,
+      pn
     }
     : {
       id: msg.key.remoteJid,
-      name: msg.key.fromMe ? rawNumber : msg.pushName
+      name: msg.key.fromMe ? rawNumber : msg.pushName,
+      pn
     };
 };
 
