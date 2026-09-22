@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import AppError from "../errors/AppError";
+import logger from "../utils/logger";
 import { getIO } from "../libs/socket";
 
 import AuthUserService from "../services/UserServices/AuthUserService";
@@ -53,18 +54,40 @@ export const update = async (
 ): Promise<Response> => {
   const token: string = req.cookies.jrt;
 
+  // Diagnostico de sesiones perdidas.
+  //
+  // Frontend y backend estan en sitios distintos (up.railway.app es un
+  // sufijo publico), asi que la cookie del refresco viaja como de terceros:
+  // SameSite=None; Secure; Partitioned. Los navegadores que no soportan
+  // CHIPS o que bloquean las cookies de terceros —habitual en el movil— no
+  // la mandan, y entonces la sesion se cae a los 15 minutos, cuando caduca
+  // el token de acceso. Desde fuera parece "se cerro sola" o "me la cerro
+  // el otro dispositivo".
+  //
+  // Esto anota si la cookie llego y con que navegador, para saber si es eso
+  // o es otra cosa. Nunca se escribe el token.
+  const agente = String(req.headers["user-agent"] || "").slice(0, 120);
+
   if (!token) {
+    logger.warn(`[SESION] Refresco SIN cookie jrt | ${agente}`);
     throw new AppError("ERR_SESSION_EXPIRED", 401);
   }
 
-  const { user, newToken, refreshToken } = await RefreshTokenService(
-    res,
-    token
-  );
+  try {
+    const { user, newToken, refreshToken } = await RefreshTokenService(
+      res,
+      token
+    );
 
-  SendRefreshToken(res, refreshToken);
+    SendRefreshToken(res, refreshToken);
 
-  return res.json({ token: newToken, user });
+    logger.info(`[SESION] Refresco OK para el usuario ${user.id} | ${agente}`);
+
+    return res.json({ token: newToken, user });
+  } catch (error) {
+    logger.warn(`[SESION] Refresco CON cookie pero rechazado | ${agente}`);
+    throw error;
+  }
 };
 
 export const me = async (req: Request, res: Response): Promise<Response> => {
