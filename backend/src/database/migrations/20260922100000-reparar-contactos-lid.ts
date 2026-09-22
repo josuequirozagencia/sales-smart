@@ -23,6 +23,35 @@ import { parDeMensajeGuardado } from "../../helpers/LidTelefono";
  */
 module.exports = {
   up: async (queryInterface: QueryInterface) => {
+    // Antes de tocar nada, una copia de lo que se va a cambiar. Railway no
+    // tiene copias continuas activadas y un volcado completo pide abrir el
+    // Postgres al exterior; para una migracion de datos basta con guardar las
+    // filas afectadas, que ademas es lo unico que haria falta restaurar.
+    // La tabla se queda: ocupa poco y es la red de seguridad de este cambio.
+    await queryInterface.sequelize.query(
+      `CREATE TABLE IF NOT EXISTS "RespaldoLidContactos" (
+         "id" SERIAL PRIMARY KEY,
+         "contactId" INTEGER NOT NULL,
+         "companyId" INTEGER,
+         "number" VARCHAR(255),
+         "name" VARCHAR(255),
+         "lid" VARCHAR(255),
+         "profilePicUrl" TEXT,
+         "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+       )`
+    );
+
+    await queryInterface.sequelize.query(
+      `INSERT INTO "RespaldoLidContactos"
+         ("contactId", "companyId", "number", "name", "lid", "profilePicUrl")
+       SELECT "id", "companyId", "number", "name", "lid", "profilePicUrl"
+       FROM "Contacts"
+       WHERE "number" LIKE '%@lid%'
+         AND NOT EXISTS (
+           SELECT 1 FROM "RespaldoLidContactos" r WHERE r."contactId" = "Contacts"."id"
+         )`
+    );
+
     const empresas: { companyId: number }[] =
       await queryInterface.sequelize.query(
         `SELECT DISTINCT "companyId" FROM "Contacts" WHERE "number" LIKE '%@lid%'`,
@@ -119,8 +148,26 @@ module.exports = {
     }
   },
 
-  down: async () => {
-    // No se deshace: volver a poner el LID en el campo del numero seria
-    // reintroducir el fallo, y el telefono recuperado es el dato correcto.
+  down: async (queryInterface: QueryInterface) => {
+    // Devuelve a cada contacto lo que tenia antes, fila por fila, desde la
+    // copia que dejo el up(). No es lo deseable —el LID en el campo del
+    // numero es el fallo— pero si algo sale mal en produccion hay que poder
+    // volver al estado exacto sin depender de un volcado externo.
+    await queryInterface.sequelize.query(
+      `UPDATE "Contacts" c
+       SET "number" = r."number",
+           "name" = r."name",
+           "lid" = r."lid",
+           "profilePicUrl" = r."profilePicUrl",
+           "updatedAt" = NOW()
+       FROM "RespaldoLidContactos" r
+       WHERE r."contactId" = c."id"`
+    );
+
+    await queryInterface.sequelize.query(
+      `DELETE FROM "WhatsappLidMaps" w
+       USING "RespaldoLidContactos" r
+       WHERE w."contactId" = r."contactId" AND r."lid" IS DISTINCT FROM w."lid"`
+    );
   }
 };
