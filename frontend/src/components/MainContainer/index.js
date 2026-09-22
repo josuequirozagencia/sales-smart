@@ -15,7 +15,12 @@ const useStyles = makeStyles(theme => ({
 
 	contentWrapper: {
 		height: "100%",
-		overflowY: "hidden",
+		// Estaba en "hidden": lo que no cabia se recortaba y no habia forma de
+		// llegar. En GoHighLevel el boton de Guardar quedaba debajo del borde
+		// de la pantalla, asi que la pagina no se podia usar. Las pantallas
+		// que ya tienen su propio scroll dentro no cambian: su contenido cabe
+		// en este alto y esta barra no llega a aparecer.
+		overflowY: "auto",
 		display: "flex",
 		flexDirection: "column",
 	},
