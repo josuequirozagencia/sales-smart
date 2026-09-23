@@ -31,13 +31,27 @@ const messages = {
       login: {
         title: "تسجيل الدخول",
         form: {
+          title: "مرحباً بعودتك",
+          subtitle: "سجّل الدخول إلى مساحة عملك للمتابعة",
           email: "البريد الإلكتروني",
           password: "كلمة المرور",
           button: "الوصول",
         },
         buttons: {
           submit: "دخول",
+          loading: "جارٍ تسجيل الدخول…",
           register: "ليس لديك حساب؟ أنشئ حساباً!",
+        },
+        validation: {
+          emailRequired: "البريد الإلكتروني مطلوب",
+          emailInvalid: "أدخل بريداً إلكترونياً صالحاً",
+          passwordRequired: "كلمة المرور مطلوبة",
+        },
+        accessibility: {
+          language: "اختر اللغة",
+          toggleTheme: "تغيير المظهر",
+          showPassword: "إظهار كلمة المرور",
+          hidePassword: "إخفاء كلمة المرور",
         },
       },
       companies: {

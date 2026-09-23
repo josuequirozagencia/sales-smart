@@ -116,7 +116,7 @@ const SignUp = () => {
     const [user, setUser] = useState(initialState);
 
     useEffect(() => {
-        getPublicSetting("userCreation")
+        getPublicSetting("userCreation", companyId)
             .then((data) => {
                 if (data === "disabled") {
                     toast.error(i18n.t("signup.toasts.disabled"));

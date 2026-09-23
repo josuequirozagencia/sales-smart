@@ -24,13 +24,27 @@ const messages = {
       login: {
         title: "Login",
         form: {
+          title: "Welcome back",
+          subtitle: "Sign in to your workspace to continue",
           email: "Email",
           password: "Password",
           button: "Access",
         },
         buttons: {
           submit: "Enter",
+          loading: "Signing in…",
           register: "Don't have an account? Register!",
+        },
+        validation: {
+          emailRequired: "Email is required",
+          emailInvalid: "Enter a valid email address",
+          passwordRequired: "Password is required",
+        },
+        accessibility: {
+          language: "Select language",
+          toggleTheme: "Change theme",
+          showPassword: "Show password",
+          hidePassword: "Hide password",
         },
       },
       companies: {
