@@ -1,0 +1,41 @@
+# Imagen del frontend para Railway.
+# Servicio configurado con Root Directory: frontend, Dockerfile Path: Dockerfile.railway,
+# Start Command: node server.js, Puerto: 3000.
+FROM node:20.19.4-bookworm AS build
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+# --legacy-peer-deps: material-ui-color pide material-ui-popup-state ^1.5.3 y el
+# proyecto usa ^4.1.0. npm install (no ci) porque el lockfile no esta sincronizado
+# tras el ajuste de compression-webpack-plugin a la serie compatible con Webpack 4.
+RUN npm install --legacy-peer-deps --no-audit --no-fund
+
+COPY . .
+
+# Las REACT_APP_* quedan fijadas en el bundle durante el build.
+# Railway solo las pasa al build si se declaran con ARG.
+ARG REACT_APP_BACKEND_URL
+ARG REACT_APP_FACEBOOK_APP_ID
+ARG REACT_APP_NUMBER_SUPPORT
+ARG REACT_APP_REQUIRE_BUSINESS_MANAGEMENT
+ENV GENERATE_SOURCEMAP=false \
+    CI=false
+RUN test -n "$REACT_APP_BACKEND_URL" || (echo "Falta REACT_APP_BACKEND_URL" >&2 && exit 1)
+# El script build ya fija --max-old-space-size=4096 y --openssl-legacy-provider,
+# necesario con react-scripts 3.4.3 (Webpack 4) sobre Node 20.
+RUN npm run build
+
+FROM node:20.19.4-bookworm-slim
+WORKDIR /app
+
+ENV NODE_ENV=production
+# server.js usa express y dotenv, que no estan en package.json. Express 4: la ruta
+# "/*" de server.js no es valida en Express 5.
+RUN npm install --no-save --no-audit --no-fund express@4.21.2 dotenv@16.4.7
+
+COPY --from=build /app/build ./build
+COPY server.js ./
+
+ENV SERVER_PORT=3000
+EXPOSE 3000
+CMD ["node", "server.js"]
