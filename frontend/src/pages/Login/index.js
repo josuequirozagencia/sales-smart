@@ -7,7 +7,6 @@ import TextField from "@material-ui/core/TextField";
 import Link from "@material-ui/core/Link";
 import Grid from "@material-ui/core/Grid";
 import { makeStyles } from "@material-ui/core/styles";
-import Container from "@material-ui/core/Container";
 import IconButton from "@material-ui/core/IconButton";
 import InputAdornment from "@material-ui/core/InputAdornment";
 import Brightness4Icon from "@material-ui/icons/Brightness4";
@@ -76,8 +75,10 @@ const useStyles = makeStyles((theme) => ({
   },
   containerLogin: {
     width: "100%",
-    maxWidth: 440,
-    padding: 0,
+    maxWidth: 472,
+    boxSizing: "border-box",
+    margin: "0 auto",
+    padding: "0 16px",
     position: "relative",
     zIndex: 2,
   },
@@ -356,7 +357,7 @@ const Login = () => {
           )}
         </div>
 
-        <Container component="main" maxWidth="xs" className={classes.containerLogin}>
+        <main className={classes.containerLogin}>
           <CssBaseline />
           <div className={classes.paper}>
             <IconButton className={classes.themeButton} onClick={colorMode.toggleColorMode} aria-label={i18n.t("login.accessibility.toggleTheme")}>
@@ -414,7 +415,7 @@ const Login = () => {
               )}
             </form>
           </div>
-        </Container>
+        </main>
         <div className={classes.footer}>© {new Date().getFullYear()} {appName || "Multi100"}</div>
       </div>
     </>
