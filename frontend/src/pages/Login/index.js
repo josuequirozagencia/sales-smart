@@ -16,6 +16,8 @@ import Brightness4Icon from "@material-ui/icons/Brightness4";
 import Brightness7Icon from "@material-ui/icons/Brightness7";
 import Visibility from "@material-ui/icons/Visibility";
 import VisibilityOff from "@material-ui/icons/VisibilityOff";
+import EmailOutlinedIcon from "@material-ui/icons/EmailOutlined";
+import LockOutlinedIcon from "@material-ui/icons/LockOutlined";
 import InputAdornment from "@material-ui/core/InputAdornment";
 import { Helmet } from "react-helmet";
 import BRFlag from "../../assets/brazil.png";
@@ -36,269 +38,248 @@ const languageOptions = [
 const useStyles = makeStyles((theme) => ({
   root: {
     width: "100vw",
-    height: "100vh",
+    minHeight: "100vh",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
     textAlign: "center",
-    padding: "0",
+    padding: "24px 16px",
     margin: "0",
     boxSizing: "border-box",
-    overflow: "hidden", // Corrigido: removido auto que causava rolagem
-    // Background com tom de azul
-    background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #60a5fa 100%)",
+    overflow: "hidden",
     position: "relative",
-    
-    // Padrão de pontos no fundo
-    "&::before": {
-      content: '""',
-      position: "absolute",
-      top: 0,
-      left: 0,
-      width: "100%",
-      height: "100%",
-      backgroundImage: `
-        radial-gradient(circle at 25% 25%, rgba(255,255,255,0.05) 1px, transparent 1px),
-        radial-gradient(circle at 75% 75%, rgba(255,255,255,0.05) 1px, transparent 1px)
-      `,
-      backgroundSize: "50px 50px",
-      animation: "$float 20s ease-in-out infinite",
-    },
+    // Degradado profundo con malla de luz
+    background:
+      "radial-gradient(1200px 600px at 15% 10%, rgba(96,165,250,0.35), transparent 60%)," +
+      "radial-gradient(900px 500px at 85% 90%, rgba(37,99,235,0.35), transparent 60%)," +
+      "linear-gradient(160deg, #0b1e4b 0%, #123a8f 45%, #1d4ed8 100%)",
   },
 
-  "@keyframes float": {
-    "0%, 100%": { transform: "translateY(0px) rotate(0deg)" },
-    "50%": { transform: "translateY(-10px) rotate(180deg)" },
+  // Orbes flotantes decorativos
+  orb: {
+    position: "absolute",
+    borderRadius: "50%",
+    filter: "blur(70px)",
+    opacity: 0.5,
+    pointerEvents: "none",
+    animation: "$drift 14s ease-in-out infinite",
+  },
+  orbOne: {
+    width: 380,
+    height: 380,
+    top: "-8%",
+    left: "-6%",
+    background: "#60a5fa",
+  },
+  orbTwo: {
+    width: 320,
+    height: 320,
+    bottom: "-10%",
+    right: "-4%",
+    background: "#2563eb",
+    animationDelay: "-7s",
   },
 
-  // Container ajustado - desktop à direita, mobile centralizado
+  "@keyframes drift": {
+    "0%, 100%": { transform: "translate(0, 0) scale(1)" },
+    "50%": { transform: "translate(30px, -25px) scale(1.08)" },
+  },
+
   containerLogin: {
-    padding: "16px",
-    maxWidth: "444px",
+    padding: "0",
+    maxWidth: "420px",
     width: "100%",
-    margin: "0 auto",
     position: "relative",
     zIndex: 10,
-    
-    // Desktop - alinhar à direita
-    [theme.breakpoints.up("md")]: {
-      position: "absolute",
-      right: "8%",
-      top: "50%",
-      transform: "translateY(-50%)",
-      margin: "0",
-      maxWidth: "420px",
-    },
-    
-    // Mobile - centralizado (comportamento original)
-    [theme.breakpoints.down("sm")]: {
-      position: "relative",
-      margin: "0 auto",
-      transform: "none",
-    },
   },
 
   paper: {
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
-    backdropFilter: "blur(20px)",
-    WebkitBackdropFilter: "blur(20px)",
-    boxShadow: `
-      0 20px 40px rgba(0, 0, 0, 0.1),
-      0 1px 0 rgba(255, 255, 255, 0.2) inset,
-      0 0 0 1px rgba(255, 255, 255, 0.1)
-    `,
+    position: "relative",
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    backdropFilter: "blur(24px)",
+    WebkitBackdropFilter: "blur(24px)",
+    boxShadow:
+      "0 24px 60px rgba(2, 12, 40, 0.45), inset 0 1px 0 rgba(255,255,255,0.15)",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    padding: "40px 30px",
-    borderRadius: "20px",
-    maxWidth: "420px",
+    padding: "44px 36px 36px",
+    borderRadius: "24px",
     width: "100%",
-    margin: "0 auto",
-    border: "1px solid rgba(255, 255, 255, 0.2)",
-    animation: "$slideInRight 0.8s cubic-bezier(0.4, 0, 0.2, 1)",
-    
+    border: "1px solid rgba(255, 255, 255, 0.16)",
+    animation: "$fadeUp 0.7s cubic-bezier(0.22, 1, 0.36, 1)",
+
     [theme.breakpoints.down("sm")]: {
-      animation: "$slideInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1)",
-      borderRadius: "12px",
-      padding: "35px 25px",
+      borderRadius: "18px",
+      padding: "36px 24px 28px",
     },
   },
 
-  "@keyframes slideInRight": {
-    from: {
-      opacity: 0,
-      transform: "translateX(50px)",
-    },
-    to: {
-      opacity: 1,
-      transform: "translateX(0)",
-    },
+  "@keyframes fadeUp": {
+    from: { opacity: 0, transform: "translateY(24px)" },
+    to: { opacity: 1, transform: "translateY(0)" },
   },
 
-  "@keyframes slideInUp": {
-    from: {
-      opacity: 0,
-      transform: "translateY(30px)",
-    },
-    to: {
-      opacity: 1,
-      transform: "translateY(0)",
-    },
+  // Marca
+  logoImg: {
+    width: "100%",
+    maxWidth: "240px",
+    height: "auto",
+    maxHeight: "72px",
+    margin: "0 auto 6px auto",
+    filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.35))",
+    content: "url(" + defaultLogoLight + ")",
   },
 
-  avatar: {
-    margin: theme.spacing(1),
-    backgroundColor: "#3b82f6",
+  welcome: {
+    color: "rgba(255, 255, 255, 0.92)",
+    fontSize: "1.35rem",
+    fontWeight: 700,
+    letterSpacing: "-0.01em",
+    margin: "10px 0 4px",
+  },
+
+  subtitle: {
+    color: "rgba(255, 255, 255, 0.6)",
+    fontSize: "0.9rem",
+    fontWeight: 400,
+    margin: "0 0 8px",
   },
 
   form: {
     width: "100%",
-    marginTop: theme.spacing(1),
+    marginTop: theme.spacing(2),
   },
 
   submit: {
     margin: theme.spacing(3, 0, 2),
-    background: "linear-gradient(45deg, #3b82f6, #1e40af)",
-    color: "white",
+    background: "linear-gradient(45deg, #3b82f6, #2563eb)",
+    color: "#fff",
     borderRadius: "12px",
-    padding: "12px 0",
-    fontSize: "16px",
-    fontWeight: 600,
+    padding: "13px 0",
+    fontSize: "15px",
+    fontWeight: 700,
+    letterSpacing: "0.02em",
     textTransform: "none",
-    boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)",
+    boxShadow: "0 8px 24px rgba(37, 99, 235, 0.45)",
     border: "none",
-    transition: "all 0.3s ease",
+    transition: "all 0.25s ease",
     "&:hover": {
       background: "linear-gradient(45deg, #2563eb, #1d4ed8)",
       transform: "translateY(-2px)",
-      boxShadow: "0 6px 20px rgba(59, 130, 246, 0.4)",
+      boxShadow: "0 12px 28px rgba(37, 99, 235, 0.55)",
     },
     "&:active": {
       transform: "translateY(0)",
     },
   },
 
-  powered: {
-    color: "white",
-  },
-
-  // Logo - mantendo o sistema original
-  logoImg: {
-    width: "100%",
-    maxWidth: "280px",
-    height: "auto",
-    maxHeight: "80px",
-    margin: "0 auto 20px auto",
-    filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.1))",
-    // Sempre usa logo.png na página de login
-    content: "url(" + defaultLogoLight + ")",
-  },
-
+  // Botón de tema
   iconButton: {
     position: "absolute",
-    top: 15,
-    right: 15,
+    top: 14,
+    right: 14,
     background: "rgba(255, 255, 255, 0.1)",
-    backdropFilter: "blur(10px)",
-    border: "1px solid rgba(255, 255, 255, 0.2)",
-    color: "#374151",
-    transition: "all 0.3s ease",
+    border: "1px solid rgba(255, 255, 255, 0.18)",
+    color: "#fff",
+    padding: 8,
+    transition: "all 0.25s ease",
     "&:hover": {
       background: "rgba(255, 255, 255, 0.2)",
-      transform: "scale(1.05)",
+      transform: "scale(1.06)",
     },
   },
 
-  // Campos de input melhorados mas compatíveis
+  // Campos sobre fondo oscuro / cristal
   textField: {
     "& .MuiOutlinedInput-root": {
       borderRadius: "12px",
-      backgroundColor: "rgba(255, 255, 255, 0.8)",
-      backdropFilter: "blur(10px)",
-      transition: "all 0.3s ease",
-      color: "#1f2937", // Cor escura para o texto digitado
+      backgroundColor: "rgba(255, 255, 255, 0.07)",
+      transition: "all 0.25s ease",
+      color: "#f3f4f6",
       "&:hover": {
-        backgroundColor: "rgba(255, 255, 255, 0.9)",
+        backgroundColor: "rgba(255, 255, 255, 0.11)",
       },
       "&.Mui-focused": {
-        backgroundColor: "rgba(255, 255, 255, 1)",
-        boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)",
+        backgroundColor: "rgba(255, 255, 255, 0.13)",
+        boxShadow: "0 0 0 3px rgba(96, 165, 250, 0.25)",
       },
       "& input": {
-        color: "#1f2937", // Garante que o texto do input seja escuro
+        color: "#f9fafb",
         "&::placeholder": {
-          color: "#9ca3af",
+          color: "rgba(255,255,255,0.45)",
           opacity: 1,
         },
       },
       "& fieldset": {
-        borderColor: "rgba(59, 130, 246, 0.2)",
+        borderColor: "rgba(255, 255, 255, 0.22)",
       },
       "&:hover fieldset": {
-        borderColor: "rgba(59, 130, 246, 0.4)",
+        borderColor: "rgba(255, 255, 255, 0.4)",
       },
       "&.Mui-focused fieldset": {
-        borderColor: "#3b82f6",
+        borderColor: "#60a5fa",
         borderWidth: "2px",
       },
     },
     "& .MuiInputLabel-root": {
-      color: "#6b7280",
+      color: "rgba(255, 255, 255, 0.65)",
       fontWeight: 500,
       "&.Mui-focused": {
-        color: "#3b82f6",
+        color: "#93c5fd",
       },
+    },
+    "& .MuiInputAdornment-root .MuiSvgIcon-root": {
+      color: "rgba(255, 255, 255, 0.55)",
     },
   },
 
-  // Seletor de idioma - versão simplificada
+  // Seletor de idioma
   languageSelector: {
     position: "fixed",
     top: "20px",
     left: "20px",
     zIndex: 1000,
-    background: theme.mode === "light" 
-      ? "rgba(255, 255, 255, 0.9)" 
-      : "rgba(255, 255, 255, 0.1)",
-    backdropFilter: "blur(10px)",
+    background: "rgba(255, 255, 255, 0.1)",
+    backdropFilter: "blur(12px)",
     borderRadius: "12px",
-    border: theme.mode === "light"
-      ? "1px solid rgba(0, 0, 0, 0.15)"
-      : "1px solid rgba(255, 255, 255, 0.2)",
+    border: "1px solid rgba(255, 255, 255, 0.2)",
     padding: "8px 12px",
-    boxShadow: theme.mode === "light"
-      ? "0 2px 8px rgba(0, 0, 0, 0.1)"
-      : "none",
   },
 
-  // Link de registro
   registerLink: {
-    color: "#3b82f6",
+    color: "#93c5fd",
     textDecoration: "none",
     fontWeight: 600,
-    transition: "all 0.3s ease",
+    transition: "all 0.25s ease",
     "&:hover": {
-      color: "#2563eb",
+      color: "#bfdbfe",
       textDecoration: "underline",
     },
   },
 
-  // Estilos para o dropdown de idiomas
+  footer: {
+    marginTop: 18,
+    color: "rgba(255, 255, 255, 0.45)",
+    fontSize: "0.78rem",
+    position: "relative",
+    zIndex: 10,
+  },
+
   languageDropdown: {
     display: "flex",
     alignItems: "center",
     background: "none",
     border: "none",
-    color: theme.mode === "light" ? "#1f2937" : "white",
+    color: "#fff",
     fontSize: "14px",
     fontWeight: 500,
     cursor: "pointer",
     gap: "8px",
-    transition: "opacity 0.3s ease",
+    transition: "opacity 0.25s ease",
     "&:hover": {
-      opacity: 0.8,
+      opacity: 0.85,
     },
   },
 
@@ -307,25 +288,25 @@ const useStyles = makeStyles((theme) => ({
     top: "100%",
     left: "0",
     marginTop: "8px",
-    background: "rgba(255, 255, 255, 0.95)",
+    background: "rgba(17, 34, 74, 0.92)",
     backdropFilter: "blur(20px)",
-    boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)",
+    boxShadow: "0 12px 30px rgba(0, 0, 0, 0.35)",
     borderRadius: "12px",
-    border: "1px solid rgba(255, 255, 255, 0.2)",
-    padding: "8px",
+    border: "1px solid rgba(255, 255, 255, 0.14)",
+    padding: "6px",
     zIndex: 1000,
-    minWidth: "140px",
+    minWidth: "150px",
   },
 
   languageOption: {
     background: "none",
     border: "none",
-    color: "#374151",
+    color: "rgba(255,255,255,0.85)",
     display: "flex",
     alignItems: "center",
     gap: "8px",
     width: "100%",
-    padding: "8px 12px",
+    padding: "9px 12px",
     textAlign: "left",
     borderRadius: "8px",
     fontSize: "14px",
@@ -333,8 +314,8 @@ const useStyles = makeStyles((theme) => ({
     cursor: "pointer",
     transition: "all 0.2s ease",
     "&:hover": {
-      background: "rgba(59, 130, 246, 0.1)",
-      color: "#3b82f6",
+      background: "rgba(96, 165, 250, 0.18)",
+      color: "#fff",
     },
   },
 
@@ -391,7 +372,7 @@ const Login = () => {
       .catch((error) => {
         console.log("Error reading setting", error);
       });
-    
+
     getPublicSetting("enabledLanguages", companyId)
       .then((langs) => {
         let arr = ["pt-BR", "en"];
@@ -406,11 +387,7 @@ const Login = () => {
 
     getPublicSetting("appLogoBackgroundLight", companyId)
       .then((bgLight) => {
-        if (bgLight) {
-          setBackgroundLight(getBackendUrl() + "/public/" + bgLight);
-        } else {
-          setBackgroundLight("");
-        }
+        setBackgroundLight(bgLight ? getBackendUrl() + "/public/" + bgLight : "");
       })
       .catch(() => {
         setBackgroundLight("");
@@ -418,15 +395,22 @@ const Login = () => {
 
     getPublicSetting("appLogoBackgroundDark", companyId)
       .then((bgDark) => {
-        if (bgDark) {
-          setBackgroundDark(getBackendUrl() + "/public/" + bgDark);
-        } else {
-          setBackgroundDark("");
-        }
+        setBackgroundDark(bgDark ? getBackendUrl() + "/public/" + bgDark : "");
       })
       .catch(() => {
         setBackgroundDark("");
       });
+  }, []);
+
+  // Cerrar dropdown de idiomas al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (ref.current && !ref.current.contains(event.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const current =
@@ -440,23 +424,12 @@ const Login = () => {
     window.location.reload();
   };
 
-    let finalBackground;
-  if (mode === "light") {
-    if (backgroundLight) {
-      finalBackground = `url(${backgroundLight})`;
-    } else {
-      finalBackground = theme.palette.light || "#f5f5f5";
-    }
-  } else {
-    if (backgroundDark) {
-      finalBackground = `url(${backgroundDark})`;
-    } else {
-      finalBackground = theme.palette.dark || "#303030";
-    }
+  // Fondo personalizado (configuración de la empresa) tiene prioridad
+  let customBackground = null;
+  const bgSetting = mode === "light" ? backgroundLight : backgroundDark;
+  if (bgSetting) {
+    customBackground = `url(${bgSetting})`;
   }
-
-  finalBackground = String(finalBackground || "#f5f5f5");
-
 
   return (
     <>
@@ -464,39 +437,31 @@ const Login = () => {
         <title>{appName || "Multi100"}</title>
         <link rel="icon" href={appLogoFavicon || "/default-favicon.ico"} />
       </Helmet>
-      
-      <div className={clsx(classes.root, "login-page")}
-      style={{   
-          width: "100vw !important",
-          height: "100vh !important",
-          display: "flex !important",
-          alignItems: "center !important",
-          justifyContent: "center !important",
-          padding: "0 !important",
-          margin: "0 !important",
-          boxSizing: "border-box !important",
-          overflow: "auto !important",
-          backgroundColor:
-            typeof finalBackground === "string" &&
-            finalBackground.includes("url(")
-              ? "transparent"
-              : finalBackground,
-          backgroundImage:
-            typeof finalBackground === "string" &&
-            finalBackground.includes("url(")
-              ? finalBackground
-              : "none",
-          backgroundRepeat: "no-repeat !important",
-          backgroundSize: "cover !important",
-          backgroundPosition: "center !important",
-        }}
+
+      <div
+        className={clsx(classes.root, "login-page")}
+        style={
+          customBackground
+            ? {
+                backgroundImage: customBackground,
+                backgroundRepeat: "no-repeat",
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }
+            : undefined
+        }
       >
+        {/* Orbes decorativos solo con el fondo por defecto */}
+        {!customBackground && (
+          <>
+            <div className={clsx(classes.orb, classes.orbOne)} />
+            <div className={clsx(classes.orb, classes.orbTwo)} />
+          </>
+        )}
+
         {/* Seletor de idioma */}
-        <div
-          ref={ref}
-          className={classes.languageSelector}
-        >
-          <button 
+        <div ref={ref} className={classes.languageSelector}>
+          <button
             onClick={() => setOpen((o) => !o)}
             className={classes.languageDropdown}
           >
@@ -544,11 +509,19 @@ const Login = () => {
             >
               {mode === "dark" ? <Brightness7Icon /> : <Brightness4Icon />}
             </IconButton>
-            
+
             <div>
               <img className={classes.logoImg} alt="logo" />
             </div>
-            
+
+            <h1 className={classes.welcome}>
+              {i18n.t("login.form.title") || appName || "Bienvenido"}
+            </h1>
+            <p className={classes.subtitle}>
+              {i18n.t("login.form.subtitle") ||
+                "Ingresa tus credenciales para continuar"}
+            </p>
+
             <form className={classes.form} noValidate onSubmit={handlSubmit}>
               <TextField
                 variant="outlined"
@@ -563,6 +536,13 @@ const Login = () => {
                 autoComplete="email"
                 autoFocus
                 className={classes.textField}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <EmailOutlinedIcon />
+                    </InputAdornment>
+                  ),
+                }}
               />
               <TextField
                 variant="outlined"
@@ -578,13 +558,18 @@ const Login = () => {
                 autoComplete="current-password"
                 className={classes.textField}
                 InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <LockOutlinedIcon />
+                    </InputAdornment>
+                  ),
                   endAdornment: (
                     <InputAdornment position="end">
                       <IconButton
                         aria-label="toggle password visibility"
                         onClick={togglePasswordVisibility}
                         edge="end"
-                        style={{ color: "#6b7280" }}
+                        style={{ color: "rgba(255,255,255,0.55)" }}
                       >
                         {showPassword ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
@@ -619,6 +604,10 @@ const Login = () => {
             </form>
           </div>
         </Container>
+
+        <div className={classes.footer}>
+          © {new Date().getFullYear()} {appName || "Multi100"}
+        </div>
       </div>
     </>
   );
