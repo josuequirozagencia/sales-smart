@@ -51,7 +51,7 @@ const useStyles = makeStyles((theme) => ({
     boxSizing: "border-box",
     position: "relative",
     padding: "76px 20px 28px",
-    background: mode => mode === "dark"
+    background: ({ mode }) => mode === "dark"
       ? "linear-gradient(145deg, #071426 0%, #0b2447 54%, #123b72 100%)"
       : "linear-gradient(145deg, #eaf2ff 0%, #dbeafe 48%, #bfdbfe 100%)",
     "&::before": {
@@ -59,7 +59,7 @@ const useStyles = makeStyles((theme) => ({
       position: "absolute",
       inset: 0,
       pointerEvents: "none",
-      background: mode => mode === "dark"
+      background: ({ mode }) => mode === "dark"
         ? "linear-gradient(115deg, rgba(255,255,255,.045), transparent 38%)"
         : "linear-gradient(115deg, rgba(255,255,255,.72), transparent 42%)",
     },
@@ -90,9 +90,9 @@ const useStyles = makeStyles((theme) => ({
     position: "relative",
     padding: "42px 40px 34px",
     borderRadius: 14,
-    border: mode => mode === "dark" ? "1px solid rgba(255,255,255,.12)" : "1px solid rgba(15,23,42,.09)",
-    backgroundColor: mode => mode === "dark" ? "rgba(10,24,45,.94)" : "rgba(255,255,255,.97)",
-    boxShadow: mode => mode === "dark" ? "0 24px 64px rgba(0,0,0,.34)" : "0 24px 64px rgba(30,64,175,.17)",
+    border: ({ mode }) => mode === "dark" ? "1px solid rgba(255,255,255,.12)" : "1px solid rgba(15,23,42,.09)",
+    backgroundColor: ({ mode }) => mode === "dark" ? "rgba(10,24,45,.94)" : "rgba(255,255,255,.97)",
+    boxShadow: ({ mode }) => mode === "dark" ? "0 24px 64px rgba(0,0,0,.34)" : "0 24px 64px rgba(30,64,175,.17)",
     animation: "$enter .45s cubic-bezier(.22,1,.36,1)",
     [theme.breakpoints.down("xs")]: {
       padding: "34px 22px 28px",
@@ -108,16 +108,16 @@ const useStyles = makeStyles((theme) => ({
     position: "absolute",
     top: 14,
     right: 14,
-    color: mode => mode === "dark" ? "#cbd5e1" : "#475569",
-    backgroundColor: mode => mode === "dark" ? "rgba(255,255,255,.06)" : "#f1f5f9",
-    border: mode => mode === "dark" ? "1px solid rgba(255,255,255,.1)" : "1px solid #e2e8f0",
-    "&:hover": { backgroundColor: mode => mode === "dark" ? "rgba(255,255,255,.11)" : "#e2e8f0" },
+    color: ({ mode }) => mode === "dark" ? "#cbd5e1" : "#475569",
+    backgroundColor: ({ mode }) => mode === "dark" ? "rgba(255,255,255,.06)" : "#f1f5f9",
+    border: ({ mode }) => mode === "dark" ? "1px solid rgba(255,255,255,.1)" : "1px solid #e2e8f0",
+    "&:hover": { backgroundColor: ({ mode }) => mode === "dark" ? "rgba(255,255,255,.11)" : "#e2e8f0" },
     "&:focus-visible": { outline: "3px solid rgba(59,130,246,.32)", outlineOffset: 2 },
   },
   brand: { minHeight: 64, display: "flex", justifyContent: "center", alignItems: "center", margin: "2px 44px 18px" },
   logoImg: { display: "block", maxWidth: "100%", width: "auto", height: "auto", maxHeight: 64, objectFit: "contain" },
   welcome: {
-    color: mode => mode === "dark" ? "#f8fafc" : "#0f172a",
+    color: ({ mode }) => mode === "dark" ? "#f8fafc" : "#0f172a",
     fontSize: "1.65rem",
     lineHeight: 1.25,
     fontWeight: 700,
@@ -126,7 +126,7 @@ const useStyles = makeStyles((theme) => ({
     margin: "0 0 8px",
   },
   subtitle: {
-    color: mode => mode === "dark" ? "#94a3b8" : "#64748b",
+    color: ({ mode }) => mode === "dark" ? "#94a3b8" : "#64748b",
     fontSize: ".94rem",
     lineHeight: 1.55,
     textAlign: "center",
@@ -137,22 +137,22 @@ const useStyles = makeStyles((theme) => ({
     "& .MuiOutlinedInput-root": {
       minHeight: 54,
       borderRadius: 8,
-      color: mode => mode === "dark" ? "#f8fafc" : "#0f172a",
-      backgroundColor: mode => mode === "dark" ? "rgba(255,255,255,.045)" : "#f8fafc",
+      color: ({ mode }) => mode === "dark" ? "#f8fafc" : "#0f172a",
+      backgroundColor: ({ mode }) => mode === "dark" ? "rgba(255,255,255,.045)" : "#f8fafc",
       transition: "background-color .18s ease, box-shadow .18s ease",
-      "& fieldset": { borderColor: mode => mode === "dark" ? "rgba(255,255,255,.18)" : "#cbd5e1" },
-      "&:hover fieldset": { borderColor: mode => mode === "dark" ? "#64748b" : "#94a3b8" },
+      "& fieldset": { borderColor: ({ mode }) => mode === "dark" ? "rgba(255,255,255,.18)" : "#cbd5e1" },
+      "&:hover fieldset": { borderColor: ({ mode }) => mode === "dark" ? "#64748b" : "#94a3b8" },
       "&.Mui-focused": { boxShadow: "0 0 0 3px rgba(37,99,235,.16)" },
       "&.Mui-focused fieldset": { borderColor: "#2563eb", borderWidth: 1 },
       "&.Mui-error fieldset": { borderColor: "#dc2626" },
       "& input:-webkit-autofill": {
-        WebkitTextFillColor: mode => mode === "dark" ? "#f8fafc" : "#0f172a",
-        WebkitBoxShadow: mode => mode === "dark" ? "0 0 0 100px #14243a inset" : "0 0 0 100px #f8fafc inset",
+        WebkitTextFillColor: ({ mode }) => mode === "dark" ? "#f8fafc" : "#0f172a",
+        WebkitBoxShadow: ({ mode }) => mode === "dark" ? "0 0 0 100px #14243a inset" : "0 0 0 100px #f8fafc inset",
       },
     },
-    "& .MuiInputLabel-root": { color: mode => mode === "dark" ? "#94a3b8" : "#64748b" },
+    "& .MuiInputLabel-root": { color: ({ mode }) => mode === "dark" ? "#94a3b8" : "#64748b" },
     "& .MuiInputLabel-root.Mui-focused": { color: "#2563eb" },
-    "& .MuiInputAdornment-root .MuiSvgIcon-root": { color: mode => mode === "dark" ? "#94a3b8" : "#64748b" },
+    "& .MuiInputAdornment-root .MuiSvgIcon-root": { color: ({ mode }) => mode === "dark" ? "#94a3b8" : "#64748b" },
     "& .MuiFormHelperText-root": { marginLeft: 2 },
   },
   submit: {
@@ -173,8 +173,8 @@ const useStyles = makeStyles((theme) => ({
     "@media (prefers-reduced-motion: reduce)": { transition: "none", "&:hover": { transform: "none" } },
   },
   progress: { color: "inherit", marginRight: 10 },
-  registerRow: { color: mode => mode === "dark" ? "#94a3b8" : "#64748b", textAlign: "center", fontSize: ".875rem" },
-  registerLink: { color: mode => mode === "dark" ? "#93c5fd" : "#1d4ed8", fontWeight: 700, textDecoration: "none", "&:hover": { textDecoration: "underline" } },
+  registerRow: { color: ({ mode }) => mode === "dark" ? "#94a3b8" : "#64748b", textAlign: "center", fontSize: ".875rem" },
+  registerLink: { color: ({ mode }) => mode === "dark" ? "#93c5fd" : "#1d4ed8", fontWeight: 700, textDecoration: "none", "&:hover": { textDecoration: "underline" } },
   languageSelector: {
     position: "absolute",
     top: 20,
@@ -189,9 +189,9 @@ const useStyles = makeStyles((theme) => ({
     gap: 8,
     padding: "7px 11px",
     borderRadius: 8,
-    border: mode => mode === "dark" ? "1px solid rgba(255,255,255,.14)" : "1px solid rgba(15,23,42,.12)",
-    color: mode => mode === "dark" ? "#e2e8f0" : "#1e293b",
-    backgroundColor: mode => mode === "dark" ? "rgba(7,20,38,.75)" : "rgba(255,255,255,.9)",
+    border: ({ mode }) => mode === "dark" ? "1px solid rgba(255,255,255,.14)" : "1px solid rgba(15,23,42,.12)",
+    color: ({ mode }) => mode === "dark" ? "#e2e8f0" : "#1e293b",
+    backgroundColor: ({ mode }) => mode === "dark" ? "rgba(7,20,38,.75)" : "rgba(255,255,255,.9)",
     boxShadow: "0 6px 18px rgba(15,23,42,.1)",
     font: "inherit",
     fontSize: 14,
@@ -207,8 +207,8 @@ const useStyles = makeStyles((theme) => ({
     minWidth: 168,
     padding: 6,
     borderRadius: 8,
-    border: mode => mode === "dark" ? "1px solid rgba(255,255,255,.12)" : "1px solid #e2e8f0",
-    backgroundColor: mode => mode === "dark" ? "#0f2139" : "#fff",
+    border: ({ mode }) => mode === "dark" ? "1px solid rgba(255,255,255,.12)" : "1px solid #e2e8f0",
+    backgroundColor: ({ mode }) => mode === "dark" ? "#0f2139" : "#fff",
     boxShadow: "0 16px 36px rgba(15,23,42,.22)",
   },
   languageOption: {
@@ -221,22 +221,22 @@ const useStyles = makeStyles((theme) => ({
     padding: "7px 9px",
     border: 0,
     borderRadius: 6,
-    color: mode => mode === "dark" ? "#e2e8f0" : "#1e293b",
+    color: ({ mode }) => mode === "dark" ? "#e2e8f0" : "#1e293b",
     background: "transparent",
     font: "inherit",
     fontSize: 14,
     textAlign: "left",
     cursor: "pointer",
-    "&:hover, &:focus-visible": { backgroundColor: mode => mode === "dark" ? "rgba(255,255,255,.08)" : "#eff6ff", outline: "none" },
+    "&:hover, &:focus-visible": { backgroundColor: ({ mode }) => mode === "dark" ? "rgba(255,255,255,.08)" : "#eff6ff", outline: "none" },
   },
   flagIcon: { width: 20, height: 14, borderRadius: 2, objectFit: "cover" },
-  footer: { position: "relative", zIndex: 2, marginTop: 18, color: mode => mode === "dark" ? "#94a3b8" : "#475569", fontSize: ".78rem", textAlign: "center" },
+  footer: { position: "relative", zIndex: 2, marginTop: 18, color: ({ mode }) => mode === "dark" ? "#94a3b8" : "#475569", fontSize: ".78rem", textAlign: "center" },
 }));
 
 const Login = () => {
   const { colorMode } = useContext(ColorModeContext);
   const { appLogoFavicon, appLogoLight, appLogoDark, appName, mode } = colorMode;
-  const classes = useStyles(mode);
+  const classes = useStyles({ mode });
   const { getPublicSetting } = useSettings();
   const { handleLogin, loading } = useContext(AuthContext);
   const [user, setUser] = useState({ email: "", password: "" });
