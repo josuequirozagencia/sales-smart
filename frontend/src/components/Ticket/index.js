@@ -151,11 +151,11 @@ const Ticket = () => {
 
             const { data } = await api.get("/tickets/u/" + ticketId);
 
-            setContact(data.contact);
+            setContact(data?.contact || {});
             // setWhatsapp(data.whatsapp);
             // setQueueId(data.queueId);
-            setTicket(data);
-            if (["pending", "open", "group"].includes(data.status)) {
+            setTicket(data && typeof data === "object" && !Array.isArray(data) ? data : {});
+            if (["pending", "open", "group"].includes(data?.status)) {
               setTabOpen(data.status);
             }
             setLoading(false);
@@ -268,7 +268,7 @@ const Ticket = () => {
           ticketStatus={ticket.status}
           ticketChannel={ticket.channel}
           droppedFiles={dragDropFiles}
-          contactId={contact.id}
+          contactId={contact?.id}
           whatsappId={ticket.whatsappId}
         />
       </>

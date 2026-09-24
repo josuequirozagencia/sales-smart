@@ -12,6 +12,7 @@ import { AuthProvider } from "../context/Auth/AuthContext";
 import { TicketsContextProvider } from "../context/Tickets/TicketsContext";
 import { WhatsAppsProvider } from "../context/WhatsApp/WhatsAppsContext";
 import Route from "./Route";
+import ErrorBoundary from "../components/ErrorBoundary";
 
 // Componente de loading
 const Loading = () => (
@@ -84,6 +85,7 @@ const Routes = () => {
   }, []);
 
   return (
+    <ErrorBoundary scope="app">
     <BrowserRouter>
       <AuthProvider>
         <TicketsContextProvider>
@@ -290,6 +292,7 @@ const Routes = () => {
         </TicketsContextProvider>
       </AuthProvider>
     </BrowserRouter>
+    </ErrorBoundary>
   );
 };
 

@@ -11,6 +11,7 @@ import Title from "../../components/Title";
 import DeleteOutlineIcon from "@material-ui/icons/DeleteOutline";
 import api from "../../services/api";
 import usePlans from "../../hooks/usePlans";
+import { resolvePlanFeatures } from "../../helpers/planFeatures";
 import toastError from "../../errors/toastError";
 import { i18n } from "../../translate/i18n";
 import {
@@ -84,13 +85,19 @@ const CampaignsConfig = () => {
 
   useEffect(() => {
     async function fetchData() {
-      const companyId = user.companyId;
-      const planConfigs = await getPlanCompany(undefined, companyId);
-      if (!planConfigs.plan.useCampaigns) {
-        toast.error(i18n.t("campaignsConfig.forbiddenMessage"));
-        setTimeout(() => {
-          history.push(`/`)
-        }, 1000);
+      try {
+        const companyId = user?.companyId;
+        if (!companyId) return;
+        const planConfigs = await getPlanCompany(undefined, companyId);
+        const { features } = resolvePlanFeatures(planConfigs, "CampaignsConfig");
+        if (!features.useCampaigns) {
+          toast.error(i18n.t("campaignsConfig.forbiddenMessage"));
+          setTimeout(() => {
+            history.push(`/`)
+          }, 1000);
+        }
+      } catch (err) {
+        toastError(err);
       }
     }
     fetchData();

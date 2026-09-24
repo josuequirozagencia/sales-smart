@@ -437,7 +437,7 @@ const TicketsManagerTabs = () => {
   // sesion. Sin la guarda, un token caducado tumbaba la pantalla entera
   // con "Cannot read properties of undefined (reading 'map')" antes de
   // que llegara el 401 que redirige al login.
-  const userQueueIds = (user.queues || []).map((q) => q.id);
+  const userQueueIds = (Array.isArray(user?.queues) ? user.queues : []).map((q) => q.id);
   const [selectedQueueIds, setSelectedQueueIds] = useState(userQueueIds || []);
   const [selectedTags, setSelectedTags] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);
@@ -461,7 +461,9 @@ const TicketsManagerTabs = () => {
   }, [selectedQueueIds]);
 
   useEffect(() => {
-    if (user.profile.toUpperCase() === "ADMIN" || user.allUserChat.toUpperCase() === "ENABLED") {
+    const profile = String(user?.profile || "").toUpperCase();
+    const allUserChat = String(user?.allUserChat || "").toUpperCase();
+    if (profile === "ADMIN" || allUserChat === "ENABLED") {
       setShowAllTickets(false);
     }
   }, []);

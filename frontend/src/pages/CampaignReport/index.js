@@ -21,6 +21,8 @@ import WhatsAppIcon from "@material-ui/icons/WhatsApp";
 import ListAltIcon from "@material-ui/icons/ListAlt";
 import { useDate } from "../../hooks/useDate";
 import usePlans from "../../hooks/usePlans";
+import toastError from "../../errors/toastError";
+import { resolvePlanFeatures } from "../../helpers/planFeatures";
 import { AuthContext } from "../../context/Auth/AuthContext";
 
 // import { SocketContext } from "../../context/Socket/SocketContext";
@@ -66,13 +68,19 @@ const CampaignReport = () => {
 
   useEffect(() => {
     async function fetchData() {
-      const companyId = user.companyId;
-      const planConfigs = await getPlanCompany(undefined, companyId);
-      if (!planConfigs.plan.useCampaigns) {
-        toast.error("Esta empresa não possui permissão para acessar essa página! Estamos lhe redirecionando.");
-        setTimeout(() => {
-          history.push(`/`)
-        }, 1000);
+      try {
+        const companyId = user?.companyId;
+        if (!companyId) return;
+        const planConfigs = await getPlanCompany(undefined, companyId);
+        const { features } = resolvePlanFeatures(planConfigs, "CampaignReport");
+        if (!features.useCampaigns) {
+          toast.error("Esta empresa não possui permissão para acessar essa página! Estamos lhe redirecionando.");
+          setTimeout(() => {
+            history.push(`/`)
+          }, 1000);
+        }
+      } catch (err) {
+        toastError(err);
       }
     }
     fetchData();

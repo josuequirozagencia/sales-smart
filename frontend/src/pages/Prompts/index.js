@@ -29,6 +29,7 @@ import { toast } from "react-toastify";
 import ConfirmationModal from "../../components/ConfirmationModal";
 import { AuthContext } from "../../context/Auth/AuthContext";
 import usePlans from "../../hooks/usePlans";
+import { resolvePlanFeatures } from "../../helpers/planFeatures";
 import { useHistory } from "react-router-dom/cjs/react-router-dom.min";
 import ForbiddenPage from "../../components/ForbiddenPage";
 // import { SocketContext } from "../../context/Socket/SocketContext";
@@ -108,12 +109,18 @@ const Prompts = () => {
 
   useEffect(() => {
     async function fetchData() {
-      const planConfigs = await getPlanCompany(undefined, companyId);
-      if (!planConfigs.plan.useOpenAi) {
-        toast.error(i18n.t("prompts.toasts.permissionError"));
-        setTimeout(() => {
-          history.push(`/`)
-        }, 1000);
+      try {
+        if (!companyId) return;
+        const planConfigs = await getPlanCompany(undefined, companyId);
+        const { features } = resolvePlanFeatures(planConfigs, "Prompts");
+        if (!features.useOpenAi) {
+          toast.error(i18n.t("prompts.toasts.permissionError"));
+          setTimeout(() => {
+            history.push(`/`)
+          }, 1000);
+        }
+      } catch (err) {
+        toastError(err);
       }
     }
     fetchData();

@@ -128,7 +128,7 @@ const DashboardManage = () => {
   const [ticketNot, setTicketNot] = useState(0);
   const companyId = user.companyId;
 
-  const userQueueIds = (user.queues || []).map((q) => q.id);
+  const userQueueIds = (Array.isArray(user?.queues) ? user.queues : []).map((q) => q.id);
   const [selectedQueueIds, setSelectedQueueIds] = useState(userQueueIds || []);
 
   useEffect(() => {

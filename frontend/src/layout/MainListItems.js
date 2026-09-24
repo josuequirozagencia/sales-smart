@@ -73,6 +73,7 @@ import { isArray } from "lodash";
 import api from "../services/api";
 import toastError from "../errors/toastError";
 import usePlans from "../hooks/usePlans";
+import { resolvePlanFeatures } from "../helpers/planFeatures";
 import { i18n } from "../translate/i18n";
 import { ShapeLine, Webhook } from "@mui/icons-material";
 import AdminPanelSettingsOutlined from "@mui/icons-material/AdminPanelSettingsOutlined";
@@ -767,16 +768,22 @@ const MainListItems = ({ collapsed, drawerClose }) => {
   useEffect(() => {
     async function fetchData() {
       try {
-        const companyId = user.companyId;
+        // El plan puede no existir: una empresa sin planId devuelve la
+        // relacion en nulo y leer planConfigs.plan.useX tumbaba el arbol
+        // entero. resolvePlanFeatures normaliza las banderas y avisa una
+        // sola vez. Pasa ahora mismo en produccion con la empresa 1.
+        const companyId = user?.companyId;
+        if (!companyId) return;
         const planConfigs = await getPlanCompany(undefined, companyId);
+        const { features } = resolvePlanFeatures(planConfigs, "MainListItems");
 
-        setShowCampaigns(planConfigs.plan.useCampaigns);
-        setShowKanban(planConfigs.plan.useKanban);
-        setShowOpenAi(planConfigs.plan.useOpenAi);
-        setShowIntegrations(planConfigs.plan.useIntegrations);
-        setShowSchedules(planConfigs.plan.useSchedules);
-        setShowInternalChat(planConfigs.plan.useInternalChat);
-        setShowExternalApi(planConfigs.plan.useExternalApi);
+        setShowCampaigns(features.useCampaigns);
+        setShowKanban(features.useKanban);
+        setShowOpenAi(features.useOpenAi);
+        setShowIntegrations(features.useIntegrations);
+        setShowSchedules(features.useSchedules);
+        setShowInternalChat(features.useInternalChat);
+        setShowExternalApi(features.useExternalApi);
       } catch (err) {
         // Mismo caso que checkHelps: con la sesion caducada esto respondia
         // 401 sin captura. Los apartados del menu se quedan ocultos, que es

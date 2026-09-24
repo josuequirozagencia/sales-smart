@@ -30,6 +30,7 @@ import api from "../../services/api";
 import ButtonWithSpinner from "../ButtonWithSpinner";
 import toastError from "../../errors/toastError";
 import usePlans from "../../hooks/usePlans";
+import { resolvePlanFeatures } from "../../helpers/planFeatures";
 import { AuthContext } from "../../context/Auth/AuthContext";
 import { TicketsContext } from "../../context/Tickets/TicketsContext";
 import Tooltip from "@material-ui/core/Tooltip";
@@ -140,7 +141,7 @@ const TicketActionButtonsCustom = ({
   ] = useState(false);
   const [showTicketLogOpen, setShowTicketLogOpen] = useState(false);
   const [openTicketMessageDialog, setOpenTicketMessageDialog] = useState(false);
-  const [disableBot, setDisableBot] = useState(ticket.contact.disableBot);
+  const [disableBot, setDisableBot] = useState(ticket?.contact?.disableBot ?? false);
 
   const [showSchedules, setShowSchedules] = useState(false);
   const [enableIntegration, setEnableIntegration] = useState(
@@ -197,13 +198,19 @@ const TicketActionButtonsCustom = ({
   }, [open]);
 
   const fetchData = async () => {
-    const companyId = user.companyId;
-    const planConfigs = await getPlanCompany(undefined, companyId);
-    if (isMounted.current) {
-      setShowSchedules(planConfigs.plan.useSchedules);
-      setOpenTicketMessageDialog(false);
-      setDisableBot(ticket.contact.disableBot);
-      setShowTicketLogOpen(false);
+    try {
+      const companyId = user?.companyId;
+      if (!companyId) return;
+      const planConfigs = await getPlanCompany(undefined, companyId);
+      const { features } = resolvePlanFeatures(planConfigs, "TicketActionButtonsCustom");
+      if (isMounted.current) {
+        setShowSchedules(features.useSchedules);
+        setOpenTicketMessageDialog(false);
+        setDisableBot(ticket?.contact?.disableBot ?? false);
+        setShowTicketLogOpen(false);
+      }
+    } catch (err) {
+      toastError(err);
     }
   };
 
@@ -411,7 +418,8 @@ const TicketActionButtonsCustom = ({
   };
 
   const handleContactToggleDisableBot = async () => {
-    const { id } = ticket.contact;
+    const id = ticket?.contact?.id;
+    if (!id) return;
 
     try {
       const { data } = await api.put(`/contacts/toggleDisableBot/${id}`);

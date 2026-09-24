@@ -234,11 +234,16 @@ const Contacts = () => {
   
   useEffect(() => {
     async function fetchData() {
-      const settingList = await getAllSettings(user.companyId);
+      try {
+      const settingList = await getAllSettings(user?.companyId);
+      const safeSettingList = settingList && typeof settingList === "object" ? settingList : {};
 
-      for (const [key, value] of Object.entries(settingList)) {
+      for (const [key, value] of Object.entries(safeSettingList)) {
         if (key === "enableLGPD") setEnableLGPD(value === "enabled");
         if (key === "lgpdHideNumber") setHideNum(value === "enabled");
+      }
+      } catch (err) {
+        toastError(err);
       }
     }
     fetchData();

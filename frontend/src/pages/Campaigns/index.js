@@ -44,6 +44,7 @@ import { isArray } from "lodash";
 import { useDate } from "../../hooks/useDate";
 import ForbiddenPage from "../../components/ForbiddenPage";
 import usePlans from "../../hooks/usePlans";
+import { resolvePlanFeatures } from "../../helpers/planFeatures";
 import { AuthContext } from "../../context/Auth/AuthContext";
 
 const reducer = (state, action) => {
@@ -145,13 +146,19 @@ const Campaigns = () => {
 
   useEffect(() => {
     async function fetchData() {
-      const companyId = user.companyId;
-      const planConfigs = await getPlanCompany(undefined, companyId);
-      if (!planConfigs.plan.useCampaigns) {
-        toast.error(i18n.t("campaigns.permissionError"));
-        setTimeout(() => {
-          history.push(`/`)
-        }, 1000);
+      try {
+        const companyId = user?.companyId;
+        if (!companyId) return;
+        const planConfigs = await getPlanCompany(undefined, companyId);
+        const { features } = resolvePlanFeatures(planConfigs, "Campaigns");
+        if (!features.useCampaigns) {
+          toast.error(i18n.t("campaigns.permissionError"));
+          setTimeout(() => {
+            history.push(`/`)
+          }, 1000);
+        }
+      } catch (err) {
+        toastError(err);
       }
     }
     fetchData();

@@ -47,6 +47,7 @@ import Autocomplete, { createFilterOptions } from "@material-ui/lab/Autocomplete
 import useQueues from "../../hooks/useQueues";
 import UserStatusIcon from "../UserModal/statusIcon";
 import usePlans from "../../hooks/usePlans";
+import { resolvePlanFeatures } from "../../helpers/planFeatures";
 import ColorBoxModal from "../ColorBoxModal";
 // import { ColorBox } from "material-ui-color";
 
@@ -182,11 +183,17 @@ const QueueModal = ({ open, onClose, queueId, onEdit }) => {
 
   useEffect(() => {
     async function fetchData() {
-      const companyId = user.companyId;
-      const planConfigs = await getPlanCompany(undefined, companyId);
+      try {
+        const companyId = user?.companyId;
+        if (!companyId) return;
+        const planConfigs = await getPlanCompany(undefined, companyId);
+        const { features } = resolvePlanFeatures(planConfigs, "QueueModal");
 
-      setShowOpenAi(planConfigs.plan.useOpenAi);
-      setShowIntegrations(planConfigs.plan.useIntegrations);
+        setShowOpenAi(features.useOpenAi);
+        setShowIntegrations(features.useIntegrations);
+      } catch (err) {
+        toastError(err);
+      }
     }
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps

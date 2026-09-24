@@ -45,7 +45,7 @@ import CircularProgress from "@material-ui/core/CircularProgress";
 
 const reducer = (state, action) => {
   if (action.type === "LOAD_WALLETS") {
-    const wallets = action.payload;
+    const wallets = Array.isArray(action.payload) ? action.payload : [];
     const newWallets = [];
 
     wallets.forEach((wallet) => {

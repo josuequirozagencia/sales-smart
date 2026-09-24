@@ -99,7 +99,9 @@ const Kanban = () => {
   const [lanes, setLanes] = useState([]);
   const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-  const queueIds = (user.queues || []).map(queue => queue.UserQueue.queueId);
+  const queueIds = (Array.isArray(user?.queues) ? user.queues : [])
+    .map(queue => queue?.UserQueue?.queueId)
+    .filter((id) => id !== undefined && id !== null);
 
   const [sortOrder, setSortOrder] = useState(() => {
     return localStorage.getItem('sortOrder') || 'ticketNumber';
@@ -160,8 +162,9 @@ const Kanban = () => {
           endDate: endDate,
         },
       });
-      setTickets(data.tickets);
-      organizeLanes(fetchedTags, data.tickets);
+      const fetchedTickets = Array.isArray(data?.tickets) ? data.tickets : [];
+      setTickets(fetchedTickets);
+      organizeLanes(fetchedTags, fetchedTickets);
     } catch (err) {
       console.log(err);
       setTickets([]);
@@ -215,7 +218,7 @@ const Kanban = () => {
   };
 
   const organizeLanes = (fetchedTags = tags, fetchedTickets = tickets) => {
-    const sortedTickets = [...fetchedTickets];
+    const sortedTickets = Array.isArray(fetchedTickets) ? [...fetchedTickets] : [];
 
     if (sortOrder === 'ticketNumber') {
       sortedTickets.sort((a, b) => a.id - b.id);

@@ -33,6 +33,7 @@ import useAppointments from "./useAppointments";
 // import { SocketContext } from "../../context/Socket/SocketContext";
 import { AuthContext } from "../../context/Auth/AuthContext";
 import usePlans from "../../hooks/usePlans";
+import { resolvePlanFeatures } from "../../helpers/planFeatures";
 import { Calendar, momentLocalizer } from "react-big-calendar";
 // Os nomes dos dias e meses do calendário vêm do locale do moment, não do
 // objeto `messages` que já era traduzido. Como só o pt-br era importado — e
@@ -353,15 +354,21 @@ const Schedules = () => {
 
   useEffect(() => {
     async function fetchData() {
-      const companyId = user.companyId;
-      const planConfigs = await getPlanCompany(undefined, companyId);
-      if (!planConfigs.plan.useSchedules) {
-        toast.error(
-          i18n.t("schedules.errors.noPermission")
-        );
-        setTimeout(() => {
-          history.push(`/`);
-        }, 1000);
+      try {
+        const companyId = user?.companyId;
+        if (!companyId) return;
+        const planConfigs = await getPlanCompany(undefined, companyId);
+        const { features } = resolvePlanFeatures(planConfigs, "Schedules");
+        if (!features.useSchedules) {
+          toast.error(
+            i18n.t("schedules.errors.noPermission")
+          );
+          setTimeout(() => {
+            history.push(`/`);
+          }, 1000);
+        }
+      } catch (err) {
+        toastError(err);
       }
     }
     fetchData();

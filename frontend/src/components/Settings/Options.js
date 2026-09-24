@@ -286,7 +286,8 @@ const [loadingCopyContactPrefix, setLoadingCopyContactPrefix] = useState(false);
 
 
   useEffect(() => {
-    for (const [key, value] of Object.entries(settings)) {
+    const safeSettings = settings && typeof settings === "object" ? settings : {};
+    for (const [key, value] of Object.entries(safeSettings)) {
       if (key === "userRating") setUserRating(value);
       if (key === "scheduleType") setScheduleType(value);
       if (key === "chatBotType") setChatBotType(value);

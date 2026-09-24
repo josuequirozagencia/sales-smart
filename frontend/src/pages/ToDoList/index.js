@@ -49,7 +49,15 @@ const ToDoList = () => {
   useEffect(() => {
     const savedTasks = localStorage.getItem('tasks');
     if (savedTasks) {
-      setTasks(JSON.parse(savedTasks));
+      try {
+        const parsed = JSON.parse(savedTasks);
+        setTasks(Array.isArray(parsed) ? parsed : []);
+      } catch (parseError) {
+        // eslint-disable-next-line no-console
+        console.error("[ToDoList] conteúdo inválido em localStorage['tasks'], reiniciando a lista.", parseError);
+        localStorage.removeItem('tasks');
+        setTasks([]);
+      }
     }
   }, []);
 

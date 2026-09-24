@@ -85,6 +85,7 @@ import MessageUploadMedias from "../MessageUploadMedias";
 import { EditMessageContext } from "../../context/EditingMessage/EditingMessageContext";
 import ScheduleModal from "../ScheduleModal";
 import usePlans from "../../hooks/usePlans";
+import { resolvePlanFeatures } from "../../helpers/planFeatures";
 import TemplateModal from "../TemplateMetaModal";
 import TriggerFlowModal from "../TriggerFlowModal";
 
@@ -674,10 +675,16 @@ const MessageInput = ({
 
   useEffect(() => {
     async function fetchData() {
-      const companyId = user.companyId;
-      const planConfigs = await getPlanCompany(undefined, companyId);
-      setShowSchedules(planConfigs.plan.useSchedules);
-      setUseWhatsappOfficial(planConfigs.plan.useWhatsappOfficial);
+      try {
+        const companyId = user?.companyId;
+        if (!companyId) return;
+        const planConfigs = await getPlanCompany(undefined, companyId);
+        const { features } = resolvePlanFeatures(planConfigs, "MessageInput");
+        setShowSchedules(features.useSchedules);
+        setUseWhatsappOfficial(features.useWhatsappOfficial);
+      } catch (err) {
+        toastError(err);
+      }
     }
     fetchData();
   }, []);
