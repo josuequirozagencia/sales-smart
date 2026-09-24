@@ -92,12 +92,12 @@ const SettingsCustom = () => {
 
         const settingListOld = await getAllSettingsOld();
 
-        setCompany(company);
-        setSchedules(company.schedules);
-        setSettings(settingList);
-        setOldSettings(settingListOld);
+        setCompany(company || {});
+        setSchedules(Array.isArray(company?.schedules) ? company.schedules : []);
+        setSettings(settingList && typeof settingList === "object" ? settingList : {});
+        setOldSettings(Array.isArray(settingListOld) ? settingListOld : []);
 
-        setSchedulesEnabled(settingList.scheduleType === "company");
+        setSchedulesEnabled(settingList?.scheduleType === "company");
         setCurrentUser(user);
       } catch (e) {
         toast.error(e);

@@ -409,7 +409,7 @@ const useStyles = makeStyles((theme) => ({
 
 const reducer = (state, action) => {
   if (action.type === "LOAD_MESSAGES") {
-    const messages = action.payload;
+    const messages = Array.isArray(action.payload) ? action.payload : [];
     const newMessages = [];
 
     messages.forEach((message) => {
@@ -498,17 +498,22 @@ const MessagesList = ({
 
   useEffect(() => {
     async function fetchData() {
+      try {
       const settings = await getAll(companyId);
+      const safeSettings = settings && typeof settings === "object" ? settings : {};
 
       let settinglgpdDeleteMessage;
       let settingEnableLGPD;
 
-      for (const [key, value] of Object.entries(settings)) {
+      for (const [key, value] of Object.entries(safeSettings)) {
         if (key === "lgpdDeleteMessage") settinglgpdDeleteMessage = value
         if (key === "enableLGPD") settingEnableLGPD = value
       }
       if (settingEnableLGPD === "enabled" && settinglgpdDeleteMessage === "enabled") {
         setLGPDDeleteMessage(true);
+      }
+      } catch (err) {
+        toastError(err);
       }
     }
     fetchData();

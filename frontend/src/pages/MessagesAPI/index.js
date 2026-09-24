@@ -17,6 +17,7 @@ import { toast } from "react-toastify";
 
 import axios from "axios";
 import usePlans from "../../hooks/usePlans";
+import { resolvePlanFeatures } from "../../helpers/planFeatures";
 import { AuthContext } from "../../context/Auth/AuthContext";
 
 const useStyles = makeStyles((theme) => ({
@@ -65,15 +66,21 @@ const MessagesAPI = () => {
 
   useEffect(() => {
     async function fetchData() {
-      const companyId = user.companyId;
-      const planConfigs = await getPlanCompany(undefined, companyId);
-      if (!planConfigs.plan.useExternalApi) {
-        toast.error(
-          i18n.t("messagesAPI.forbiddenMessage")
-        );
-        setTimeout(() => {
-          history.push(`/`);
-        }, 1000);
+      try {
+        const companyId = user?.companyId;
+        if (!companyId) return;
+        const planConfigs = await getPlanCompany(undefined, companyId);
+        const { features } = resolvePlanFeatures(planConfigs, "MessagesAPI");
+        if (!features.useExternalApi) {
+          toast.error(
+            i18n.t("messagesAPI.forbiddenMessage")
+          );
+          setTimeout(() => {
+            history.push(`/`);
+          }, 1000);
+        }
+      } catch (err) {
+        toastError(err);
       }
     }
     fetchData();

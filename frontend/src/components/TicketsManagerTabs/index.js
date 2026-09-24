@@ -348,7 +348,7 @@ const TicketsManagerTabs = () => {
   const [pendingCount, setPendingCount] = useState(0);
   const [groupingCount, setGroupingCount] = useState(0);
 
-  const userQueueIds = user.queues.map((q) => q.id);
+  const userQueueIds = (Array.isArray(user?.queues) ? user.queues : []).map((q) => q.id);
   const [selectedQueueIds, setSelectedQueueIds] = useState(userQueueIds || []);
   const [selectedTags, setSelectedTags] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);
@@ -372,7 +372,9 @@ const TicketsManagerTabs = () => {
   }, [selectedQueueIds]);
 
   useEffect(() => {
-    if (user.profile.toUpperCase() === "ADMIN" || user.allUserChat.toUpperCase() === "ENABLED") {
+    const profile = String(user?.profile || "").toUpperCase();
+    const allUserChat = String(user?.allUserChat || "").toUpperCase();
+    if (profile === "ADMIN" || allUserChat === "ENABLED") {
       setShowAllTickets(false);
     }
   }, []);

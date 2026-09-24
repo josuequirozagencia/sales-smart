@@ -89,7 +89,7 @@ const NewTicketModal = ({ modalOpen, onClose, initialContact }) => {
         setSelectedWhatsapp(whatsappId)
       }
 
-      if (user.queues.length === 1) {
+      if (Array.isArray(user?.queues) && user.queues.length === 1) {
         setSelectedQueue(user.queues[0].id)
       }
       fetchContacts();
@@ -331,8 +331,9 @@ const NewTicketModal = ({ modalOpen, onClose, initialContact }) => {
                   if (selectedQueue === "") {
                     return "Selecione uma fila"
                   }
-                  const queue = user.queues.find(q => q.id === selectedQueue)
-                  return queue.name
+                  const queue = (Array.isArray(user?.queues) ? user.queues : [])
+                    .find(q => q.id === selectedQueue)
+                  return queue?.name || "Selecione uma fila"
                 }}
               >
                 {user.queues?.length > 0 &&

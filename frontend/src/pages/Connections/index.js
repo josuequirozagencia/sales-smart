@@ -64,6 +64,7 @@ import toastError from "../../errors/toastError";
 import formatSerializedId from '../../utils/formatSerializedId';
 import { AuthContext } from "../../context/Auth/AuthContext";
 import usePlans from "../../hooks/usePlans";
+import { resolvePlanFeatures } from "../../helpers/planFeatures";
 import { useHistory } from "react-router-dom/cjs/react-router-dom.min";
 import ForbiddenPage from "../../components/ForbiddenPage";
 import { Can } from "../../components/Can";
@@ -196,8 +197,14 @@ const Connections = () => {
 
   useEffect(() => {
     async function fetchData() {
-      const planConfigs = await getPlanCompany(undefined, companyId);
-      setPlanConfig(planConfigs)
+      try {
+        if (!companyId) return;
+        const planConfigs = await getPlanCompany(undefined, companyId);
+        const { company, features } = resolvePlanFeatures(planConfigs, "Connections");
+        setPlanConfig({ ...(company || {}), plan: features })
+      } catch (err) {
+        toastError(err);
+      }
     }
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps

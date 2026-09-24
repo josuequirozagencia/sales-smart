@@ -41,6 +41,7 @@ import { i18n } from "../../translate/i18n";
 import toastError from "../../errors/toastError";
 import { AuthContext } from "../../context/Auth/AuthContext";
 import usePlans from "../../hooks/usePlans";
+import { resolvePlanFeatures } from "../../helpers/planFeatures";
 import { useHistory } from "react-router-dom/cjs/react-router-dom.min";
 import ForbiddenPage from "../../components/ForbiddenPage";
 
@@ -126,14 +127,20 @@ const QueueIntegration = () => {
 
   useEffect(() => {
     async function fetchData() {
-      const planConfigs = await getPlanCompany(undefined, companyId);
-      if (!planConfigs.plan.useIntegrations) {
-        toast.error(
-          i18n.t("queueIntegration.toasts.permissionError")
-        );
-        setTimeout(() => {
-          history.push(`/`);
-        }, 1000);
+      try {
+        if (!companyId) return;
+        const planConfigs = await getPlanCompany(undefined, companyId);
+        const { features } = resolvePlanFeatures(planConfigs, "QueueIntegration");
+        if (!features.useIntegrations) {
+          toast.error(
+            i18n.t("queueIntegration.toasts.permissionError")
+          );
+          setTimeout(() => {
+            history.push(`/`);
+          }, 1000);
+        }
+      } catch (err) {
+        toastError(err);
       }
     }
     fetchData();

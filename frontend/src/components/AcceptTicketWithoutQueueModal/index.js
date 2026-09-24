@@ -71,7 +71,7 @@ const AcceptTicketWithouSelectQueue = ({
 
   useEffect(() => {
     try {
-      if (user.queues.length === 1) {
+      if (Array.isArray(user?.queues) && user.queues.length === 1) {
         if (isMounted.current) {
           setSelectedQueue(user.queues[0].id);
         }
@@ -206,7 +206,7 @@ const AcceptTicketWithouSelectQueue = ({
               label={i18n.t("ticketsList.acceptModal.queue")}
             >
               <MenuItem value={""}>&nbsp;</MenuItem>
-              {user.queues.map((queue) => (
+              {(Array.isArray(user?.queues) ? user.queues : []).map((queue) => (
                 <MenuItem key={queue.id} value={queue.id}>
                   {queue.name}
                 </MenuItem>

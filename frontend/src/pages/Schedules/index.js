@@ -26,6 +26,7 @@ import moment from "moment";
 // import { SocketContext } from "../../context/Socket/SocketContext";
 import { AuthContext } from "../../context/Auth/AuthContext";
 import usePlans from "../../hooks/usePlans";
+import { resolvePlanFeatures } from "../../helpers/planFeatures";
 import { Calendar, momentLocalizer } from "react-big-calendar";
 import "moment/locale/pt-br";
 import "react-big-calendar/lib/css/react-big-calendar.css";
@@ -165,15 +166,21 @@ const Schedules = () => {
 
   useEffect(() => {
     async function fetchData() {
-      const companyId = user.companyId;
-      const planConfigs = await getPlanCompany(undefined, companyId);
-      if (!planConfigs.plan.useSchedules) {
-        toast.error(
-          i18n.t("schedules.errors.noPermission")
-        );
-        setTimeout(() => {
-          history.push(`/`);
-        }, 1000);
+      try {
+        const companyId = user?.companyId;
+        if (!companyId) return;
+        const planConfigs = await getPlanCompany(undefined, companyId);
+        const { features } = resolvePlanFeatures(planConfigs, "Schedules");
+        if (!features.useSchedules) {
+          toast.error(
+            i18n.t("schedules.errors.noPermission")
+          );
+          setTimeout(() => {
+            history.push(`/`);
+          }, 1000);
+        }
+      } catch (err) {
+        toastError(err);
       }
     }
     fetchData();

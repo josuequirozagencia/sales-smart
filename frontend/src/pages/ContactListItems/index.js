@@ -49,7 +49,7 @@ import ForbiddenPage from "../../components/ForbiddenPage";
 
 const reducer = (state, action) => {
   if (action.type === "LOAD_CONTACTS") {
-    const contacts = action.payload;
+    const contacts = Array.isArray(action.payload) ? action.payload : [];
     const newContacts = [];
 
     contacts.forEach((contact) => {

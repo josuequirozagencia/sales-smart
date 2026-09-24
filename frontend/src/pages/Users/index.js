@@ -39,6 +39,7 @@ import ForbiddenPage from "../../components/ForbiddenPage";
 import ChatBubbleOutlineIcon from "@material-ui/icons/ChatBubbleOutline";
 import { useHistory } from "react-router-dom";
 import usePlans from "../../hooks/usePlans";
+import { resolvePlanFeatures } from "../../helpers/planFeatures";
 
 const backendUrl = getBackendUrl();
 
@@ -144,10 +145,11 @@ const Users = () => {
       try {
         setLoading(true);
         const planConfigs = await getPlanCompany(undefined, companyId);
+        const { features } = resolvePlanFeatures(planConfigs, "Users");
 
-        setShowInternalChat(planConfigs.plan.useInternalChat);
+        setShowInternalChat(features.useInternalChat);
       } catch (err) {
-        console.error("Error fetching plan:", err);
+        toastError(err);
       } finally {
         setLoading(false);
       }

@@ -3,6 +3,7 @@ import { Route as RouterRoute, Redirect } from "react-router-dom";
 
 import { AuthContext } from "../context/Auth/AuthContext";
 import BackdropLoading from "../components/BackdropLoading";
+import ErrorBoundary from "../components/ErrorBoundary";
 
 const Route = ({ component: Component, isPrivate = false, ...rest }) => {
 	const { isAuth, loading, user } = useContext(AuthContext);
@@ -29,7 +30,18 @@ const Route = ({ component: Component, isPrivate = false, ...rest }) => {
 		return <Redirect to={{ pathname: redirectTo, state: { from: rest.location } }} />;
 	}
 
-	return <RouterRoute {...rest} component={Component} />;
+	// Cada rota tem seu próprio ErrorBoundary: uma exceção em uma tela não
+	// derruba o restante da aplicação nem deixa a página em branco.
+	return (
+		<RouterRoute
+			{...rest}
+			render={props => (
+				<ErrorBoundary key={rest.path} scope={rest.path}>
+					<Component {...props} />
+				</ErrorBoundary>
+			)}
+		/>
+	);
 };
 
 export default Route;

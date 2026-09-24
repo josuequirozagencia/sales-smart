@@ -39,6 +39,7 @@ import { Autorenew, FileCopy } from "@material-ui/icons";
 import useCompanySettings from "../../hooks/useSettings/companySettings";
 import SchedulesForm from "../SchedulesForm";
 import usePlans from "../../hooks/usePlans";
+import { resolvePlanFeatures } from "../../helpers/planFeatures";
 import { AuthContext } from "../../context/Auth/AuthContext";
 import { Colorize } from "@material-ui/icons";
 import ColorPicker from "../ColorPicker";
@@ -286,12 +287,18 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
 
   useEffect(() => {
     async function fetchData() {
-      const companyId = user.companyId;
-      const planConfigs = await getPlanCompany(undefined, companyId);
+      try {
+        const companyId = user?.companyId;
+        if (!companyId) return;
+        const planConfigs = await getPlanCompany(undefined, companyId);
+        const { features } = resolvePlanFeatures(planConfigs, "WhatsAppModal");
 
-      setShowOpenAi(planConfigs.plan.useOpenAi);
-      setShowIntegrations(planConfigs.plan.useIntegrations);
-      setUseWhatsappOfficial(planConfigs.plan.useWhatsappOfficial);
+        setShowOpenAi(features.useOpenAi);
+        setShowIntegrations(features.useIntegrations);
+        setUseWhatsappOfficial(features.useWhatsappOfficial);
+      } catch (err) {
+        toastError(err);
+      }
     }
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
