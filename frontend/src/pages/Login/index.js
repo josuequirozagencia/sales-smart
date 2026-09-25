@@ -1,40 +1,164 @@
 import React, { useState, useContext, useEffect, useRef } from "react";
 import { Link as RouterLink } from "react-router-dom";
 import Button from "@material-ui/core/Button";
+import CircularProgress from "@material-ui/core/CircularProgress";
 import CssBaseline from "@material-ui/core/CssBaseline";
 import TextField from "@material-ui/core/TextField";
 import Link from "@material-ui/core/Link";
 import Grid from "@material-ui/core/Grid";
-import { makeStyles, useTheme } from "@material-ui/core/styles";
-import { i18n, soloIdioma, IDIOMA_POR_DEFECTO } from "../../translate/i18n";
-import { AuthContext } from "../../context/Auth/AuthContext";
-import ColorModeContext from "../../layout/themeContext";
-import useSettings from "../../hooks/useSettings";
+import { makeStyles } from "@material-ui/core/styles";
 import IconButton from "@material-ui/core/IconButton";
+import InputAdornment from "@material-ui/core/InputAdornment";
 import Brightness4Icon from "@material-ui/icons/Brightness4";
 import Brightness7Icon from "@material-ui/icons/Brightness7";
 import Visibility from "@material-ui/icons/Visibility";
 import VisibilityOff from "@material-ui/icons/VisibilityOff";
-import InputAdornment from "@material-ui/core/InputAdornment";
+import EmailOutlinedIcon from "@material-ui/icons/EmailOutlined";
+import LockOutlinedIcon from "@material-ui/icons/LockOutlined";
+import ExpandMoreIcon from "@material-ui/icons/ExpandMore";
+import CheckIcon from "@material-ui/icons/Check";
 import { Helmet } from "react-helmet";
+import clsx from "clsx";
+
+import { i18n } from "../../translate/i18n";
+import { AuthContext } from "../../context/Auth/AuthContext";
+import ColorModeContext from "../../layout/themeContext";
+import useSettings from "../../hooks/useSettings";
 import BRFlag from "../../assets/brazil.png";
 import USFlag from "../../assets/unitedstates.png";
 import ESFlag from "../../assets/esspain.png";
 import ARFlag from "../../assets/arabe.png";
 import defaultLogoLight from "../../assets/logo.png";
-import clsx from "clsx";
 import { getBackendUrl } from "../../config";
 
 const languageOptions = [
   { value: "pt-BR", label: "Português", icon: BRFlag },
   { value: "en", label: "English", icon: USFlag },
   { value: "es", label: "Español", icon: ESFlag },
-  { value: "ar", label: "عربي", icon: ARFlag },
+  { value: "ar", label: "العربية", icon: ARFlag },
 ];
 
 const useStyles = makeStyles((theme) => ({
-  // Aviso de acceso bloqueado. Fijo, no pasajero: el usuario no lo
-  // resuelve reintentando y tiene que poder leerlo con calma.
+  root: {
+    width: "100%",
+    minHeight: "100dvh",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    overflowY: "auto",
+    boxSizing: "border-box",
+    position: "relative",
+    padding: "76px 20px 28px",
+    background: ({ mode }) => mode === "dark"
+      ? "linear-gradient(145deg, #071426 0%, #0b2447 54%, #123b72 100%)"
+      : "linear-gradient(145deg, #eaf2ff 0%, #dbeafe 48%, #bfdbfe 100%)",
+    "&::before": {
+      content: '""',
+      position: "absolute",
+      inset: 0,
+      pointerEvents: "none",
+      background: ({ mode }) => mode === "dark"
+        ? "linear-gradient(115deg, rgba(255,255,255,.045), transparent 38%)"
+        : "linear-gradient(115deg, rgba(255,255,255,.72), transparent 42%)",
+    },
+    [theme.breakpoints.down("xs")]: {
+      justifyContent: "flex-start",
+      padding: "68px 16px 22px",
+    },
+  },
+  customOverlay: {
+    position: "absolute",
+    inset: 0,
+    background: "rgba(5, 18, 38, .62)",
+    pointerEvents: "none",
+  },
+  containerLogin: {
+    width: "100%",
+    maxWidth: 472,
+    boxSizing: "border-box",
+    margin: "0 auto",
+    padding: "0 16px",
+    position: "relative",
+    zIndex: 2,
+  },
+  paper: {
+    width: "100%",
+    boxSizing: "border-box",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "stretch",
+    position: "relative",
+    padding: "42px 40px 34px",
+    borderRadius: 14,
+    border: ({ mode }) => mode === "dark" ? "1px solid rgba(255,255,255,.12)" : "1px solid rgba(15,23,42,.09)",
+    backgroundColor: ({ mode }) => mode === "dark" ? "rgba(10,24,45,.94)" : "rgba(255,255,255,.97)",
+    boxShadow: ({ mode }) => mode === "dark" ? "0 24px 64px rgba(0,0,0,.34)" : "0 24px 64px rgba(30,64,175,.17)",
+    animation: "$enter .45s cubic-bezier(.22,1,.36,1)",
+    [theme.breakpoints.down("xs")]: {
+      padding: "34px 22px 28px",
+      borderRadius: 12,
+    },
+    "@media (prefers-reduced-motion: reduce)": { animation: "none" },
+  },
+  "@keyframes enter": {
+    from: { opacity: 0, transform: "translateY(12px)" },
+    to: { opacity: 1, transform: "translateY(0)" },
+  },
+  themeButton: {
+    position: "absolute",
+    top: 14,
+    right: 14,
+    color: ({ mode }) => mode === "dark" ? "#cbd5e1" : "#475569",
+    backgroundColor: ({ mode }) => mode === "dark" ? "rgba(255,255,255,.06)" : "#f1f5f9",
+    border: ({ mode }) => mode === "dark" ? "1px solid rgba(255,255,255,.1)" : "1px solid #e2e8f0",
+    "&:hover": { backgroundColor: ({ mode }) => mode === "dark" ? "rgba(255,255,255,.11)" : "#e2e8f0" },
+    "&:focus-visible": { outline: "3px solid rgba(59,130,246,.32)", outlineOffset: 2 },
+  },
+  brand: { minHeight: 64, display: "flex", justifyContent: "center", alignItems: "center", margin: "2px 44px 18px" },
+  logoImg: { display: "block", maxWidth: "100%", width: "auto", height: "auto", maxHeight: 64, objectFit: "contain" },
+  welcome: {
+    color: ({ mode }) => mode === "dark" ? "#f8fafc" : "#0f172a",
+    fontSize: "1.65rem",
+    lineHeight: 1.25,
+    fontWeight: 700,
+    letterSpacing: 0,
+    textAlign: "center",
+    margin: "0 0 8px",
+  },
+  subtitle: {
+    color: ({ mode }) => mode === "dark" ? "#94a3b8" : "#64748b",
+    fontSize: ".94rem",
+    lineHeight: 1.55,
+    textAlign: "center",
+    margin: "0 0 18px",
+  },
+  form: { width: "100%" },
+  textField: {
+    "& .MuiOutlinedInput-root": {
+      minHeight: 54,
+      borderRadius: 8,
+      color: ({ mode }) => mode === "dark" ? "#f8fafc" : "#0f172a",
+      backgroundColor: ({ mode }) => mode === "dark" ? "rgba(255,255,255,.045)" : "#f8fafc",
+      transition: "background-color .18s ease, box-shadow .18s ease",
+      "& fieldset": { borderColor: ({ mode }) => mode === "dark" ? "rgba(255,255,255,.18)" : "#cbd5e1" },
+      "&:hover fieldset": { borderColor: ({ mode }) => mode === "dark" ? "#64748b" : "#94a3b8" },
+      "&.Mui-focused": { boxShadow: "0 0 0 3px rgba(37,99,235,.16)" },
+      "&.Mui-focused fieldset": { borderColor: "#2563eb", borderWidth: 1 },
+      "&.Mui-error fieldset": { borderColor: "#dc2626" },
+      "& input:-webkit-autofill": {
+        WebkitTextFillColor: ({ mode }) => mode === "dark" ? "#f8fafc" : "#0f172a",
+        WebkitBoxShadow: ({ mode }) => mode === "dark" ? "0 0 0 100px #14243a inset" : "0 0 0 100px #f8fafc inset",
+      },
+    },
+    "& .MuiInputLabel-root": { color: ({ mode }) => mode === "dark" ? "#94a3b8" : "#64748b" },
+    "& .MuiInputLabel-root.Mui-focused": { color: "#2563eb" },
+    "& .MuiInputAdornment-root .MuiSvgIcon-root": { color: ({ mode }) => mode === "dark" ? "#94a3b8" : "#64748b" },
+    "& .MuiFormHelperText-root": { marginLeft: 2 },
+  },
+  // Aviso de acceso bloqueado. Fijo, no pasajero: el usuario no lo resuelve
+  // reintentando y tiene que poder leerlo con calma. Viene de la linea del
+  // producto; el login de main no lo tenia.
   avisoBloqueo: {
     width: "100%",
     padding: theme.spacing(2),
@@ -51,420 +175,129 @@ const useStyles = makeStyles((theme) => ({
     borderTop: "1px solid currentColor",
     opacity: 0.9,
   },
-  root: {
-    width: "100%",
-    height: "100vh",
-    // dvh descuenta las barras del navegador movil; donde no existe se queda
-    // el 100vh de arriba.
-    "@supports (height: 100dvh)": {
-      height: "100dvh",
-    },
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    // El centrado vertical lo da el margin auto de la tarjeta, no
-    // justifyContent: con "center", cuando la tarjeta no cabe se sale por
-    // arriba y esa parte ya no se alcanza con el scroll.
-    justifyContent: "flex-start",
-    textAlign: "center",
-    // Arriba queda sitio para el idioma y el tema, que van fijos.
-    padding: "80px 16px 32px",
-    margin: "0",
-    boxSizing: "border-box",
-    // Scroll vertical propio (el body de la aplicacion tiene overflow hidden):
-    // antes era overflow hidden y, en un movil con el teclado abierto o en
-    // horizontal, el boton quedaba fuera de la pantalla sin forma de llegar.
-    overflowX: "hidden",
-    overflowY: "auto",
-    // Escritorio: tarjeta a la derecha, como antes, pero dentro del flujo y no
-    // en posicion absoluta, para que tambien pueda desplazarse en ventanas bajas.
-    [theme.breakpoints.up("md")]: {
-      alignItems: "flex-end",
-      padding: "80px 8% 32px",
-    },
-    // Fondo con el color de MARCA, no un azul fijo.
-    //
-    // Se deriva del primario configurado en Ajustes > Whitelabel, asi que
-    // una empresa que cambie su color ve tambien cambiar esta pantalla. El
-    // sistema de tokens solo ofrece oscurecer, de ahi que el degradado vaya
-    // del tono activo al primario en vez de abrir hacia un tono claro.
-    background: `linear-gradient(135deg, ${theme.palette.tokens.brand.primaryActive} 0%, ${theme.palette.tokens.brand.primary} 100%)`,
-    position: "relative",
-
-    // Padrão de pontos no fundo
-    "&::before": {
-      content: '""',
-      position: "absolute",
-      top: 0,
-      left: 0,
-      width: "100%",
-      height: "100%",
-      backgroundImage: `
-        radial-gradient(circle at 25% 25%, rgba(255,255,255,0.05) 1px, transparent 1px),
-        radial-gradient(circle at 75% 75%, rgba(255,255,255,0.05) 1px, transparent 1px)
-      `,
-      backgroundSize: "50px 50px",
-      animation: "$float 20s ease-in-out infinite",
-    },
-  },
-
-  "@keyframes float": {
-    "0%, 100%": { transform: "translateY(0px) rotate(0deg)" },
-    "50%": { transform: "translateY(-10px) rotate(180deg)" },
-  },
-
-  // Container ajustado - desktop à direita, mobile centralizado
-  // Ya no es un <Container> de MUI: el tema global le quita el padding con
-  // !important a todos (App.js, MuiContainer) y en el movil la tarjeta llegaba
-  // de borde a borde de la pantalla. El margen lo da ahora la raiz.
-  containerLogin: {
-    width: "100%",
-    maxWidth: "420px",
-    position: "relative",
-    zIndex: 10,
-    marginTop: "auto",
-    marginBottom: "auto",
-    flexShrink: 0,
-  },
-
-  paper: {
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
-    backdropFilter: "blur(20px)",
-    WebkitBackdropFilter: "blur(20px)",
-    boxShadow: `
-      0 20px 40px rgba(0, 0, 0, 0.1),
-      0 1px 0 rgba(255, 255, 255, 0.2) inset,
-      0 0 0 1px rgba(255, 255, 255, 0.1)
-    `,
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    padding: "40px 30px",
-    borderRadius: "20px",
-    maxWidth: "420px",
-    width: "100%",
-    margin: "0 auto",
-    border: "1px solid rgba(255, 255, 255, 0.2)",
-    animation: "$slideInRight 0.8s cubic-bezier(0.4, 0, 0.2, 1)",
-
-    [theme.breakpoints.down("sm")]: {
-      animation: "$slideInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1)",
-      borderRadius: "16px",
-      padding: "28px 20px 20px",
-    },
-  },
-
-  "@keyframes slideInRight": {
-    from: {
-      opacity: 0,
-      transform: "translateX(50px)",
-    },
-    to: {
-      opacity: 1,
-      transform: "translateX(0)",
-    },
-  },
-
-  "@keyframes slideInUp": {
-    from: {
-      opacity: 0,
-      transform: "translateY(30px)",
-    },
-    to: {
-      opacity: 1,
-      transform: "translateY(0)",
-    },
-  },
-
-  avatar: {
-    margin: theme.spacing(1),
-    backgroundColor: theme.palette.tokens.brand.primary,
-    // El icono de dentro se calcula sobre el fondo, no se fija blanco: si
-    // una empresa elige un primario claro, el blanco desapareceria.
-    color: theme.palette.tokens.brand.onPrimary,
-  },
-
-  form: {
-    width: "100%",
-    marginTop: theme.spacing(1),
-  },
-
   submit: {
-    margin: theme.spacing(3, 0, 2),
-    background: `linear-gradient(45deg, ${theme.palette.tokens.brand.primary}, ${theme.palette.tokens.brand.primaryActive})`,
-    color: "white",
-    borderRadius: "12px",
-    padding: "12px 0",
-    fontSize: "16px",
-    fontWeight: 600,
+    minHeight: 50,
+    margin: theme.spacing(2.5, 0, 2),
+    borderRadius: 8,
+    background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
+    color: "#fff",
+    boxShadow: "0 8px 20px rgba(37,99,235,.24)",
+    fontSize: 15,
+    fontWeight: 700,
+    letterSpacing: 0,
     textTransform: "none",
-    // Sombra del sistema, no una tintada con el azul que ya no existe.
-    boxShadow: theme.palette.tokens.shadow.md,
-    border: "none",
-    transition: "all 0.3s ease",
-    "&:hover": {
-      background: `linear-gradient(45deg, ${theme.palette.tokens.brand.primaryHover}, ${theme.palette.tokens.brand.primaryActive})`,
-      transform: "translateY(-2px)",
-      boxShadow: theme.palette.tokens.shadow.lg,
-    },
-    "&:active": {
-      transform: "translateY(0)",
-    },
+    transition: "transform .18s ease, box-shadow .18s ease",
+    "&:hover": { background: "linear-gradient(135deg, #1d4ed8, #1e40af)", transform: "translateY(-1px)", boxShadow: "0 10px 24px rgba(37,99,235,.3)" },
+    "&:active": { transform: "translateY(0)" },
+    "&.Mui-disabled": { color: "rgba(255,255,255,.8)", background: "#64748b" },
+    "@media (prefers-reduced-motion: reduce)": { transition: "none", "&:hover": { transform: "none" } },
   },
-
-  powered: {
-    color: "white",
-  },
-
-  // Logo - mantendo o sistema original
-  logoImg: {
-    width: "100%",
-    maxWidth: "280px",
-    height: "auto",
-    maxHeight: "80px",
-    margin: "0 auto 20px auto",
-    [theme.breakpoints.down("xs")]: {
-      maxWidth: "220px",
-      maxHeight: "56px",
-      marginBottom: "8px",
-    },
-    filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.1))",
-    // Sempre usa logo.png na página de login
-    content: "url(" + defaultLogoLight + ")",
-  },
-
-  // Boton de tema: fuera de la tarjeta, fijo arriba a la derecha, como el
-  // idioma a la izquierda. Dentro de la tarjeta, en el movil, tapaba el logo.
-  iconButton: {
-    position: "fixed",
-    top: 20,
-    right: 20,
-    zIndex: 1000,
-    width: 40,
-    height: 40,
-    padding: 8,
-    borderRadius: "12px",
-    background: "rgba(255, 255, 255, 0.9)",
-    backdropFilter: "blur(10px)",
-    border: "1px solid rgba(0, 0, 0, 0.15)",
-    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-    color: "#374151",
-    transition: "all 0.3s ease",
-    "&:hover": {
-      background: "rgba(255, 255, 255, 1)",
-      transform: "scale(1.05)",
-    },
-    [theme.breakpoints.down("xs")]: {
-      top: 16,
-      right: 16,
-    },
-  },
-
-  // Campos de input melhorados mas compatíveis
-  textField: {
-    "& .MuiOutlinedInput-root": {
-      borderRadius: "12px",
-      backgroundColor: "rgba(255, 255, 255, 0.8)",
-      backdropFilter: "blur(10px)",
-      transition: "all 0.3s ease",
-      color: "#1f2937", // Cor escura para o texto digitado
-      "&:hover": {
-        backgroundColor: "rgba(255, 255, 255, 0.9)",
-      },
-      "&.Mui-focused": {
-        backgroundColor: "rgba(255, 255, 255, 1)",
-        // Halo de foco en el color de marca, con la opacidad en el propio
-        // borde: es lo que senala donde se esta escribiendo.
-        boxShadow: `0 0 0 3px ${theme.palette.tokens.brand.primary}22`,
-      },
-      // 48px de alto y letra de 16px. El tema global deja los campos en 38px
-      // con la etiqueta calculada para 56 (quedaba pegada al borde inferior),
-      // y con menos de 16px Safari en iPhone amplia la pagina al tocar el campo.
-      "& .MuiOutlinedInput-input": {
-        paddingTop: 14,
-        paddingBottom: 14,
-        fontSize: 16,
-      },
-      "& input": {
-        color: "#1f2937", // Garante que o texto do input seja escuro
-        "&::placeholder": {
-          color: "#9ca3af",
-          opacity: 1,
-        },
-      },
-      "& fieldset": {
-        borderColor: theme.palette.tokens.border.border,
-      },
-      "&:hover fieldset": {
-        borderColor: theme.palette.tokens.border.strong,
-      },
-      "&.Mui-focused fieldset": {
-        borderColor: theme.palette.tokens.brand.primary,
-        borderWidth: "2px",
-      },
-    },
-    "& .MuiInputLabel-outlined:not(.MuiInputLabel-shrink)": {
-      transform: "translate(14px, 15px) scale(1)",
-    },
-    "& .MuiInputLabel-root": {
-      color: "#6b7280",
-      fontWeight: 500,
-      "&.Mui-focused": {
-        color: theme.palette.tokens.brand.onSurface,
-      },
-    },
-  },
-
-  // Seletor de idioma - versão simplificada
+  progress: { color: "inherit", marginRight: 10 },
+  registerRow: { color: ({ mode }) => mode === "dark" ? "#94a3b8" : "#64748b", textAlign: "center", fontSize: ".875rem" },
+  registerLink: { color: ({ mode }) => mode === "dark" ? "#93c5fd" : "#1d4ed8", fontWeight: 700, textDecoration: "none", "&:hover": { textDecoration: "underline" } },
   languageSelector: {
-    position: "fixed",
-    top: "20px",
-    left: "20px",
-    [theme.breakpoints.down("xs")]: {
-      top: "16px",
-      left: "16px",
-    },
-    zIndex: 1000,
-    background: theme.mode === "light"
-      ? "rgba(255, 255, 255, 0.9)"
-      : "rgba(255, 255, 255, 0.1)",
-    backdropFilter: "blur(10px)",
-    borderRadius: "12px",
-    border: theme.mode === "light"
-      ? "1px solid rgba(0, 0, 0, 0.15)"
-      : "1px solid rgba(255, 255, 255, 0.2)",
-    padding: "8px 12px",
-    boxShadow: theme.mode === "light"
-      ? "0 2px 8px rgba(0, 0, 0, 0.1)"
-      : "none",
+    position: "absolute",
+    top: 20,
+    left: 20,
+    zIndex: 3,
+    [theme.breakpoints.down("xs")]: { top: 14, left: 16 },
   },
-
-  // Link de registro
-  registerLink: {
-    color: theme.palette.tokens.brand.onSurface,
-    textDecoration: "none",
-    fontWeight: 600,
-    transition: "all 0.3s ease",
-    "&:hover": {
-      color: theme.palette.tokens.brand.primaryHover,
-      textDecoration: "underline",
-    },
-  },
-
-  // Estilos para o dropdown de idiomas
   languageDropdown: {
+    minHeight: 40,
     display: "flex",
     alignItems: "center",
-    background: "none",
-    border: "none",
-    color: theme.mode === "light" ? "#1f2937" : "white",
-    fontSize: "14px",
-    fontWeight: 500,
+    gap: 8,
+    padding: "7px 11px",
+    borderRadius: 8,
+    border: ({ mode }) => mode === "dark" ? "1px solid rgba(255,255,255,.14)" : "1px solid rgba(15,23,42,.12)",
+    color: ({ mode }) => mode === "dark" ? "#e2e8f0" : "#1e293b",
+    backgroundColor: ({ mode }) => mode === "dark" ? "rgba(7,20,38,.75)" : "rgba(255,255,255,.9)",
+    boxShadow: "0 6px 18px rgba(15,23,42,.1)",
+    font: "inherit",
+    fontSize: 14,
+    fontWeight: 600,
     cursor: "pointer",
-    gap: "8px",
-    transition: "opacity 0.3s ease",
-    "&:hover": {
-      opacity: 0.8,
-    },
+    "&:focus-visible": { outline: "3px solid rgba(59,130,246,.32)", outlineOffset: 2 },
   },
-
+  chevronOpen: { transform: "rotate(180deg)" },
   languageOptions: {
     position: "absolute",
-    top: "100%",
-    left: "0",
-    marginTop: "8px",
-    background: "rgba(255, 255, 255, 0.95)",
-    backdropFilter: "blur(20px)",
-    boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)",
-    borderRadius: "12px",
-    border: "1px solid rgba(255, 255, 255, 0.2)",
-    padding: "8px",
-    zIndex: 1000,
-    minWidth: "140px",
+    top: "calc(100% + 8px)",
+    left: 0,
+    minWidth: 168,
+    padding: 6,
+    borderRadius: 8,
+    border: ({ mode }) => mode === "dark" ? "1px solid rgba(255,255,255,.12)" : "1px solid #e2e8f0",
+    backgroundColor: ({ mode }) => mode === "dark" ? "#0f2139" : "#fff",
+    boxShadow: "0 16px 36px rgba(15,23,42,.22)",
   },
-
   languageOption: {
-    background: "none",
-    border: "none",
-    color: "#374151",
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
     width: "100%",
-    padding: "8px 12px",
+    minHeight: 38,
+    display: "grid",
+    gridTemplateColumns: "20px 1fr 18px",
+    alignItems: "center",
+    gap: 9,
+    padding: "7px 9px",
+    border: 0,
+    borderRadius: 6,
+    color: ({ mode }) => mode === "dark" ? "#e2e8f0" : "#1e293b",
+    background: "transparent",
+    font: "inherit",
+    fontSize: 14,
     textAlign: "left",
-    borderRadius: "8px",
-    fontSize: "14px",
-    fontWeight: 500,
     cursor: "pointer",
-    transition: "all 0.2s ease",
-    "&:hover": {
-      background: theme.palette.tokens.surface.surfaceSecondary,
-      color: theme.palette.tokens.brand.onSurface,
-    },
+    "&:hover, &:focus-visible": { backgroundColor: ({ mode }) => mode === "dark" ? "rgba(255,255,255,.08)" : "#eff6ff", outline: "none" },
   },
-
-  flagIcon: {
-    width: 20,
-    height: 15,
-    borderRadius: 2,
-  },
+  flagIcon: { width: 20, height: 14, borderRadius: 2, objectFit: "cover" },
+  footer: { position: "relative", zIndex: 2, marginTop: 18, color: ({ mode }) => mode === "dark" ? "#94a3b8" : "#475569", fontSize: ".78rem", textAlign: "center" },
 }));
 
 const Login = () => {
-  const classes = useStyles();
-  const theme = useTheme();
   const { colorMode } = useContext(ColorModeContext);
-  const { appLogoFavicon, appName, mode } = colorMode;
+  const { appLogoFavicon, appLogoLight, appLogoDark, appName, mode } = colorMode;
+  const classes = useStyles({ mode });
+  const { getPublicSetting } = useSettings();
+  // El motivo del bloqueo llega del CONTEXTO y no de un estado de aqui: esta
+  // pantalla se desmonta mientras dura el intento y volveria montada de cero
+  // con el aviso perdido.
+  const {
+    handleLogin,
+    loading,
+    bloqueoAcceso: bloqueo,
+    limpiarBloqueo
+  } = useContext(AuthContext);
+  const [soporte, setSoporte] = useState({ email: "", phone: "", note: "" });
   const [user, setUser] = useState({ email: "", password: "" });
+  const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [allowSignup, setAllowSignup] = useState(false);
-  // Motivo por el que no se puede entrar, si lo hay. Se muestra fijo y no
-  // como aviso pasajero: son situaciones que el usuario no arregla
-  // reintentando, y necesita leer que hacer.
-  //
-  // Llega del CONTEXTO y no de un estado de aqui: esta pantalla se
-  // desmonta mientras dura el intento —Route pinta la carga— y volveria
-  // montada de cero con el aviso perdido. Ver la nota en useAuth.
-  const [soporte, setSoporte] = useState({ email: "", phone: "", note: "" });
-  const { getPublicSetting } = useSettings();
-  const { handleLogin, bloqueoAcceso: bloqueo, limpiarBloqueo } = useContext(AuthContext);
-
   const [open, setOpen] = useState(false);
-  const ref = useRef();
   const [enabledLanguages, setEnabledLanguages] = useState(["pt-BR", "en"]);
   const [backgroundLight, setBackgroundLight] = useState("");
   const [backgroundDark, setBackgroundDark] = useState("");
+  const selectorRef = useRef();
 
-  const getCompanyIdFromUrl = () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const companyId = urlParams.get("companyId");
-    return companyId ? parseInt(companyId) : null;
-  };
-
-  const handleChangeInput = (e) => {
-    setUser({ ...user, [e.target.name]: e.target.value });
-  };
-
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-  };
-
-  const handlSubmit = (e) => {
-    e.preventDefault();
-    limpiarBloqueo();
-    // El motivo lo guarda handleLogin en el contexto; aqui solo hay que
-    // evitar que el rechazo quede sin recoger.
-    handleLogin(user).catch(() => {});
-  };
+  const companyId = new URLSearchParams(window.location.search).get("companyId");
+  const numericCompanyId = companyId ? parseInt(companyId, 10) : null;
+  const current = languageOptions.find(opt => i18n.language === opt.value || i18n.language.startsWith(`${opt.value}-`)) || languageOptions[0];
+  const isRtl = current.value === "ar";
 
   useEffect(() => {
-    const companyId = getCompanyIdFromUrl();
+    Promise.all([
+      getPublicSetting("userCreation", numericCompanyId).then(data => setAllowSignup(data === "enabled")).catch(() => setAllowSignup(false)),
+      getPublicSetting("enabledLanguages", numericCompanyId).then(langs => {
+        try { setEnabledLanguages(langs ? JSON.parse(langs) : ["pt-BR", "en"]); }
+        catch { setEnabledLanguages(["pt-BR", "en"]); }
+      }).catch(() => setEnabledLanguages(["pt-BR", "en"])),
+      getPublicSetting("appLogoBackgroundLight", numericCompanyId).then(file => setBackgroundLight(file ? `${getBackendUrl()}/public/${file}` : "")).catch(() => setBackgroundLight("")),
+      getPublicSetting("appLogoBackgroundDark", numericCompanyId).then(file => setBackgroundDark(file ? `${getBackendUrl()}/public/${file}` : "")).catch(() => setBackgroundDark("")),
+    ]);
 
-    // Datos de soporte para el aviso de prueba vencida. Si fallan, el
-    // mensaje sale igual sin ellos: no puede depender de esto.
+    // Datos de soporte para el aviso de prueba vencida. Si fallan, el mensaje
+    // sale igual sin ellos: no puede depender de esto.
     ["supportEmail", "supportPhone", "supportNote"].forEach((clave) => {
-      getPublicSetting(clave, companyId)
+      getPublicSetting(clave, numericCompanyId)
         .then((valor) =>
           setSoporte((s) => ({
             ...s,
@@ -473,213 +306,139 @@ const Login = () => {
         )
         .catch(() => {});
     });
-
-    getPublicSetting("userCreation", companyId)
-      .then((data) => {
-        setAllowSignup(data === "enabled");
-      })
-      .catch((error) => {
-        console.log("Error reading setting", error);
-      });
-
-    getPublicSetting("enabledLanguages", companyId)
-      .then((langs) => {
-        let arr = ["pt-BR", "en"];
-        try {
-          if (langs) arr = JSON.parse(langs);
-        } catch {}
-        setEnabledLanguages(arr);
-      })
-      .catch(() => {
-        setEnabledLanguages(["pt-BR", "en"]);
-      });
-
-    getPublicSetting("appLogoBackgroundLight", companyId)
-      .then((bgLight) => {
-        if (bgLight) {
-          setBackgroundLight(getBackendUrl() + "/public/" + bgLight);
-        } else {
-          setBackgroundLight("");
-        }
-      })
-      .catch(() => {
-        setBackgroundLight("");
-      });
-
-    getPublicSetting("appLogoBackgroundDark", companyId)
-      .then((bgDark) => {
-        if (bgDark) {
-          setBackgroundDark(getBackendUrl() + "/public/" + bgDark);
-        } else {
-          setBackgroundDark("");
-        }
-      })
-      .catch(() => {
-        setBackgroundDark("");
-      });
+    // Settings are loaded once for the company encoded in the entry URL.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Se compara por el idioma BASE. i18n.language conserva la variante
-  // del navegador —'es-419'—, que no coincide con el valor 'es' de la
-  // lista, y entonces caia en languageOptions[0], que es portugues: la
-  // interfaz salia en espanol pero el selector decia Portugues.
-  const current =
-    languageOptions.find(
-      (opt) => soloIdioma(opt.value) === soloIdioma(i18n.language)
-    ) ||
-    languageOptions.find((opt) => soloIdioma(opt.value) === IDIOMA_POR_DEFECTO) ||
-    languageOptions[0];
+  useEffect(() => {
+    const closeOutside = event => {
+      if (selectorRef.current && !selectorRef.current.contains(event.target)) setOpen(false);
+    };
+    const closeOnEscape = event => { if (event.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", closeOutside);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", closeOutside);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, []);
 
-  const handleSelect = (opt) => {
-    i18n.changeLanguage(opt.value);
-    localStorage.setItem("language", opt.value);
-    setOpen(false);
-    window.location.reload();
+  const handleChangeInput = event => {
+    const { name, value } = event.target;
+    setUser(previous => ({ ...previous, [name]: value }));
+    if (errors[name]) setErrors(previous => ({ ...previous, [name]: "" }));
   };
 
-  // Fondo de la pantalla.
-  //
-  // Si la empresa subio una imagen en Ajustes > Whitelabel, manda esa. Si
-  // no, un degradado con el color de MARCA, que antes era un azul fijo sin
-  // relacion con el color configurado.
-  //
-  // El respaldo anterior era `theme.palette.light`, que NO es un color sino
-  // un objeto {main}: String() lo convertia en "[object Object]", un valor
-  // de CSS invalido que el navegador descartaba. El fondo acababa siendo el
-  // que hubiera debajo, y nadie se enteraba porque no da error.
-  const degradadoDeMarca =
-    `linear-gradient(135deg, ${theme.palette.tokens.brand.primaryActive} 0%, ` +
-    `${theme.palette.tokens.brand.primary} 100%)`;
+  const handleSubmit = event => {
+    event.preventDefault();
+    if (loading) return;
+    const nextErrors = {};
+    if (!user.email.trim()) nextErrors.email = i18n.t("login.validation.emailRequired");
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.email)) nextErrors.email = i18n.t("login.validation.emailInvalid");
+    if (!user.password) nextErrors.password = i18n.t("login.validation.passwordRequired");
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length === 0) {
+      // El motivo lo guarda handleLogin en el contexto; aqui solo hay que
+      // evitar que el rechazo quede sin recoger y limpiar el aviso anterior.
+      limpiarBloqueo();
+      handleLogin(user).catch(() => {});
+    }
+  };
 
-  let finalBackground;
-  if (mode === "light") {
-    finalBackground = backgroundLight
-      ? `url(${backgroundLight})`
-      : degradadoDeMarca;
-  } else {
-    finalBackground = backgroundDark
-      ? `url(${backgroundDark})`
-      : degradadoDeMarca;
-  }
+  const handleSelect = option => {
+    i18n.changeLanguage(option.value);
+    localStorage.setItem("language", option.value);
+    document.documentElement.dir = option.value === "ar" ? "rtl" : "ltr";
+    document.documentElement.lang = option.value;
+    setOpen(false);
+  };
 
-  finalBackground = String(finalBackground || degradadoDeMarca);
-
-  // Tanto una imagen como un degradado se pintan con backgroundImage; solo
-  // un color plano iria en backgroundColor, y ya no queda ninguno.
-  const fondoEsImagen =
-    finalBackground.includes("url(") || finalBackground.includes("gradient(");
-
+  const background = mode === "light" ? backgroundLight : backgroundDark;
+  const logo = mode === "dark" ? appLogoDark || appLogoLight : appLogoLight || appLogoDark;
+  const signupTarget = companyId ? `/signup?companyId=${encodeURIComponent(companyId)}` : "/signup";
 
   return (
     <>
       <Helmet>
+        <html lang={current.value} dir={isRtl ? "rtl" : "ltr"} />
         <title>{appName || "Multi100"}</title>
         <link rel="icon" href={appLogoFavicon || "/default-favicon.ico"} />
       </Helmet>
-
-      <div className={clsx(classes.root, "login-page")}
-      style={{
-          backgroundColor: fondoEsImagen ? "transparent" : finalBackground,
-          backgroundImage: fondoEsImagen ? finalBackground : "none",
-          backgroundRepeat: "no-repeat",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
+      <div
+        className={clsx(classes.root, "login-page")}
+        dir={isRtl ? "rtl" : "ltr"}
+        style={background ? { backgroundImage: `url(${background})`, backgroundRepeat: "no-repeat", backgroundSize: "cover", backgroundPosition: "center" } : undefined}
       >
-        {/* Seletor de idioma */}
-        <div
-          ref={ref}
-          className={classes.languageSelector}
-        >
+        {background && <div className={classes.customOverlay} />}
+        <div ref={selectorRef} className={classes.languageSelector}>
           <button
-            onClick={() => setOpen((o) => !o)}
+            type="button"
             className={classes.languageDropdown}
+            aria-label={i18n.t("login.accessibility.language")}
+            aria-haspopup="listbox"
+            aria-expanded={open}
+            onClick={() => setOpen(value => !value)}
           >
-            <img
-              src={current.icon}
-              alt={current.label}
-              className={classes.flagIcon}
-            />
-            {current.label}
-            <span>▾</span>
+            <img src={current.icon} alt="" className={classes.flagIcon} />
+            <span>{current.label}</span>
+            <ExpandMoreIcon fontSize="small" className={open ? classes.chevronOpen : undefined} />
           </button>
-
           {open && (
-            <div className={classes.languageOptions}>
-              {languageOptions
-                .filter((opt) =>
-                  enabledLanguages.some(
-                    (l) => soloIdioma(l) === soloIdioma(opt.value)
-                  )
-                )
-                .map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => handleSelect(opt)}
-                    className={classes.languageOption}
-                  >
-                    <img
-                      src={opt.icon}
-                      alt={opt.label}
-                      className={classes.flagIcon}
-                    />
-                    {opt.label}
-                  </button>
-                ))}
+            <div className={classes.languageOptions} role="listbox" aria-label={i18n.t("login.accessibility.language")}>
+              {languageOptions.filter(option => enabledLanguages.includes(option.value)).map(option => (
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={option.value === current.value}
+                  key={option.value}
+                  onClick={() => handleSelect(option)}
+                  className={classes.languageOption}
+                >
+                  <img src={option.icon} alt="" className={classes.flagIcon} />
+                  <span>{option.label}</span>
+                  {option.value === current.value ? <CheckIcon fontSize="small" /> : <span />}
+                </button>
+              ))}
             </div>
           )}
         </div>
 
-        <IconButton
-          className={classes.iconButton}
-          onClick={colorMode.toggleColorMode}
-        >
-          {mode === "dark" ? <Brightness7Icon /> : <Brightness4Icon />}
-        </IconButton>
-
         <main className={classes.containerLogin}>
           <CssBaseline />
           <div className={classes.paper}>
-            <div>
-              <img className={classes.logoImg} alt="logo" />
+            <IconButton className={classes.themeButton} onClick={colorMode.toggleColorMode} aria-label={i18n.t("login.accessibility.toggleTheme")}>
+              {mode === "dark" ? <Brightness7Icon /> : <Brightness4Icon />}
+            </IconButton>
+            <div className={classes.brand}>
+              <img className={classes.logoImg} src={logo || defaultLogoLight} alt={appName || "Multi100"} />
             </div>
-
-            <form className={classes.form} noValidate onSubmit={handlSubmit}>
+            <h1 className={classes.welcome}>{i18n.t("login.form.title")}</h1>
+            <p className={classes.subtitle}>{i18n.t("login.form.subtitle")}</p>
+            <form className={classes.form} noValidate onSubmit={handleSubmit}>
               <TextField
-                variant="outlined"
-                margin="normal"
-                required
-                fullWidth
-                id="email"
-                label={i18n.t("login.form.email")}
-                name="email"
-                value={user.email}
-                onChange={handleChangeInput}
-                autoComplete="email"
-                autoFocus
-                className={classes.textField}
+                variant="outlined" margin="normal" required fullWidth id="email" type="email"
+                label={i18n.t("login.form.email")} name="email" value={user.email}
+                onChange={handleChangeInput} autoComplete="email" autoFocus className={classes.textField}
+                error={Boolean(errors.email)} helperText={errors.email || " "}
+                inputProps={{ "aria-describedby": errors.email ? "email-helper-text" : undefined }}
+                InputProps={{ startAdornment: <InputAdornment position="start"><EmailOutlinedIcon /></InputAdornment> }}
               />
               <TextField
-                variant="outlined"
-                margin="normal"
-                required
-                fullWidth
-                name="password"
-                label={i18n.t("login.form.password")}
-                type={showPassword ? "text" : "password"}
-                id="password"
-                value={user.password}
-                onChange={handleChangeInput}
-                autoComplete="current-password"
-                className={classes.textField}
+                variant="outlined" margin="normal" required fullWidth name="password"
+                label={i18n.t("login.form.password")} type={showPassword ? "text" : "password"}
+                id="password" value={user.password} onChange={handleChangeInput}
+                autoComplete="current-password" className={classes.textField}
+                error={Boolean(errors.password)} helperText={errors.password || " "}
+                inputProps={{ "aria-describedby": errors.password ? "password-helper-text" : undefined }}
                 InputProps={{
+                  startAdornment: <InputAdornment position="start"><LockOutlinedIcon /></InputAdornment>,
                   endAdornment: (
                     <InputAdornment position="end">
                       <IconButton
-                        aria-label="toggle password visibility"
-                        onClick={togglePasswordVisibility}
+                        aria-label={i18n.t(showPassword ? "login.accessibility.hidePassword" : "login.accessibility.showPassword")}
+                        aria-pressed={showPassword}
+                        onClick={() => setShowPassword(value => !value)}
                         edge="end"
-                        style={{ color: "#6b7280" }}
                       >
                         {showPassword ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
@@ -687,22 +446,16 @@ const Login = () => {
                   ),
                 }}
               />
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                color="primary"
-                className={classes.submit}
-              >
-                {i18n.t("login.buttons.submit")}
+              <Button type="submit" fullWidth variant="contained" className={classes.submit} disabled={loading} aria-busy={loading}>
+                {loading && <CircularProgress size={18} className={classes.progress} />}
+                {loading ? i18n.t("login.buttons.loading") : i18n.t("login.buttons.submit")}
               </Button>
-
               {bloqueo && (
                 <div className={classes.avisoBloqueo}>
                   {i18n.t(`backendErrors.${bloqueo}`)}
-                  {/* Los datos de contacto solo se muestran cuando sirven
-                      de algo: en el resto de bloqueos no hay nada que
-                      gestionar con soporte. */}
+                  {/* Los datos de contacto solo se muestran cuando sirven de
+                      algo: en el resto de bloqueos no hay nada que gestionar
+                      con soporte. */}
                   {bloqueo === "ERR_TRIAL_EXPIRED" &&
                     (soporte.email || soporte.phone || soporte.note) && (
                       <div className={classes.avisoSoporte}>
@@ -713,32 +466,23 @@ const Login = () => {
                     )}
                 </div>
               )}
+
               {/* Recuperar contrasena: siempre visible. No depende de que el
                   registro publico este abierto, porque quien ya tiene cuenta
-                  necesita poder recuperarla igualmente. */}
-              <Grid container justifyContent="center">
+                  necesita poder recuperarla igualmente. El login de main no
+                  lo traia. */}
+              <Grid container justify="center" className={classes.registerRow}>
                 <Grid item>
-                  <Link
-                    href="#"
-                    variant="body2"
-                    component={RouterLink}
-                    to="/forgot-password"
-                    className={classes.registerLink}
-                  >
+                  <Link component={RouterLink} to="/forgot-password" className={classes.registerLink}>
                     {i18n.t("login.buttons.forgotPassword")}
                   </Link>
                 </Grid>
               </Grid>
+
               {allowSignup && (
-                <Grid container justifyContent="center">
+                <Grid container justify="center" className={classes.registerRow}>
                   <Grid item>
-                    <Link
-                      href="#"
-                      variant="body2"
-                      component={RouterLink}
-                      to="/signup"
-                      className={classes.registerLink}
-                    >
+                    <Link component={RouterLink} to={signupTarget} className={classes.registerLink}>
                       {i18n.t("login.buttons.register")}
                     </Link>
                   </Grid>
@@ -747,6 +491,7 @@ const Login = () => {
             </form>
           </div>
         </main>
+        <div className={classes.footer}>© {new Date().getFullYear()} {appName || "Multi100"}</div>
       </div>
     </>
   );

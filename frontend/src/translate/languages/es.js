@@ -404,6 +404,8 @@ const messages = {
       login: {
         title: "Inicio de Sesión",
         form: {
+          title: "Inicio de sesión",
+          subtitle: "Accede a tu espacio de trabajo para continuar",
           email: "Correo Electrónico",
           password: "Contraseña",
           button: "Ingresar",
@@ -411,7 +413,19 @@ const messages = {
         buttons: {
           forgotPassword: "¿Olvidaste tu contraseña?",
           submit: "Ingresa",
+          loading: "Ingresando…",
           register: "¿No tienes cuenta? ¡Regístrate!",
+        },
+        validation: {
+          emailRequired: "El correo electrónico es obligatorio",
+          emailInvalid: "Ingresa un correo electrónico válido",
+          passwordRequired: "La contraseña es obligatoria",
+        },
+        accessibility: {
+          language: "Seleccionar idioma",
+          toggleTheme: "Cambiar tema",
+          showPassword: "Mostrar contraseña",
+          hidePassword: "Ocultar contraseña",
         },
       },
       companies: {
