@@ -105,24 +105,25 @@ describe("Chat de prueba del agente", () => {
   });
 
   it("no escribe nada en la base: ni contactos, ni tickets, ni mensajes, ni seguimientos", async () => {
-    // Se cuenta SOLO lo de esta empresa. Contar filas de toda la base hacia
-    // que cualquier otra suite corriendo en paralelo —que crea sus propios
-    // usuarios o contactos— rompiera esta comprobacion por un motivo ajeno.
+    // Se cuenta sobre empresaB, que crea y destruye esta misma suite y que
+    // no toca nadie mas. Con la empresa 1 la comprobacion era una carrera:
+    // otra suite crea y borra sus tickets ahi mismo, y el recuento cambiaba
+    // por un motivo ajeno al sandbox.
     const antes = await Promise.all([
-      Contact.count({ where: { companyId: COMPANY_A } }),
-      Ticket.count({ where: { companyId: COMPANY_A } }),
-      Message.count({ where: { companyId: COMPANY_A } }),
-      AiAgentFollowUpJob.count({ where: { companyId: COMPANY_A } })
+      Contact.count({ where: { companyId: empresaB.id } }),
+      Ticket.count({ where: { companyId: empresaB.id } }),
+      Message.count({ where: { companyId: empresaB.id } }),
+      AiAgentFollowUpJob.count({ where: { companyId: empresaB.id } })
     ]);
     await probarMensaje(
-      { companyId: COMPANY_A, userId: 1, sessionId: "s2", config: configFormulario({ followUps: [] }), texto: "Hola" },
+      { companyId: empresaB.id, userId: 1, sessionId: "s2", config: configFormulario({ followUps: [] }), texto: "Hola" },
       { baseURL: base }
     );
     const despues = await Promise.all([
-      Contact.count({ where: { companyId: COMPANY_A } }),
-      Ticket.count({ where: { companyId: COMPANY_A } }),
-      Message.count({ where: { companyId: COMPANY_A } }),
-      AiAgentFollowUpJob.count({ where: { companyId: COMPANY_A } })
+      Contact.count({ where: { companyId: empresaB.id } }),
+      Ticket.count({ where: { companyId: empresaB.id } }),
+      Message.count({ where: { companyId: empresaB.id } }),
+      AiAgentFollowUpJob.count({ where: { companyId: empresaB.id } })
     ]);
     expect(despues).toEqual(antes);
   });
