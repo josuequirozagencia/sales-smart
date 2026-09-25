@@ -96,7 +96,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
 
   if (
     req.url === "/signup" &&
-    (await CheckSettingsHelper("userCreation")) === "disabled"
+    (await CheckSettingsHelper("userCreation", Number(bodyCompanyId) || 1)) === "disabled"
   ) {
     throw new AppError("ERR_USER_CREATION_DISABLED", 403);
   } else if (req.url !== "/signup" && req.user.profile !== "admin") {
