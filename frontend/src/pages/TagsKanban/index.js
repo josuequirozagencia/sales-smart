@@ -6,7 +6,7 @@ import React, {
   useContext,
 } from "react";
 import { toast } from "react-toastify";
-import { useHistory } from "react-router-dom"; // Importe o useHistory
+import { useHistory, useLocation } from "react-router-dom"; // Importe o useHistory
 
 import { makeStyles } from "@material-ui/core/styles";
 import Paper from "@material-ui/core/Paper";
@@ -109,6 +109,12 @@ const Tags = () => {
   const [searchParam, setSearchParam] = useState("");
   const [tags, dispatch] = useReducer(reducer, []);
   const [tagModalOpen, setTagModalOpen] = useState(false);
+  // Embudo desde el que se llego (el tablero manda ?pipelineId=): la etapa
+  // nueva nace ahi en vez de quedar suelta.
+  const location = useLocation();
+  const pipelineIdActivo = Number(
+    new URLSearchParams(location.search).get("pipelineId")
+  ) || null;
 
   useEffect(() => {
     setLoading(true);
@@ -116,7 +122,14 @@ const Tags = () => {
       const fetchTags = async () => {
         try {
           const { data } = await api.get("/tags/", {
-            params: { searchParam, pageNumber, kanban: 1 },
+            params: {
+              searchParam,
+              pageNumber,
+              kanban: 1,
+              // Solo las etapas del embudo desde el que se llego; sin embudo,
+              // todas, como cuando solo habia un tablero.
+              ...(pipelineIdActivo ? { pipelineId: pipelineIdActivo } : {}),
+            },
           });
           dispatch({ type: "LOAD_TAGS", payload: data.tags });
           setHasMore(data.hasMore);
@@ -220,6 +233,7 @@ const Tags = () => {
           aria-labelledby="form-dialog-title"
           tagId={selectedTag && selectedTag.id}
           kanban={1}
+          pipelineId={pipelineIdActivo}
         />
       )}
       <MainHeader>

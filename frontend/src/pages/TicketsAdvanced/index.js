@@ -1,12 +1,7 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useEffect, useContext } from "react";
 import { useParams } from "react-router-dom";
 import { makeStyles } from "@material-ui/core/styles";
-import Button from '@material-ui/core/Button';
 import Box from '@material-ui/core/Box';
-import BottomNavigation from '@material-ui/core/BottomNavigation';
-import BottomNavigationAction from '@material-ui/core/BottomNavigationAction';
-import QuestionAnswerIcon from '@material-ui/icons/QuestionAnswer';
-import ChatIcon from '@material-ui/icons/Chat';
 
 import TicketsManagerTabs from "../../components/TicketsManagerTabs/";
 import Ticket from "../../components/Ticket/";
@@ -14,40 +9,36 @@ import TicketAdvancedLayout from "../../components/TicketAdvancedLayout";
 
 import { TicketsContext } from "../../context/Tickets/TicketsContext";
 
-import { i18n } from "../../translate/i18n";
 import { QueueSelectedProvider } from "../../context/QueuesSelected/QueuesSelectedContext";
 
 const useStyles = makeStyles(theme => ({
-    header: {
-    },
     content: {
-        overflow: "auto"
+        overflow: "auto",
+        backgroundColor: theme.palette.tokens.surface.background,
     },
-    placeholderContainer: {
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        height: "100%",
-        // backgroundColor: "#eee"
-        background: theme.palette.tabHeaderBackground,
-    },
-    placeholderItem: {
-    }
 }));
 
+/**
+ * Bandeja en movil: o la lista, o la conversacion.
+ *
+ * Antes lo decidia un conmutador propio arriba ("Ticket" / "Atenciones") que
+ * ocupaba 44px de una pantalla donde ya se iban 229 en barras, y que ademas
+ * podia contradecir a la direccion: se podia estar en la pestana de
+ * conversacion sin ninguna abierta, viendo un aviso con un boton para ir a la
+ * lista. Ahora manda la direccion, como en cualquier aplicacion de mensajes:
+ * se toca una conversacion para abrirla y la flecha de la cabecera vuelve a la
+ * lista.
+ */
 const TicketAdvanced = (props) => {
     const classes = useStyles();
     const { ticketId } = useParams();
-    const [option, setOption] = useState(0);
     const { currentTicket, setCurrentTicket } = useContext(TicketsContext)
+
+    const hayConversacion = ticketId && ticketId !== "undefined";
 
     useEffect(() => {
         if (currentTicket.id !== null) {
             setCurrentTicket({ id: currentTicket.id, code: '#open' })
-        }
-        if (!ticketId) {
-            setOption(1)
         }
         return () => {
             setCurrentTicket({ id: null, code: null })
@@ -55,52 +46,11 @@ const TicketAdvanced = (props) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
-    useEffect(() => {
-        if (currentTicket.id !== null) {
-            setOption(0)
-        }
-    }, [currentTicket])
-
-    const renderPlaceholder = () => {
-        return <Box className={classes.placeholderContainer}>
-            <div className={classes.placeholderItem}>{i18n.t("chat.noTicketMessage")}</div><br />
-            <Button onClick={() => setOption(1)} variant="contained" color="primary">
-                Selecionar Ticket
-            </Button>
-        </Box>
-    }
-
-    const renderMessageContext = () => {
-        if (ticketId && ticketId !== "undefined") {
-            return <Ticket />
-        }
-        return renderPlaceholder()
-    }
-
-    const renderTicketsManagerTabs = () => {
-        return <TicketsManagerTabs
-        />
-    }
-
     return (
         <QueueSelectedProvider>
-
             <TicketAdvancedLayout>
-                <Box className={classes.header}>
-                    <BottomNavigation
-                        value={option}
-                        onChange={(event, newValue) => {
-                            setOption(newValue);
-                        }}
-                        showLabels
-                        className={classes.root}
-                    >
-                        <BottomNavigationAction label="Ticket" icon={<ChatIcon />} />
-                        <BottomNavigationAction label="Atendimentos" icon={<QuestionAnswerIcon />} />
-                    </BottomNavigation>
-                </Box>
                 <Box className={classes.content}>
-                    {option === 0 ? renderMessageContext() : renderTicketsManagerTabs()}
+                    {hayConversacion ? <Ticket /> : <TicketsManagerTabs />}
                 </Box>
             </TicketAdvancedLayout>
         </QueueSelectedProvider>

@@ -1,6 +1,7 @@
 // frontend/geminiModal.jsx
 import React, { useState, useEffect, useRef } from "react";
 import * as Yup from "yup";
+import FlowAgentPicker, { datosNodoAgente, esquemaNodoAgente, useAgentesDeFlujo } from "../FlowAgentPicker";
 import { Formik, Form, Field, FieldArray } from "formik";
 import { makeStyles } from "@material-ui/core/styles";
 import { green } from "@material-ui/core/colors";
@@ -42,14 +43,12 @@ import {
 } from "@material-ui/icons";
 import { InputAdornment } from "@material-ui/core";
 
-// Lista de modelos Gemini suportados
-const geminiModels = [
-  "gemini-pro",
-  "gemini-1.5-pro", 
-  "gemini-1.5-flash",
-  "gemini-2.0-flash",
-  "gemini-2.0-pro"
-];
+import {
+  GEMINI_MODELS,
+  DEFAULT_GEMINI_MODEL,
+  getModelDisplayName,
+  modelOptionsFor
+} from "../../constants/aiModels";
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -136,9 +135,10 @@ const GeminiSchema = Yup.object().shape({
   prompt: Yup.string()
     .min(50, "Muito curto!")
     .required("Descreva o treinamento para Inteligência Artificial"),
-  model: Yup.string()
-    .oneOf(geminiModels, "Modelo inválido")
-    .required("Informe o modelo"),
+  // Não se valida contra GEMINI_MODELS de propósito: como toda a lista
+  // anterior foi aposentada, praticamente todo nó existente tem um modelo
+  // fora da lista e travaria o formulário ao salvar.
+  model: Yup.string().required("Informe o modelo"),
   maxTokens: Yup.number()
     .min(10, "Mínimo 10 tokens")
     .max(8000, "Máximo 8000 tokens")
@@ -192,12 +192,14 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
   const initialState = {
     name: "",
     prompt: "",
-    model: "gemini-1.5-flash",
+    model: DEFAULT_GEMINI_MODEL,
     maxTokens: 1000,
     temperature: 0.7,
     apiKey: "",
     maxMessages: 10,
     queueId: 0,
+    // Vacio = configuracion manual. Con un agente el nodo guarda solo su id.
+    agentId: "",
     
     // Campos para controle de fluxo
     flowMode: "permanent",
@@ -215,6 +217,7 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
     btn: "Adicionar",
   });
   const [newKeyword, setNewKeyword] = useState("");
+  const agentes = useAgentesDeFlujo(open === "create" || open === "edit");
 
   useEffect(() => {
     if (open === "edit") {
@@ -226,9 +229,11 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
       setIntegration({
         ...initialState,
         ...typebotIntegration,
-        model: geminiModels.includes(typebotIntegration.model)
-          ? typebotIntegration.model
-          : "gemini-1.5-flash",
+        // Mantém o modelo já salvo mesmo fora da lista, para não trocar em
+        // silêncio a configuração de fluxos em produção. Como toda a lista
+        // anterior foi aposentada, aqui isso vale para praticamente todos os
+        // nós existentes: eles aparecem marcados como descontinuados.
+        model: typebotIntegration.model || DEFAULT_GEMINI_MODEL,
         flowMode: typebotIntegration.flowMode || "permanent",
         continueKeywords: typebotIntegration.continueKeywords || ["continuar", "próximo", "avançar"],
         maxInteractions: typebotIntegration.maxInteractions || 5,
@@ -255,7 +260,7 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
   };
 
   const handleSavePrompt = (values, { setSubmitting }) => {
-    const promptData = {
+    const promptData = values.agentId ? datosNodoAgente(values, agentes, "gemini") : {
       ...values,
       // Garantir que campos do modo temporário sejam nulos se modo for permanente
       maxInteractions: values.flowMode === "temporary" ? values.maxInteractions : null,
@@ -294,16 +299,6 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
     arrayHelpers.remove(index);
   };
 
-  const getModelDisplayName = (model) => {
-    const modelNames = {
-      "gemini-pro": "Gemini Pro",
-      "gemini-1.5-pro": "Gemini 1.5 Pro",
-      "gemini-1.5-flash": "Gemini 1.5 Flash",
-      "gemini-2.0-flash": "Gemini 2.0 Flash",
-      "gemini-2.0-pro": "Gemini 2.0 Pro"
-    };
-    return modelNames[model] || model;
-  };
 
   return (
     <div className={classes.root}>
@@ -320,15 +315,24 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
         <Formik
           initialValues={integration}
           enableReinitialize={true}
-          validationSchema={GeminiSchema}
+          validationSchema={Yup.lazy((v) => (v.agentId ? esquemaNodoAgente : GeminiSchema))}
           onSubmit={handleSavePrompt}
         >
           {({ touched, errors, isSubmitting, values, setFieldValue }) => (
             <Form style={{ width: "100%" }}>
               <DialogContent dividers>
                 
-                {/* CONFIGURAÇÕES BÁSICAS */}
-                <Accordion className={classes.accordion} defaultExpanded>
+                <FlowAgentPicker
+                  agentes={agentes}
+                  value={values.agentId}
+                  onChange={(id) => setFieldValue("agentId", id)}
+                  className={classes.accordion}
+                  summaryClassName={classes.accordionSummary}
+                  titleClassName={classes.sectionTitle}
+                />
+
+                {/* CONFIGURAÇÕES BÁSICAS: con agente las pone el agente */}
+                <Accordion className={classes.accordion} defaultExpanded style={values.agentId ? { display: "none" } : undefined}>
                   <AccordionSummary 
                     expandIcon={<ExpandMore />}
                     className={classes.accordionSummary}
@@ -388,9 +392,10 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
                         label="Modelo Gemini"
                         name="model"
                       >
-                        {geminiModels.map((model) => (
+                        {modelOptionsFor(GEMINI_MODELS, values.model).map((model) => (
                           <MenuItem key={model} value={model}>
                             {getModelDisplayName(model)}
+                            {!GEMINI_MODELS.includes(model) && " — descontinuado"}
                           </MenuItem>
                         ))}
                       </Field>

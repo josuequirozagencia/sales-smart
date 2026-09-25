@@ -7,7 +7,7 @@ import emojiRegex from "emoji-regex";
 import { v4 as uuidv4 } from "uuid";
 
 import { makeStyles, withStyles } from "@material-ui/core/styles";
-import { green } from "@material-ui/core/colors";
+import { onColor, semantic } from "../../theme/tokens";
 import ListItem from "@material-ui/core/ListItem";
 import ListItemText from "@material-ui/core/ListItemText";
 import ListItemAvatar from "@material-ui/core/ListItemAvatar";
@@ -100,8 +100,11 @@ const useStyles = makeStyles((theme) => ({
     },
 
     badgeStyle: {
-        color: "white",
-        backgroundColor: green[500],
+        // Antes usaba green[500] (#4caf50): blanco encima queda por debajo
+        // del contraste mínimo. semantic.success.fill (#16a34a, en
+        // theme/tokens.js) sí pasa 4.5:1 con texto blanco.
+        color: "#fff",
+        backgroundColor: semantic.success.fill,
     },
 
     acceptButton: {
@@ -144,13 +147,19 @@ const useStyles = makeStyles((theme) => ({
         alignItems: "center",
     },
     tags: {
-        color: "#FFF",
+        // El color de texto ya no se fija aquí: cada chip lo calcula con
+        // onColor() a partir de su propio fondo (ver los `style={{...}}` más
+        // abajo), porque el fondo lo elige el usuario al crear la etiqueta y
+        // el blanco fijo se volvía ilegible sobre colores claros.
         border: "1px solid #CCC",
         padding: 0,
         paddingLeft: 5,
         paddingRight: 5,
         borderRadius: 0,
-        fontSize: "0.6em",
+        // 11px — igual que el mínimo definido en theme/tokens.js. Antes
+        // 0.6em daba ~8.4px reales, por debajo de cualquier tamaño legible.
+        fontSize: "0.6875rem",
+        fontWeight: 500,
         textAlign: "center",
     },
     divUser: {
@@ -165,13 +174,15 @@ const useStyles = makeStyles((theme) => ({
         alignItems: "center",
     },
     user: {
-        color: "#eee",
+        // Mismo criterio que `.tags`: el color de texto se calcula por chip
+        // con onColor(), no se fija aquí.
         border: "1px solid #CCC",
         padding: 0,
         paddingLeft: 5,
         paddingRight: 5,
         borderRadius: 0,
-        fontSize: "0.6em",
+        fontSize: "0.6875rem",
+        fontWeight: 500,
         textAlign: "center",
     },
 
@@ -567,6 +578,7 @@ const TicketListItem = ({ ticket }) => {
                                 // title={ticket.isGroup}
                                 style={{
                                     backgroundColor: "#7C7C7C",
+                                    color: onColor("#7C7C7C"),
                                 }}
                             >
                                 Grupo
@@ -586,6 +598,12 @@ const TicketListItem = ({ ticket }) => {
                                                 !ticket.user.color
                                                 ? "#7C7C7C"
                                                 : ticket.user.color,
+                                        color: onColor(
+                                            ticket.user.color === "" ||
+                                                !ticket.user.color
+                                                ? "#7C7C7C"
+                                                : ticket.user.color,
+                                        ),
                                     }}
                                 >
                                     {renderUserName(ticket.user.name)}
@@ -601,6 +619,7 @@ const TicketListItem = ({ ticket }) => {
                                     title={ticket.tags[0].name}
                                     style={{
                                         backgroundColor: ticket.tags[0].color,
+                                        color: onColor(ticket.tags[0].color),
                                     }}
                                 >
                                     {ticket.tags[0].name}
@@ -613,6 +632,7 @@ const TicketListItem = ({ ticket }) => {
                                     title={ticket.tags[1].name}
                                     style={{
                                         backgroundColor: ticket.tags[1].color,
+                                        color: onColor(ticket.tags[1].color),
                                     }}
                                 >
                                     +{ticket.tags.length - 1}

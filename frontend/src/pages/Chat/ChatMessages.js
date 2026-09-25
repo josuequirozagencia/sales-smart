@@ -155,7 +155,9 @@ const useStyles = makeStyles((theme) => ({
     fontWeight: "bold",
   },
   sendMessageIcons: {
-    color: "grey",
+    // Estaba declarado dos veces en el mismo objeto; la segunda anulaba a
+    // esta. "grey" ademas no distingue el modo.
+    color: theme.palette.text.secondary,
   },
   uploadInput: {
     display: "none",
@@ -219,9 +221,6 @@ const useStyles = makeStyles((theme) => ({
     bottom: 63,
     left: 10,
     zIndex: 1000,
-  },
-  sendMessageIcons: {
-    color: "grey",
   },
   dailyTimestampText: {
     color: "#808888",
@@ -660,7 +659,7 @@ function ChatMessages({
           <div className={classes.dailyTimestampText}>
             {today ===
             format(parseISO(messagesList[index].createdAt), "dd/MM/yyyy")
-              ? "HOJE"
+              ? i18n.t("chat2.today")
               : format(parseISO(messagesList[index].createdAt), "dd/MM/yyyy")}
           </div>
         </span>
@@ -678,7 +677,7 @@ function ChatMessages({
             <div className={classes.dailyTimestampText}>
               {today ===
               format(parseISO(messagesList[index].createdAt), "dd/MM/yyyy")
-                ? "HOJE"
+                ? i18n.t("chat2.today")
                 : format(parseISO(messagesList[index].createdAt), "dd/MM/yyyy")}
             </div>
           </span>

@@ -1,0 +1,30 @@
+# Imagen de api_oficial para Railway. Se construye desde api_oficial/
+# (railway up ./api_oficial --path-as-root). Ver docs/DESPLIEGUE_RAILWAY.md.
+FROM node:20.19.4-bookworm AS build
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
+
+COPY . .
+RUN npx prisma generate && npm run build
+
+FROM node:20.19.4-bookworm-slim
+WORKDIR /app
+
+# Prisma necesita OpenSSL en ejecucion y la imagen slim no lo trae.
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends openssl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
+ENV NODE_ENV=production
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/prisma ./prisma
+COPY --from=build /app/package.json ./
+
+# Medios temporales: multer y la descarga de medios de Meta escriben en ./public.
+RUN mkdir -p public
+
+EXPOSE 3000
+CMD ["node", "dist/main.js"]

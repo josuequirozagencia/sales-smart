@@ -17,6 +17,9 @@ import Select from "@material-ui/core/Select";
 import InputLabel from "@material-ui/core/InputLabel";
 import MenuItem from "@material-ui/core/MenuItem";
 import FormControl from "@material-ui/core/FormControl";
+import FormControlLabel from "@material-ui/core/FormControlLabel";
+import FormHelperText from "@material-ui/core/FormHelperText";
+import Switch from "@material-ui/core/Switch";
 import whatsappIcon from "../../assets/nopicture.png";
 import { i18n } from "../../translate/i18n";
 
@@ -27,13 +30,12 @@ import { AuthContext } from "../../context/Auth/AuthContext";
 import useWhatsApps from "../../hooks/useWhatsApps";
 
 import { Can } from "../Can";
-import { Avatar, Grid, Input, Paper, Tab, Tabs } from "@material-ui/core";
+import { Avatar, Grid, Input, Paper, Tab, Tabs, Typography } from "@material-ui/core";
 import { getBackendUrl } from "../../config";
 import TabPanel from "../TabPanel";
 import AvatarUploader from "../AvatarUpload";
 
 const backendUrl = getBackendUrl();
-const path = require("path");
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -116,6 +118,12 @@ const UserSchema = Yup.object().shape({
   password: Yup.string().min(5, "Too Short!").max(50, "Too Long!"),
   email: Yup.string().email("Invalid email").required("Required"),
   allHistoric: Yup.string().nullable(),
+  // Peso na distribuição de leads: 0 tira a pessoa da rotação, 100 é o normal.
+  distributionWeight: Yup.number()
+    .min(0, i18n.t("userModal.form.distributionWeightMin"))
+    .max(1000, i18n.t("userModal.form.distributionWeightMax"))
+    .integer(i18n.t("userModal.form.distributionWeightInteger"))
+    .nullable(),
 });
 
 const formatDateForInput = (date) => {
@@ -140,10 +148,13 @@ const UserModal = ({ open, onClose, userId }) => {
     password: "",
     birthDate: "",
     profile: "user",
+    // Rol de instalacion. Solo lo ve y lo cambia otro Super Admin.
+    super: false,
     startWork: "00:00",
     endWork: "23:59",
     farewellMessage: "",
     allTicket: "enable",
+    distributionWeight: 100,
     allowGroup: false,
     defaultTheme: "light",
     defaultMenu: "open",
@@ -329,7 +340,7 @@ const handleSaveUser = async (values) => {
             }, 400);
           }}
         >
-          {({ touched, errors, isSubmitting, setFieldValue }) => (
+          {({ touched, errors, isSubmitting, setFieldValue, values }) => (
             <Form>
               <Paper className={classes.mainPaper} elevation={1}>
                 <Tabs
@@ -451,8 +462,12 @@ const handleSaveUser = async (values) => {
                                   id="profile-selection"
                                   required
                                 >
-                                  <MenuItem value="admin">Admin</MenuItem>
-                                  <MenuItem value="user">User</MenuItem>
+                                  <MenuItem value="admin">
+                                    {i18n.t("users.roles.admin")}
+                                  </MenuItem>
+                                  <MenuItem value="user">
+                                    {i18n.t("users.roles.user")}
+                                  </MenuItem>
                                 </Field>
                               </>
                             )}
@@ -460,6 +475,34 @@ const handleSaveUser = async (values) => {
                         </FormControl>
                       </Grid>
                     </Grid>
+
+                    {/* El rol de Super Admin solo lo reparte otro Super Admin:
+                        da acceso a TODAS las empresas, no solo a la suya. Por
+                        eso ni se muestra al resto. El backend lo comprueba
+                        igualmente, que esconder un control no es protegerlo. */}
+                    {loggedInUser.super && (
+                      <Grid container spacing={1}>
+                        <Grid item xs={12}>
+                          <FormControlLabel
+                            control={
+                              <Switch
+                                checked={Boolean(values.super)}
+                                onChange={(e) =>
+                                  setFieldValue("super", e.target.checked)
+                                }
+                                name="super"
+                                color="primary"
+                              />
+                            }
+                            label={i18n.t("userModal.form.super")}
+                          />
+                          <FormHelperText>
+                            {i18n.t("userModal.form.superAyuda")}
+                          </FormHelperText>
+                        </Grid>
+                      </Grid>
+                    )}
+
                     <Grid container spacing={1}>
                       <Grid item xs={12} md={12} xl={12}>
                         <Can
@@ -562,9 +605,46 @@ const handleSaveUser = async (values) => {
                               className={classes.textField}
                             />
                           </Grid>
+                          {/* El superadministrador entra a cualquier hora: el
+                              horario no le bloquea el acceso, pero si cuenta
+                              para el reparto de conversaciones. Sin este aviso
+                              parecia que tocarlo podia dejarlo fuera. */}
+                          {user.super && (
+                            <Grid item xs={12}>
+                              <Typography variant="caption" color="textSecondary">
+                                {i18n.t("userModal.form.superWorkHoursNote")}
+                              </Typography>
+                            </Grid>
+                          )}
                         </Grid>
                       )}
                     />
+
+                    <Grid container spacing={1}>
+                      <Grid item xs={12} md={6} xl={6}>
+                        <Field
+                          as={TextField}
+                          label={i18n.t("userModal.form.distributionWeight")}
+                          type="number"
+                          name="distributionWeight"
+                          inputProps={{ min: 0, max: 1000, step: 10 }}
+                          helperText={
+                            touched.distributionWeight &&
+                            errors.distributionWeight
+                              ? errors.distributionWeight
+                              : i18n.t("userModal.form.distributionWeightHelp")
+                          }
+                          error={
+                            touched.distributionWeight &&
+                            Boolean(errors.distributionWeight)
+                          }
+                          variant="outlined"
+                          margin="dense"
+                          fullWidth
+                          className={classes.textField}
+                        />
+                      </Grid>
+                    </Grid>
 
                     <Grid container spacing={1}>
                       <Grid item xs={12} md={6} xl={6}>
@@ -1109,12 +1189,12 @@ const handleSaveUser = async (values) => {
                               >
                                 <>
                                   <InputLabel>
-                                    Finalização com Valor de Venda
+                                    {i18n.t("userModal.form.finalizationWithSaleValue")}
                                   </InputLabel>
 
                                   <Field
                                     as={Select}
-                                    label="Finalização com Valor de Venda"
+                                    label={i18n.t("userModal.form.finalizationWithSaleValue")}
                                     name="finalizacaoComValorVendaAtiva"
                                     type="finalizacaoComValorVendaAtiva"
                                     required

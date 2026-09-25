@@ -23,8 +23,62 @@ import QueueIntegrations from "./QueueIntegrations";
 import Prompt from "./Prompt";
 import { FlowBuilderModel } from "./FlowBuilder";
 
+/**
+ * Credenciales de la conexion. Ninguna sale serializada hacia fuera:
+ * - token: clave de la API externa (/api/messages) y enlace con api_oficial,
+ *   que ademas acepta envios con el en una ruta publica;
+ * - send_token: token de la API de WhatsApp Cloud de Meta;
+ * - facebookUserToken y tokenMeta: tokens de pagina de Facebook e Instagram.
+ * Quien gestiona conexiones recibe `token` aparte, en la ficha
+ * (WhatsAppController.show). `send_token` no lo recibe nadie: la ficha solo
+ * sabe si hay uno guardado y sus ultimos 4 caracteres.
+ */
+export const CAMPOS_SECRETOS = [
+  "token",
+  "send_token",
+  "facebookUserToken",
+  "tokenMeta"
+];
+
+export const quitarSecretos = (plano: any): any => {
+  if (!plano || typeof plano !== "object") return plano;
+
+  // Copia: sin includes, get({ plain: true }) devuelve los dataValues de la
+  // instancia tal cual, y borrar ahi borraria el valor en memoria.
+  const limpio = { ...plano };
+
+  if ("send_token" in limpio) {
+    limpio.tieneSendToken = Boolean(limpio.send_token);
+    limpio.sendTokenFinal = limpio.send_token
+      ? String(limpio.send_token).slice(-4)
+      : null;
+  }
+
+  CAMPOS_SECRETOS.forEach(campo => {
+    delete limpio[campo];
+  });
+
+  return limpio;
+};
+
 @Table
 class Whatsapp extends Model<Whatsapp> {
+  /**
+   * Toda serializacion pasa por aqui: res.json y los emits de socket llaman a
+   * toJSON, que es get({ plain: true }), y Sequelize usa ese mismo get para
+   * las conexiones incluidas en otro modelo (ticket.whatsapp, contact.whatsapp).
+   * Por eso se filtra aqui y no en cada respuesta. Leer el campo en el
+   * servidor (whatsapp.token, whatsapp.get("token")) no cambia.
+   */
+  get(key?: any, options?: any): any {
+    const valor = super.get(key, options);
+    const opciones = key !== null && typeof key === "object" ? key : options;
+
+    if (typeof key === "string" || !opciones?.plain) return valor;
+
+    return quitarSecretos(valor);
+  }
+
   @PrimaryKey
   @AutoIncrement
   @Column

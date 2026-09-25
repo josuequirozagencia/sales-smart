@@ -57,6 +57,15 @@ const useStyles = makeStyles((theme) => ({
     height: "100%",
     flexDirection: "column",
     overflow: "hidden",
+    // Las pestanas (Trabajando en / Esperando / Grupos) miden 48px de serie.
+    // Son una de las cuatro filas que hay por encima de la primera
+    // conversacion: entre todas se llevaban 157px de los 715 de pantalla
+    // antes de ensenar un solo ticket. En la interfaz que Josue paso como
+    // referencia, esa cabecera son 64px. Bajan a 40 en cualquier tamano, no
+    // solo en el movil.
+    "& > .MuiTabs-root, & > .MuiTabs-root .MuiTab-root": {
+      minHeight: 40,
+    },
     borderTopRightRadius: 0,
     borderBottomRightRadius: 0,
   },
@@ -69,6 +78,10 @@ const useStyles = makeStyles((theme) => ({
     marginBottom: theme.spacing(0.5),
     marginLeft: theme.spacing(0.5),
     marginRight: theme.spacing(0.5),
+    [theme.breakpoints.down("xs")]: {
+      marginTop: theme.spacing(0.25),
+      marginBottom: theme.spacing(0.25),
+    },
   },
 
   settingsIcon: {
@@ -83,7 +96,7 @@ const useStyles = makeStyles((theme) => ({
     padding: theme.spacing(0.5, 1),
     borderRadius: 8,
     transition: "0.3s",
-    borderColor: "#aaa",
+    borderColor: theme.palette.tokens.border.border,
     borderWidth: "1px",
     borderStyle: "solid",
     marginRight: theme.spacing(0.5),
@@ -104,14 +117,27 @@ const useStyles = makeStyles((theme) => ({
     },
 
     "&:hover": {
-      backgroundColor: "rgba(0, 0, 0, 0.1)",
+      // Un negro al 10% sobre fondo oscuro no se percibe. Se invierte el
+      // velo segun el modo, igual que en la lista y en la barra lateral.
+      backgroundColor:
+        theme.mode === "light"
+          ? "rgba(15, 23, 42, 0.06)"
+          : "rgba(255, 255, 255, 0.08)",
     },
+    transition: "background-color 180ms ease",
   },
 
   tabPanelItem: {
     minWidth: "33%",
     fontSize: 11,
     marginLeft: 0,
+
+    // El contador va anclado a la esquina del icono y sobresale unos 12px a
+    // la derecha, justo donde empieza el texto: "13" tapaba la T de
+    // "Trabajando en". Se separan las dos celdas.
+    "& .MuiGrid-item:first-child": {
+      marginRight: 18,
+    },
   },
 
   tabIndicator: {
@@ -127,8 +153,16 @@ const useStyles = makeStyles((theme) => ({
     whiteSpace: "nowrap",
     borderRadius: "12px",
     padding: "0 8px",
+    // El texto era blanco fijo sobre el color primario, que cada empresa
+    // configura. Con una marca clara la cifra quedaba ilegible. onColor la
+    // decide segun el fondo.
     backgroundColor: theme.mode === "light" ? theme.palette.primary.main : "#FFF",
-    color: theme.mode === "light" ? "#FFF" : theme.palette.primary.main,
+    color:
+      theme.mode === "light"
+        ? theme.palette.tokens.onColor(theme.palette.primary.main)
+        : theme.palette.primary.main,
+    fontSize: "0.6875rem",
+    fontWeight: 600,
   },
   ticketOptionsBox: {
     display: "flex",
@@ -136,43 +170,72 @@ const useStyles = makeStyles((theme) => ({
     alignItems: "center",
     background: theme.palette.optionsBackground,
     borderRadius: 8,
-    borderColor: "#aaa",
+    borderColor: theme.palette.tokens.border.border,
     borderWidth: "1px",
     borderStyle: "solid",
-    marginTop: theme.spacing(0.5),
-    marginBottom: theme.spacing(1),
+    marginTop: theme.spacing(0.25),
+    marginBottom: theme.spacing(0.5),
     marginLeft: theme.spacing(1),
     marginRight: theme.spacing(1),
-    padding: theme.spacing(0.5),
+    padding: theme.spacing(0.25),
+    // Cada fila de controles compite con la lista por la pantalla, en el
+    // movil y tambien en el escritorio.
+    [theme.breakpoints.down("xs")]: {
+      marginLeft: theme.spacing(0.5),
+      marginRight: theme.spacing(0.5),
+      "& .MuiIconButton-root": {
+        padding: 6,
+      },
+    },
   },
 
   serachInputWrapper: {
     flex: 1,
-    height: 40,
-    background: theme.palette.total,
+    // 36 en vez de 40: con el icono de lupa dentro, el campo sigue siendo
+    // comodo y la lista gana la diferencia.
+    height: 36,
     display: "flex",
-    borderRadius: 40,
-    padding: 4,
-    borderColor: "#aaa",
-    borderWidth: "1px",
-    borderStyle: "solid",
-    marginTop: theme.spacing(0.5),
-    marginBottom: theme.spacing(0.5),
-    marginLeft: theme.spacing(0.5),
-    marginRight: theme.spacing(0.5),
+    alignItems: "center",
+    // Relleno del sistema en vez de palette.total, una clave a medida que
+    // en claro era blanco: el campo quedaba blanco sobre blanco y hacia
+    // falta un borde gris permanente para que se viera. Con un relleno un
+    // peldano por debajo de la superficie, el campo se distingue solo.
+    backgroundColor: theme.palette.tokens.surface.surfaceSecondary,
+    borderRadius: theme.palette.tokens.radius.full,
+    // El borde existe siempre pero transparente: si apareciera solo al
+    // enfocar, el campo daria un salto de 2px al pulsarlo.
+    border: "1px solid transparent",
+    paddingLeft: theme.palette.tokens.space.md,
+    paddingRight: theme.palette.tokens.space.sm,
+    transition: "border-color 160ms ease, box-shadow 160ms ease",
+    // El foco se marca con el color de marca. El halo va aparte del borde
+    // para que se vea tambien sobre fondos oscuros.
+    "&:focus-within": {
+      borderColor: `${theme.palette.primary.main}66`,
+      boxShadow: `0 0 0 3px ${theme.palette.primary.main}1f`,
+    },
+    margin: theme.spacing(0.5),
   },
 
   searchIcon: {
-    color: "grey",
-    marginLeft: 6,
-    marginRight: 6,
+    // Era la palabra clave "grey" de CSS, que no distingue modo claro de
+    // oscuro y ademas es mas oscura que el gris del sistema.
+    color: theme.palette.tokens.text.muted,
+    // El margen izquierdo lo pone ya el padding del contenedor.
+    marginRight: theme.palette.tokens.space.sm,
     alignSelf: "center",
   },
 
   searchInput: {
     flex: 1,
     border: "none",
-    borderRadius: 30,
+    // El campo hereda el radio del contenedor; el suyo propio no se ve.
+    // Lo que si hacia falta era bajar el marcador de posicion al gris
+    // atenuado: estaba al mismo peso que el texto escrito.
+    "& input::placeholder": {
+      color: theme.palette.tokens.text.muted,
+      opacity: 1,
+    },
   },
 
   badge: {
@@ -181,8 +244,13 @@ const useStyles = makeStyles((theme) => ({
 
   customBadge: {
     right: "-10px",
-    backgroundColor: "#f44336",
-    color: "#fff",
+    // Era "#f44336" escrito a mano. Es el rojo semantico del sistema.
+    backgroundColor: theme.palette.tokens.semantic.error.fill,
+    color: theme.palette.tokens.onColor(
+      theme.palette.tokens.semantic.error.fill
+    ),
+    fontSize: "0.6875rem",
+    fontWeight: 600,
   },
 
   show: {
@@ -270,7 +338,7 @@ const useStyles = makeStyles((theme) => ({
     height: 30,
     width: 30,
     border: "2px solid",
-    borderColor: "#aaa",
+    borderColor: theme.palette.tokens.border.border,
     borderRadius: 8,
     marginRight: 8,
     "&:hover": {
@@ -278,7 +346,7 @@ const useStyles = makeStyles((theme) => ({
     },
   },
   icon: {
-    color: "#aaa",
+    color: theme.palette.tokens.text.muted,
     "&:hover": {
       color: theme.mode === "light" ? theme.palette.primary.main : "#FFF",
     },
@@ -290,13 +358,21 @@ const useStyles = makeStyles((theme) => ({
   },
   // Classe padronizada para todos os botões de ação
   standardButton: {
-    height: 30,
-    width: 30,
-    border: "2px solid #aaa",
-    borderRadius: 8,
-    marginRight: 8,
+    height: 32,
+    width: 32,
+    // Sin borde. El estado activo se marcaba engordando el borde de 2 a 3
+    // pixeles, y eso mueve el icono un pixel cada vez que cambias de
+    // filtro; ademas el gris #aaa era el mismo en claro y en oscuro.
+    //
+    // Ahora el activo es una pildora rellena: se lee de un vistazo y no
+    // desplaza nada, porque el tamano no cambia.
+    border: "none",
+    backgroundColor: "transparent",
+    borderRadius: theme.palette.tokens.radius.md,
+    marginRight: theme.palette.tokens.space.sm,
     padding: 0,
     minWidth: 'auto',
+    transition: "background-color 160ms ease",
     "&:hover": {
       borderColor: theme.mode === "light" ? theme.palette.primary.main : "#FFF",
     },
@@ -307,11 +383,15 @@ const useStyles = makeStyles((theme) => ({
     },
   },
   activeButton: {
-    borderColor: theme.mode === "light" ? theme.palette.primary.main : "#FFF",
-    borderWidth: "3px",
+    // Tinte del primario configurado por la empresa, no un color fijo.
+    backgroundColor:
+      theme.mode === "light"
+        ? `${theme.palette.primary.main}1f`
+        : `${theme.palette.primary.main}33`,
   },
   standardIcon: {
-    color: "#aaa",
+    // Gris del sistema: el #aaa fijo no distinguia modo claro de oscuro.
+    color: theme.palette.tokens.text.muted,
     fontSize: 18,
     "&:hover": {
       color: theme.mode === "light" ? theme.palette.primary.main : "#FFF",
@@ -321,7 +401,12 @@ const useStyles = makeStyles((theme) => ({
     },
   },
   activeIcon: {
-    color: theme.mode === "light" ? theme.palette.primary.main : "#FFF",
+    // En oscuro el primario puro pierde contraste sobre la pildora; se usa
+    // el tono de marca pensado para leerse sobre superficie.
+    color:
+      theme.mode === "light"
+        ? theme.palette.primary.main
+        : theme.palette.tokens.brand.onSurface,
   },
 }));
 
@@ -348,6 +433,10 @@ const TicketsManagerTabs = () => {
   const [pendingCount, setPendingCount] = useState(0);
   const [groupingCount, setGroupingCount] = useState(0);
 
+  // user llega vacio mientras el contexto de autenticacion resuelve la
+  // sesion. Sin la guarda, un token caducado tumbaba la pantalla entera
+  // con "Cannot read properties of undefined (reading 'map')" antes de
+  // que llegara el 401 que redirige al login.
   const userQueueIds = (Array.isArray(user?.queues) ? user.queues : []).map((q) => q.id);
   const [selectedQueueIds, setSelectedQueueIds] = useState(userQueueIds || []);
   const [selectedTags, setSelectedTags] = useState([]);
@@ -877,7 +966,7 @@ const TicketsManagerTabs = () => {
                   <Typography
                     style={{
                       marginLeft: 8,
-                      fontSize: 10,
+                      fontSize: "0.6875rem",
                       fontWeight: 600,
                     }}
                   >
@@ -913,7 +1002,7 @@ const TicketsManagerTabs = () => {
                   <Typography
                     style={{
                       marginLeft: 8,
-                      fontSize: 10,
+                      fontSize: "0.6875rem",
                       fontWeight: 600,
                     }}
                   >
@@ -950,7 +1039,7 @@ const TicketsManagerTabs = () => {
                     <Typography
                       style={{
                         marginLeft: 8,
-                        fontSize: 10,
+                        fontSize: "0.6875rem",
                         fontWeight: 600,
                       }}
                     >

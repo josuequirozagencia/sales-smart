@@ -66,10 +66,16 @@ const useStyles = makeStyles((theme) => ({
     letterSpacing: "0.5px",
     lineHeight: 2.5,
     textTransform: "uppercase",
-    fontFamily: "'Plus Jakarta Sans', sans-serif'",
+    // El valor era "'Plus Jakarta Sans', sans-serif'" con un apostrofo
+    // sobrante al final, lo que invalida la declaracion entera: el navegador
+    // la descartaba y caia en la tipografia heredada.
+    fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
   },
   h4: {
-    fontFamily: "'Plus Jakarta Sans', sans-serif'",
+    // El valor era "'Plus Jakarta Sans', sans-serif'" con un apostrofo
+    // sobrante al final, lo que invalida la declaracion entera: el navegador
+    // la descartaba y caia en la tipografia heredada.
+    fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
     fontWeight: 500,
     fontSize: "2rem",
     lineHeight: 1,
@@ -100,7 +106,12 @@ const useStyles = makeStyles((theme) => ({
       marginLeft: theme.spacing(0.3),
     },
     "&:hover": {
-      backgroundColor: "rgba(6, 81, 131, 0.3)",
+      // Era "rgba(6, 81, 131, 0.3)", el azul por defecto anterior escrito a
+      // mano: no seguia al color de marca ni funcionaba en modo oscuro.
+      backgroundColor:
+        theme.mode === "light"
+          ? `${theme.palette.primary.main}14`
+          : `${theme.palette.primary.main}26`,
     },
     "&$selected": {
       color: theme.palette.primary.contrastText,
@@ -113,7 +124,7 @@ const useStyles = makeStyles((theme) => ({
     height: 6,
     bottom: 0,
     color:
-      theme.palette.mode === "light"
+      theme.mode === "light"
         ? theme.palette.primary.main
         : theme.palette.primary.contrastText,
   },
@@ -123,14 +134,19 @@ const useStyles = makeStyles((theme) => ({
   },
   nps: {
     paddingTop: theme.spacing(1),
-    paddingBottom: theme.padding,
+    // Era theme.padding, que no existe en el tema: el valor llegaba como
+    // undefined y la propiedad se descartaba.
+    paddingBottom: theme.spacing(1),
   },
   fixedHeightPaper: {
-    padding: theme.spacing(2),
+    padding: theme.palette.tokens.space.xl,
     display: "flex",
     flexDirection: "column",
     height: 240,
     overflowY: "auto",
+    borderRadius: theme.palette.tokens.radius.lg,
+    border: `1px solid ${theme.palette.divider}`,
+    boxShadow: theme.palette.tokens.shadow.sm,
     ...theme.scrollbarStyles,
   },
   cardAvatar: {
@@ -142,7 +158,7 @@ const useStyles = makeStyles((theme) => ({
   },
   cardTitle: {
     fontSize: "18px",
-    color: theme.palette.primary.main,
+    color: theme.palette.tokens.brand.onSurface,
   },
   cardSubtitle: {
     color: theme.palette.text.secondary,
@@ -164,17 +180,24 @@ const useStyles = makeStyles((theme) => ({
     border: "none",
   },
   customFixedHeightPaperLg: {
-    padding: theme.spacing(2),
+    padding: theme.palette.tokens.space.xl,
     display: "flex",
     overflow: "auto",
     flexDirection: "column",
     height: "100%",
+    borderRadius: theme.palette.tokens.radius.lg,
+    border: `1px solid ${theme.palette.divider}`,
+    boxShadow: theme.palette.tokens.shadow.sm,
   },
   sectionTitle: {
-    fontSize: "1.5rem",
-    fontWeight: 700,
-    color: theme.palette.primary.main,
-    marginBottom: theme.spacing(2),
+    // Era 1.5rem en el color de marca. Un titulo de seccion no deberia
+    // competir en peso visual con los datos que encabeza; se baja a la
+    // escala del sistema y al color de texto principal.
+    fontSize: "1.125rem",
+    fontWeight: 600,
+    letterSpacing: "-0.015em",
+    color: theme.palette.tokens.text.primary,
+    marginBottom: theme.palette.tokens.space.lg,
   },
   mainPaper: {
     flex: 1,
@@ -184,11 +207,22 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: "transparent !important",
     borderRadius: "10px",
   },
+  // Tarjetas del panel.
+  //
+  // Se les da el mismo lenguaje que al resto: borde sutil, sombra suave con
+  // tinte azulado en vez de la de serie del MUI, y radio del sistema. El
+  // borde importa mas de lo que parece: en modo oscuro la sombra apenas se
+  // percibe, y sin borde las tarjetas se funden con el fondo.
   paper: {
-    padding: theme.spacing(2),
-    borderRadius: 12,
-    backgroundColor: theme.palette.background.paper,
-    boxShadow: theme.shadows[1],
+    padding: theme.palette.tokens.space.xl,
+    borderRadius: theme.palette.tokens.radius.lg,
+    backgroundColor: theme.palette.tokens.surface.surface,
+    border: `1px solid ${theme.palette.divider}`,
+    boxShadow: theme.palette.tokens.shadow.sm,
+    transition: "box-shadow 180ms ease",
+    "&:hover": {
+      boxShadow: theme.palette.tokens.shadow.md,
+    },
   },
   barContainer: {
     display: "flex",
@@ -205,7 +239,7 @@ const useStyles = makeStyles((theme) => ({
     minWidth: 50,
     textAlign: "right",
     fontWeight: 500,
-    color: theme.palette.mode === "light" ? theme.palette.text.secondary : theme.palette.text.primary,
+    color: theme.mode === "light" ? theme.palette.text.secondary : theme.palette.text.primary,
   },
   infoCard: {
     padding: theme.spacing(2),
@@ -217,7 +251,7 @@ const useStyles = makeStyles((theme) => ({
   },
   infoIcon: {
     fontSize: "2rem",
-    color: theme.palette.primary.main,
+    color: theme.palette.tokens.brand.onSurface,
     marginBottom: theme.spacing(1),
   },
 }));
@@ -559,7 +593,7 @@ const Dashboard = () => {
             
             {/* Indicadores Gerais */}
             <Grid2 xs={12} style={{ marginTop: '20px', paddingLeft: '4px' }}>
-              <Typography variant="h5" style={{ marginBottom: '10px', color: theme.palette.primary.main }}>
+              <Typography variant="h5" style={{ marginBottom: '10px', color: theme.palette.tokens.brand.onSurface }}>
                 {i18n.t("dashboard.sections.indicators")}
               </Typography>
             </Grid2>
@@ -569,7 +603,7 @@ const Dashboard = () => {
 
             {/* Pesquisa de Satisfação (NPS) */}
             <Grid2 xs={12} style={{ marginTop: '40px', paddingLeft: '4px' }}>
-              <Typography variant="h5" style={{ marginBottom: '10px', color: theme.palette.primary.main }}>
+              <Typography variant="h5" style={{ marginBottom: '10px', color: theme.palette.tokens.brand.onSurface }}>
                 {i18n.t("dashboard.sections.satisfactionSurvey")}
               </Typography>
             </Grid2>
@@ -579,7 +613,7 @@ const Dashboard = () => {
 
             {/* Informações de Atendimento */}
             <Grid2 xs={12} style={{ marginTop: '40px', paddingLeft: '4px' }}>
-              <Typography variant="h5" style={{ marginBottom: '10px', color: theme.palette.primary.main }}>
+              <Typography variant="h5" style={{ marginBottom: '10px', color: theme.palette.tokens.brand.onSurface }}>
                 {i18n.t("dashboard.sections.attendances")}
               </Typography>
             </Grid2>
@@ -589,13 +623,24 @@ const Dashboard = () => {
 
             {/* Índice de Avaliação */}
             <Grid2 xs={12} style={{ marginTop: '40px', paddingLeft: '4px', paddingRight: '4px' }}>
-              <Typography variant="h6" style={{ marginBottom: '15px', color: theme.palette.primary.main }}>
+              <Typography variant="h6" style={{ marginBottom: '15px', color: theme.palette.tokens.brand.onSurface }}>
                 {i18n.t("dashboard.sections.ratingIndex")}
               </Typography>
               <Grid2 container alignItems="center" spacing={2}>
                 <Grid2 xs={12} sm={2}>
-                  <Paper className={classes.infoCard} style={{ textAlign: 'center', padding: '8px', backgroundColor: '#FFE3B3' }}>
-                    <Typography variant="h6" style={{ color: '#F79009' }}>
+                  <Paper className={classes.infoCard} style={{
+                    textAlign: 'center',
+                    padding: '8px',
+                    // Era '#FFE3B3' con texto '#F79009' encima: naranja medio
+                    // sobre naranja claro, 1.89 de contraste. Los tokens
+                    // semanticos ya distinguen el fondo suave del tono
+                    // legible como texto, que es justo este caso.
+                    backgroundColor: theme.palette.tokens.semantic.warning.soft,
+                  }}>
+                    <Typography
+                      variant="h6"
+                      style={{ color: theme.palette.tokens.semantic.warning.text }}
+                    >
                       {Number(counters.percRating / 100).toLocaleString(undefined, { style: 'percent' }) || "0%"}
                     </Typography>
                   </Paper>
@@ -613,7 +658,7 @@ const Dashboard = () => {
 
             {/* Tabela de Atendentes */}
             <Grid2 xs={12} style={{ marginTop: '40px', paddingLeft: '4px' }}>
-              <Typography variant="h5" style={{ marginBottom: '10px', color: theme.palette.primary.main }}>
+              <Typography variant="h5" style={{ marginBottom: '10px', color: theme.palette.tokens.brand.onSurface }}>
                 {i18n.t("dashboard.sections.attendants")}
               </Typography>
               <Paper className={classes.paper}>

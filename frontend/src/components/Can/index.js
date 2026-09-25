@@ -36,4 +36,6 @@ Can.defaultProps = {
 	no: () => null,
 };
 
-export { Can };
+// check se exporta para decidir si un grupo del menu tiene algo que mostrar con
+// la misma regla que aplica <Can>, sin duplicarla.
+export { Can, check };

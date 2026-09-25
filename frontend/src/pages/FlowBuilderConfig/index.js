@@ -48,6 +48,7 @@ import WebAssetIcon from '@material-ui/icons/WebAsset';
 import MainHeader from "../../components/MainHeader";
 import Title from "../../components/Title";
 import { AuthContext } from "../../context/Auth/AuthContext";
+import { i18n } from "../../translate/i18n";
 import api from "../../services/api";
 import toastError from "../../errors/toastError";
 
@@ -401,26 +402,26 @@ const useStyles = makeStyles(theme => ({
 // Definição das categorias de nós
 const nodeCategories = [
   {
-    name: "Básicos",
+    name: i18n.t("flows.basics"),
     color: theme => theme.palette.primary.main,
     icon: <RocketLaunch />,
     nodes: [
       {
         icon: <RocketLaunch />,
-        name: "Início",
+        name: i18n.t("flows.start"),
         type: "start",
-        description: "Ponto inicial do fluxo"
+        description: i18n.t("flows.startPoint")
       }
     ]
   },
   {
-    name: "Conteúdo",
+    name: i18n.t("flows.content"),
     color: theme => theme.palette.success.main,
     icon: <LibraryBooks />,
     nodes: [
       {
         icon: <LibraryBooks />,
-        name: "Conteúdo",
+        name: i18n.t("flows.content"),
         type: "content",
         description: "Enviar texto, imagem, áudio ou vídeo"
       },
@@ -433,7 +434,7 @@ const nodeCategories = [
     ]
   },
   {
-    name: "Interação",
+    name: i18n.t("flows.interaction"),
     color: theme => theme.palette.warning.main,
     icon: <DynamicFeed />,
     nodes: [
@@ -458,7 +459,7 @@ const nodeCategories = [
     ]
   },
   {
-    name: "Lógica",
+    name: i18n.t("flows.logic"),
     color: theme => theme.palette.secondary.main,
     icon: <CallSplit />,
     nodes: [
@@ -471,7 +472,7 @@ const nodeCategories = [
     ]
   },
   {
-    name: "Sistema",
+    name: i18n.t("flows.system"),
     color: theme => theme.palette.info.main,
     icon: <Queue />,
     nodes: [
@@ -508,7 +509,7 @@ const nodeCategories = [
     ]
   },
   {
-    name: "Integrações",
+    name: i18n.t("flows.integrations"),
     color: theme => theme.palette.error.main,
     icon: <HttpIcon />,
     nodes: [
@@ -646,7 +647,7 @@ const QuickActions = ({ onActionClick }) => {
     { icon: <Message />, name: "Texto", type: "text" },
     { icon: <DynamicFeed />, name: "Menu", type: "menu" },
     { icon: <AccessTime />, name: "Intervalo", type: "interval" },
-    { icon: <LibraryBooks />, name: "Conteúdo", type: "content" }
+    { icon: <LibraryBooks />, name: i18n.t("flows.content"), type: "content" }
   ];
   
   return (
@@ -1484,7 +1485,7 @@ export const FlowBuilderConfig = () => {
         />
         
         <div className={classes.bottomSheetHeader}>
-          <Typography variant="h6">Adicionar Nós</Typography>
+          <Typography variant="h6">{i18n.t("flows.addNodes")}</Typography>
           <IconButton onClick={() => setBottomSheetOpen(false)} size="small">
             <CloseIcon />
           </IconButton>
@@ -1560,7 +1561,7 @@ export const FlowBuilderConfig = () => {
           <div className={classes.sidebarHeader}>
             {sidebarOpen && (
               <Typography variant="subtitle1" fontWeight="bold">
-                Adicionar Nós
+                {i18n.t("flows.addNodes")}
               </Typography>
             )}
             <IconButton 

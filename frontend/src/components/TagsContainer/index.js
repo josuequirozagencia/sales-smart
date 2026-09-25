@@ -1,4 +1,5 @@
 import { Chip, Paper, TextField } from "@material-ui/core";
+import { useTheme } from "@material-ui/core/styles";
 import Autocomplete from "@material-ui/lab/Autocomplete";
 import React, { useEffect, useRef, useState } from "react";
 import { isArray, isString } from "lodash";
@@ -6,6 +7,7 @@ import toastError from "../../errors/toastError";
 import api from "../../services/api";
 
 export function TagsContainer({ contact }) {
+    const theme = useTheme();
 
     const [tags, setTags] = useState([]);
     const [selecteds, setSelecteds] = useState([]);
@@ -109,18 +111,32 @@ export function TagsContainer({ contact }) {
                     value.map((option, index) => (
                         <Chip
                             variant="outlined"
-                            style={{
-                                backgroundColor: option.color || '#eee',
-                                color: "#FFF",
-                                marginRight: 1,
-                                padding: 1,
-                                fontWeight: 'bold',
-                                paddingLeft: 5,
-                                paddingRight: 5,
-                                borderRadius: 3,
-                                fontSize: "0.8em",
-                                whiteSpace: "nowrap"
-                            }}
+                            style={(() => {
+                                // El color de la etiqueta se genera al azar al
+                                // crearla (getRandomHexColor), y el texto era
+                                // blanco fijo: cualquier color claro que saliera
+                                // dejaba la etiqueta ilegible.
+                                //
+                                // onColor elige blanco o tinta oscura segun el
+                                // fondo, igual que en las insignias del ticket.
+                                const fondo = option.color || theme.palette.tokens.surface.surfaceSecondary;
+                                return {
+                                    backgroundColor: fondo,
+                                    color: theme.palette.tokens.onColor(fondo),
+                                    marginRight: 4,
+                                    marginBottom: 2,
+                                    fontWeight: 500,
+                                    paddingLeft: 4,
+                                    paddingRight: 4,
+                                    // 3px era casi un angulo recto. 6 encaja con
+                                    // la escala de radios del sistema.
+                                    borderRadius: theme.palette.tokens.radius.sm + 2,
+                                    fontSize: "0.75rem",
+                                    // Antes era nowrap sin limite: una etiqueta
+                                    // de nombre largo empujaba la fila entera.
+                                    maxWidth: 180,
+                                };
+                            })()}
                             label={option.name}
                             {...getTagProps({ index })}
                             size="small"

@@ -8,6 +8,7 @@ interface PromptData {
     apiKey: string;
     prompt: string;
     maxTokens?: number;
+    model?: string;
     temperature?: number;
     promptTokens?: number;
     completionTokens?: number;

@@ -23,6 +23,7 @@ import CreateMessageService from "../services/MessageServices/CreateMessageServi
 
 import { sendFacebookMessageMedia } from "../services/FacebookServices/sendFacebookMessageMedia";
 import { sendFacebookMessage } from "../services/FacebookServices/sendFacebookMessage";
+import SendGhlMessage from "../services/GhlServices/SendGhlMessage";
 
 import ShowPlanCompanyService from "../services/CompanyService/ShowPlanCompanyService";
 import ListMessagesServiceAll from "../services/MessageServices/ListMessagesServiceAll";
@@ -42,6 +43,7 @@ import ShowService from "../services/QuickMessageService/ShowService";
 import { IMetaMessageTemplateComponents, IMetaMessageTemplate } from "../libs/whatsAppOficial/IWhatsAppOficial.interfaces";
 import CheckContactNumber from "../services/WbotServices/CheckNumber";
 import TranscribeAudioMessageToText from "../services/MessageServices/TranscribeAudioMessageService";
+import { pausarPorMensajeHumano } from "../services/AiAgentServices/EstadoIaTicket";
 
 type IndexQuery = {
   pageNumber: string;
@@ -180,6 +182,13 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     throw new AppError("Este ticket não possui conexão vinculada, provavelmente foi excluída a conexão.", 400);
   }
 
+  // Agentes IA, prioridad humana: el mensaje del asesor pausa la IA de esta
+  // conversacion ANTES de enviarse, asi ninguna respuesta de IA en camino sale
+  // detras de el. No cambia la asignacion. Las notas internas no cuentan.
+  if (isPrivate !== "true") {
+    await pausarPorMensajeHumano(ticket, { userId: Number(req.user.id) });
+  }
+
   SetTicketMessagesAsRead(ticket);
 
   try {
@@ -218,6 +227,16 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
               type: null, 
               quotedMsg
             })
+          }
+
+          // Canal GHL: con adjunto. El archivo ya esta subido a public/,
+          // asi que a GHL se le pasa la URL para que se lo descargue.
+          if (ticket.channel === "ghl") {
+            await SendGhlMessage({
+              body: Array.isArray(body) ? body[index] : body,
+              ticket,
+              media
+            });
           }
 
           if (["facebook", "instagram"].includes(ticket.channel)) {
@@ -260,6 +279,11 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
         await SendWhatsAppOficialMessage({
           body, ticket, quotedMsg, type: !isNil(vCard) ? 'contacts' : 'text', media: null, vCard
         })
+      } else if (ticket.channel === "ghl" && isPrivate === "false") {
+        // Canal GHL: en vez de salir a Meta, el mensaje va a la API de
+        // GoHighLevel, que es quien lo entrega y quien dispara alli las
+        // automatizaciones de "mensaje saliente".
+        await SendGhlMessage({ body, ticket });
       } else if (isPrivate === "true") {
         const messageData = {
           wid: `PVT${ticket.updatedAt.toString().replace(' ', '')}`,
@@ -370,6 +394,9 @@ export const forwardMessage = async (
     ticketId: createTicket.id,
     companyId: createTicket.companyId
   });
+
+  // Agentes IA, prioridad humana (ver store).
+  await pausarPorMensajeHumano(createTicket, { userId: requestUser.id });
 
   let body = message.body;
   if (message.mediaType === 'conversation'
@@ -577,6 +604,9 @@ export const storeTemplate = async (req: Request, res: Response): Promise<Respon
   const { companyId } = req.user;
 
   const ticket = await ShowTicketService(ticketId, companyId);
+
+  // Agentes IA, prioridad humana (ver store).
+  await pausarPorMensajeHumano(ticket, { userId: Number(req.user.id) });
 
   const template = await ShowService(templateId, companyId);
 

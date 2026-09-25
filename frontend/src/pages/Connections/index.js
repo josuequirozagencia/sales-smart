@@ -40,6 +40,7 @@ import {
   SignalCellular4Bar,
   CropFree,
   DeleteOutline,
+  DeviceHub,
   Facebook,
   Instagram,
   WhatsApp,
@@ -49,6 +50,7 @@ import WebhookIcon from '@mui/icons-material/Webhook';
 import FacebookLogin from "react-facebook-login/dist/facebook-login-render-props";
 
 import MainContainer from "../../components/MainContainer";
+import GoogleCalendarPanel from "../../components/GoogleCalendarPanel";
 import MainHeader from "../../components/MainHeader";
 import MainHeaderButtonsWrapper from "../../components/MainHeaderButtonsWrapper";
 import Title from "../../components/Title";
@@ -155,6 +157,10 @@ const IconChannel = (channel) => {
       return <WhatsApp style={{ color: "#25d366" }} />;
     case "whatsapp_oficial":
       return <WhatsApp style={{ color: "#25d366" }} />;
+    // GoHighLevel no tiene marca propia en el set de Material. Se usa un
+    // icono neutro de conexion y el color de marca de la plataforma.
+    case "ghl":
+      return <DeviceHub style={{ color: "#2dd4bf" }} />;
     default:
       return "error";
   }
@@ -872,6 +878,22 @@ const Connections = () => {
                               />
                               {i18n.t("connections.whatsappOfficial")}
                             </MenuItem>
+                            {/* GOHIGHLEVEL */}
+                            <MenuItem
+                              onClick={() => {
+                                handleOpenWhatsAppModal("ghl");
+                                popupState.close();
+                              }}
+                            >
+                              <DeviceHub
+                                fontSize="small"
+                                style={{
+                                  marginRight: "10px",
+                                  color: "#2dd4bf",
+                                }}
+                              />
+                              GoHighLevel
+                            </MenuItem>
                             {/* FACEBOOK */}
                             <FacebookLogin
                               appId={process.env.REACT_APP_FACEBOOK_APP_ID}
@@ -933,6 +955,11 @@ const Connections = () => {
               </PopupState>
             </MainHeaderButtonsWrapper>
           </MainHeader>
+
+          {/* Conexion con Google Calendar. Va aqui, con las demas
+              conexiones externas, y no en Ajustes: es lo mismo que
+              conectar un WhatsApp, un servicio de fuera. */}
+          <GoogleCalendarPanel />
 
           {
             statusImport?.all ? (

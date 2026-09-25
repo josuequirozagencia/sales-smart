@@ -1,4 +1,6 @@
 import { verify } from "jsonwebtoken";
+import ReviewCompanyService from "../services/CompanyService/ReviewCompanyService";
+import ListAuthAuditService from "../services/AuthAuditServices/ListAuthAuditService";
 import authConfig from "../config/auth";
 import * as Yup from "yup";
 import { Request, Response } from "express";
@@ -19,6 +21,8 @@ import FindAllCompaniesService from "../services/CompanyService/FindAllCompanies
 import ShowPlanCompanyService from "../services/CompanyService/ShowPlanCompanyService";
 import User from "../models/User";
 import ListCompaniesPlanService from "../services/CompanyService/ListCompaniesPlanService";
+import CloneCompanyConfigService from "../services/CompanyService/CloneCompanyConfigService";
+import DuplicateCompanyService from "../services/CompanyService/DuplicateCompanyService";
 
 interface TokenPayload {
   id: string;
@@ -366,7 +370,7 @@ export const remove = async (
   const requestUser = await User.findByPk(requestUserId);
 
   if (requestUser.super === true) {
-    const company = await DeleteCompanyService(id);
+    const company = await DeleteCompanyService(id, companyId);
     
     // Invalidar cache da empresa removida
     invalidateCompanyCache(parseInt(id));
@@ -442,4 +446,105 @@ export const indexPlan = async (req: Request, res: Response): Promise<Response> 
   } else {
     return res.status(400).json({ error: "Você não possui permissão para acessar este recurso!" });
   }
+};
+/**
+ * Aprobar, rechazar, suspender o reactivar una empresa.
+ *
+ * El revisor sale de req.user, nunca del cuerpo de la peticion: si no,
+ * cualquiera podria atribuir su decision a otra persona.
+ */
+export const review = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { id } = req.params;
+  const { status, reason } = req.body;
+  const { id: reviewerId } = req.user;
+
+  const company = await ReviewCompanyService({
+    companyId: id,
+    status,
+    reviewerId: Number(reviewerId),
+    reason
+  });
+
+  return res.status(200).json(company);
+};
+
+/**
+ * Clona la configuracion de una empresa en otra ya creada.
+ *
+ * Solo el superadministrador, con el mismo guard que el resto de la
+ * gestion de empresas de este controlador. Que se copia, que no y por
+ * que: CloneCompanyConfigService y docs/CLONAR_EMPRESA.md.
+ */
+export const cloneConfig = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const requestUser = await User.findByPk(req.user.id);
+
+  if (requestUser?.super !== true) {
+    throw new AppError("ERR_NO_PERMISSION", 403);
+  }
+
+  const { sourceCompanyId, targetCompanyId } = req.body;
+
+  const resumen = await CloneCompanyConfigService({
+    sourceCompanyId: Number(sourceCompanyId),
+    targetCompanyId: Number(targetCompanyId),
+    userId: requestUser.id
+  });
+
+  return res.status(200).json(resumen);
+};
+
+/**
+ * Duplica una empresa: crea otra con su plan y su configuracion.
+ *
+ * Solo el superadministrador, con el mismo guard que el clonado. Que
+ * hereda y que no: DuplicateCompanyService y docs/CLONAR_EMPRESA.md.
+ */
+export const duplicate = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const requestUser = await User.findByPk(req.user.id);
+
+  if (requestUser?.super !== true) {
+    throw new AppError("ERR_NO_PERMISSION", 403);
+  }
+
+  const { id } = req.params;
+  const { name, email, password, phone, document } = req.body;
+
+  const resultado = await DuplicateCompanyService({
+    sourceCompanyId: Number(id),
+    name,
+    email,
+    password,
+    phone,
+    document,
+    userId: requestUser.id
+  });
+
+  return res.status(201).json(resultado);
+};
+
+/** Historial de la solicitud. Solo el superadministrador. */
+export const audit = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { id } = req.params;
+  const { limit } = req.query as { limit?: string };
+  const { id: requesterId } = req.user;
+
+  const registros = await ListAuthAuditService({
+    companyId: id,
+    requesterId: Number(requesterId),
+    limit: limit ? Number(limit) : undefined
+  });
+
+  return res.status(200).json(registros);
 };

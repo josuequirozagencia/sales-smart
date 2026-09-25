@@ -1,0 +1,29 @@
+# Imagen del backend para Railway. Se construye desde backend/
+# (railway up ./backend --path-as-root). Ver docs/DESPLIEGUE_RAILWAY.md.
+FROM node:20.19.4-bookworm AS build
+WORKDIR /app
+
+# vendor/ antes de npm ci: xlsx se instala desde vendor/xlsx-0.20.3.tgz.
+COPY package.json package-lock.json ./
+COPY vendor ./vendor
+RUN npm ci --legacy-peer-deps --no-audit --no-fund
+
+COPY . .
+RUN npm run build
+
+FROM node:20.19.4-bookworm-slim
+WORKDIR /app
+
+ENV NODE_ENV=production
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/package.json /app/.sequelizerc ./
+COPY --from=build /app/deploy ./deploy
+
+# Los archivos subidos viven en /app/public, que en Railway es un volumen.
+# MessageController busca los medios reenviados en ../../../backend/public desde
+# dist/controllers, que dentro del contenedor es /backend/public: se enlaza al mismo sitio.
+RUN mkdir -p /app/public /backend && ln -s /app/public /backend/public
+
+EXPOSE 8080
+CMD ["node", "dist/server.js"]

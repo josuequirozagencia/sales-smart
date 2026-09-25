@@ -204,7 +204,10 @@ export function ContactNotes({ ticket }) {
                                         </Button>
                                     </Grid>
                                     <Grid xs={6} item>
-                                        <ButtonWithSpinner loading={loading} color="primary" type="submit" variant="contained" autoFocus fullWidth>
+                                        {/* Sin autoFocus: al abrir un ticket el navegador enfocaba este
+                                            boton y desplazaba la ficha de contacto hasta el final, y
+                                            ademas le quitaba el foco al campo de mensaje. */}
+                                        <ButtonWithSpinner loading={loading} color="primary" type="submit" variant="contained" fullWidth>
                                             Salvar
                                         </ButtonWithSpinner>
                                     </Grid>

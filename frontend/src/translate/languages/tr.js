@@ -641,16 +641,6 @@ const messages = {
           showAll: "Tüm"
         }
       },
-      transferTicketModal: {
-        title: "Sohbeti Transfer Et",
-        fieldLabel: "Kullanıcı Ara",
-        noOptions: "Bu isimde Kullanıcı Bulunamadı.",
-        noteLabel: "Gözlemler",
-        buttons: {
-          ok: "Transfer",
-          cancel: "İptal"
-        }
-      },
       ticketsList: {
         pendingHeader: "Kuyruktakiler",
         assignedHeader: "İlgilenilenler",
@@ -682,17 +672,6 @@ const messages = {
           title: "Bu görüşmenin bağlantısı yok",
           message: "Sohbete devam etmek için bir bağlantı seçin",
           applyToAll: "Bağlantı olmadan herkese uygula"
-        }
-      },
-      newTicketModal: {
-        title: "Sohbet Oluştur",
-        fieldLabel: "Kişileri Ara",
-        queues: "Kuyruklar",
-        noQueue: "Boş",
-        add: "Ekle",
-        buttons: {
-          ok: "Başla",
-          cancel: "İptal"
         }
       },
       whatsappSelect: {
@@ -958,32 +937,6 @@ const messages = {
         },
         totalCountUsers: "Toplam Kullanıcılar :"
       },
-      campaigns: {
-        title: "Kampanyalar",
-        table: {
-          name: "Kampanya Adı",
-          status: "Durum",
-          createdAt: "Oluşturulma Zamanı",
-          connection: "Bağlantı",
-          progress: "İlerleme",
-          actions: "İşlem"
-        },
-        not_connection: "Bağlantı Yok",
-        status: {
-          concluded: "Tamamlandı",
-          suspended: "Askıda",
-          active: "Aktif"
-        },
-        buttons: {
-          add: "Yeni Kampanya"
-        },
-        toasts: {
-          created: "Kampanya başarılı bir şekilde oluşturuldu!",
-          started: "Kampanya başarılı bir şekilde başladı!",
-          suspended: "Kampanya başarılı bir şekilde durduruldu!"
-        },
-        remainingMessages: "Kalan Mesajlar :"
-      },
       settings: {
         success: "Ayarlar başarılı bir şekilde kaydedildi!",
         title: "Ayarlar",
@@ -1060,6 +1013,7 @@ const messages = {
         }
       },
       messagesList: {
+        ventana24h: "Meta politikaları gereği, müşteri yazdıktan sonra yanıtlamak için 24 saatiniz var.",
         header: {
           assignedTo: "İlgilenen :",
           buttons: {
@@ -1539,6 +1493,29 @@ const messages = {
           listContacts: "Kişi Listesi",
           settings: "Ayarlar",
         },
+        remainingMessages: "Kalan Mesajlar :",
+        toasts: {
+          created: "Kampanya başarılı bir şekilde oluşturuldu!",
+          started: "Kampanya başarılı bir şekilde başladı!",
+          suspended: "Kampanya başarılı bir şekilde durduruldu!"
+        },
+        buttons: {
+          add: "Yeni Kampanya"
+        },
+        status: {
+          concluded: "Tamamlandı",
+          suspended: "Askıda",
+          active: "Aktif"
+        },
+        not_connection: "Bağlantı Yok",
+        table: {
+          name: "Kampanya Adı",
+          status: "Durum",
+          createdAt: "Oluşturulma Zamanı",
+          connection: "Bağlantı",
+          progress: "İlerleme",
+          actions: "İşlem"
+        },
       },
       campaignsConfig: {
         title: "Kampanya Ayarları",
@@ -1578,11 +1555,22 @@ const messages = {
         fieldQueueLabel: "Kuyruğa transfer et",
         fieldQueuePlaceholder: "Kuyruk seç",
         noOptions: "Kullanıcı bulunamadı",
+        buttons: {
+          ok: "Transfer",
+          cancel: "İptal"
+        },
+        noteLabel: "Gözlemler",
       },
       newTicketModal: {
         title: "Bilet Oluştur",
         fieldLabel: "Kişi ara",
         add: "Ekle",
+        buttons: {
+          ok: "Başla",
+          cancel: "İptal"
+        },
+        noQueue: "Boş",
+        queues: "Kuyruklar",
       },
       tags: {
         title: "Etiketler",

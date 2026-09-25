@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useHistory } from "react-router-dom";
 import { has, isArray } from "lodash";
 
@@ -9,10 +9,31 @@ import api from "../../services/api";
 import toastError from "../../errors/toastError";
 import { socketConnection } from "../../services/socket";
 import moment from "moment";
+import {
+  marcarActividad,
+  olvidarActividad,
+  sesionCaducadaPorInactividad,
+} from "../../services/inactividadSesion";
 
 const useAuth = () => {
   const history = useHistory();
   const [isAuth, setIsAuth] = useState(false);
+  /**
+   * Motivo por el que se ha denegado el acceso, si lo hay.
+   *
+   * Vive AQUI y no en la pantalla de login a proposito. Mientras dura el
+   * intento, `loading` hace que Route pinte la pantalla de carga, y eso
+   * DESMONTA el login: al volver se monta uno nuevo y cualquier estado
+   * suyo se ha perdido. El aviso desaparecia sin dejar rastro y la
+   * persona veia que al pulsar no pasaba nada. El proveedor, en cambio,
+   * esta por encima y sobrevive.
+   */
+  const [bloqueoAcceso, setBloqueoAcceso] = useState(null);
+
+  // Identidad estable: el contexto memoriza su valor, y una funcion
+  // nueva en cada render lo invalidaria y volveria a renderizar a todos
+  // los que lo consumen, que en esta aplicacion son casi todos.
+  const limpiarBloqueo = useCallback(() => setBloqueoAcceso(null), []);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState({});
   const [socket, setSocket] = useState(null);
@@ -22,6 +43,8 @@ const useAuth = () => {
   const reconnectTimeoutRef = useRef(null);
   const reconnectAttemptsRef = useRef(0);
   const maxReconnectAttempts = 5;
+  // Evita dos cierres a la vez (el aviso y la carga de la pagina, o dos ticks).
+  const cerrandoPorInactividadRef = useRef(false);
 
   // Interceptors do API (mantém como estava)
   api.interceptors.request.use(
@@ -29,7 +52,16 @@ const useAuth = () => {
       const token = localStorage.getItem("token");
       if (token) {
         config.headers["Authorization"] = `Bearer ${JSON.parse(token)}`;
-        setIsAuth(true);
+        // Tener un token guardado no es estar autenticado: aqui habia un
+        // setIsAuth(true) que se disparaba con la simple presencia de la
+        // cadena en localStorage, antes de que nadie la hubiera validado.
+        // Con el backend caido o la sesion caducada, eso dejaba isAuth en
+        // true y loading en false con user={} y socket=null, y Route
+        // montaba las pantallas privadas igual. La primera que leia
+        // user.queues.map o socket.emit se llevaba por delante el arbol
+        // entero de React y la pagina quedaba en blanco con el overlay de
+        // error. isAuth lo ponen ahora solo el login y el refresco, que
+        // rellenan user antes.
       }
       return config;
     },
@@ -50,22 +82,51 @@ const useAuth = () => {
         localStorage.setItem("redirectAfterLogin", window.location.pathname);
       }
       
-      if (error?.response?.status === 403 && !originalRequest._retry) {
+      const status = error?.response?.status;
+
+      // 403 e 401 são tratados igual, com uma tentativa de renovação.
+      //
+      // O backend usa os dois: token vencido devolve 403, e falta do header
+      // Authorization devolve 401 (ERR_SESSION_EXPIRED). Antes só o 403
+      // renovava; o 401 apagava o token e zerava
+      // api.defaults.headers.Authorization. Bastava uma requisição sair sem
+      // header — o que acontecia na corrida da carga da página — para a sessão
+      // entrar num beco sem saída: todas as seguintes também iam sem header e
+      // levavam 401, sem nunca tentar renovar. A tela seguia aberta e nada
+      // funcionava.
+      //
+      // O _retry garante uma única tentativa por requisição, para não entrar
+      // em laço quando a renovação também falha.
+      // A própria chamada de renovação nunca pode ser renovada: se ela falha,
+      // tentar de novo dispara uma recursão infinita que martela o servidor
+      // com POST /auth/refresh_token. Quando é ela que falha, a sessão acabou
+      // e o caminho certo é cair para o bloco de logout mais abaixo.
+      const isRefreshCall = String(originalRequest?.url || "").includes(
+        "/auth/refresh_token"
+      );
+
+      if (
+        (status === 403 || status === 401) &&
+        !originalRequest._retry &&
+        !isRefreshCall
+      ) {
         originalRequest._retry = true;
 
         try {
           const { data } = await api.post("/auth/refresh_token");
-          if (data) {
+          if (data?.token) {
             localStorage.setItem("token", JSON.stringify(data.token));
             api.defaults.headers.Authorization = `Bearer ${data.token}`;
+            originalRequest.headers.Authorization = `Bearer ${data.token}`;
+            return api(originalRequest);
           }
-          return api(originalRequest);
         } catch (refreshError) {
           console.error("Token refresh failed:", refreshError);
         }
       }
-      
-      if (error?.response?.status === 401 && window.location.pathname !== "/login") {
+
+      // Chegou aqui: a renovação não resolveu, então a sessão acabou mesmo.
+      if (status === 401 && window.location.pathname !== "/login") {
         localStorage.removeItem("token");
         api.defaults.headers.Authorization = undefined;
         setIsAuth(false);
@@ -79,13 +140,32 @@ const useAuth = () => {
   useEffect(() => {
     const token = localStorage.getItem("token");
     (async () => {
+      if (token && sesionCaducadaPorInactividad()) {
+        // La sesion quedo abierta y sin uso mas alla del limite de la empresa
+        // (pestana olvidada, navegador cerrado, equipo suspendido): se cierra
+        // al volver en vez de reabrirla.
+        await cerrarSesionPorInactividad();
+        setLoading(false);
+        return;
+      }
       if (token) {
         try {
           const { data } = await api.post("/auth/refresh_token");
           api.defaults.headers.Authorization = `Bearer ${data.token}`;
           setIsAuth(true);
           setUser(data.user || data);
+          // Recargar la pagina tambien es actividad.
+          marcarActividad();
         } catch (err) {
+          // Si el refresco no sale adelante —sesion caducada, o el backend
+          // sin responder— la sesion no sirve. Se deja constancia explicita
+          // en vez de continuar con un estado a medias: la persona acaba en
+          // el login, que es donde puede hacer algo.
+          //
+          // El token se conserva a proposito: si el fallo fue de red y no de
+          // credenciales, borrarlo obligaria a entrar de nuevo por un corte
+          // pasajero.
+          setIsAuth(false);
           toastError(err);
         }
       }
@@ -207,6 +287,7 @@ const useAuth = () => {
 
   const handleLogin = async (userData) => {
     setLoading(true);
+    setBloqueoAcceso(null);
 
     try {
       const { data } = await api.post("/auth/login", userData);
@@ -245,23 +326,39 @@ const useAuth = () => {
       localStorage.setItem("profileImage", data.user.profileImage);
 
       moment.locale("pt-br");
-      let dueDate;
-      if (data.user.company.id === 1) {
-        dueDate = "2999-12-31T00:00:00.000Z";
-      } else {
-        dueDate = data.user.company.dueDate;
-      }
-      
-      const hoje = moment(moment()).format("DD/MM/yyyy");
-      const vencimento = moment(dueDate).format("DD/MM/yyyy");
 
-      var diff = moment(dueDate).diff(moment(moment()).format());
-      var before = moment(moment().format()).isBefore(dueDate);
-      var dias = moment.duration(diff).asDays();
+      // Sin fecha de vencimiento NO hay corte.
+      //
+      // Antes se leia la fecha tal cual y se comparaba con
+      // moment().isBefore(dueDate); cuando la fecha es nula eso devuelve
+      // false, o sea "vencida". Una empresa recien creada, que nace sin
+      // fecha, encerraba al usuario en la pantalla de facturacion nada mas
+      // entrar, sin manera de salir.
+      //
+      // Tambien desaparece el apano de eximir a la empresa id 1: era un caso
+      // escrito a mano que dejo de valer en cuanto esa empresa no existio.
+      // Quien no tiene vencimiento no vence, sea cual sea su id.
+      const dueDate = data.user.company?.dueDate || null;
+      const sinVencimiento = !dueDate;
 
-      if (before === true) {
+      const vencimento = sinVencimiento
+        ? ""
+        : moment(dueDate).format("DD/MM/yyyy");
+      const dias = sinVencimiento
+        ? Infinity
+        : moment.duration(moment(dueDate).diff(moment())).asDays();
+      const vigente = sinVencimiento || moment().isBefore(dueDate);
+
+      if (vigente === true) {
+        // La cuenta de inactividad empieza de cero con cada inicio de sesion:
+        // sin esto, la marca de una sesion anterior la cerraria al instante.
+        marcarActividad();
         localStorage.setItem("token", JSON.stringify(data.token));
-        localStorage.setItem("companyDueDate", vencimento);
+        if (!sinVencimiento) {
+          localStorage.setItem("companyDueDate", vencimento);
+        } else {
+          localStorage.removeItem("companyDueDate");
+        }
         api.defaults.headers.Authorization = `Bearer ${data.token}`;
         setUser(data.user || data);
         setIsAuth(true);
@@ -289,6 +386,25 @@ Entre em contato com o Suporte para mais informações! `);
         setLoading(false);
       }
     } catch (err) {
+      // Los bloqueos de acceso NO se muestran como aviso pasajero: son
+      // situaciones que el usuario no puede resolver reintentando, y un
+      // mensaje que se cierra en dos segundos no le deja leer que hacer.
+      // Se propagan para que la pantalla de login los muestre fijos.
+      const codigo = err?.response?.data?.error;
+      const bloqueos = [
+        "ERR_COMPANY_PENDING",
+        "ERR_COMPANY_REJECTED",
+        "ERR_COMPANY_SUSPENDED",
+        "ERR_TRIAL_EXPIRED"
+      ];
+      if (bloqueos.includes(codigo)) {
+        setBloqueoAcceso(codigo);
+        setLoading(false);
+        // Se sigue lanzando para que quien llame pueda reaccionar, pero
+        // lo que se PINTA sale del estado de arriba: la pantalla que
+        // recogeria este throw puede haberse desmontado ya.
+        throw codigo;
+      }
       toastError(err);
       setLoading(false);
     }
@@ -318,6 +434,7 @@ Entre em contato com o Suporte para mais informações! `);
       setSocket(null);
       localStorage.removeItem("token");
       localStorage.removeItem("cshow");
+      olvidarActividad();
       api.defaults.headers.Authorization = undefined;
       setLoading(false);
       history.push("/login");
@@ -325,6 +442,46 @@ Entre em contato com o Suporte para mais informações! `);
       toastError(err);
       setLoading(false);
     }
+  };
+
+  /**
+   * Cierre por inactividad.
+   *
+   * A diferencia de handleLogout, cierra SIEMPRE en este navegador aunque la
+   * llamada al servidor falle (sin red, backend caido): un equipo abandonado
+   * no puede quedarse con la sesion abierta por un error de red. La llamada
+   * sirve para borrar la cookie de renovacion y marcar al usuario offline.
+   */
+  const cerrarSesionPorInactividad = async () => {
+    if (cerrandoPorInactividadRef.current) return;
+    cerrandoPorInactividadRef.current = true;
+
+    if (socket) {
+      listenersRef.current.forEach((eventName) => {
+        if (socket.off) socket.off(eventName);
+      });
+      listenersRef.current.clear();
+      if (typeof socket.disconnect === "function") socket.disconnect();
+    }
+
+    try {
+      await api.delete("/auth/logout");
+    } catch (err) {
+      // La sesion se cierra igual en este navegador.
+    }
+
+    localStorage.removeItem("token");
+    localStorage.removeItem("cshow");
+    olvidarActividad();
+    api.defaults.headers.Authorization = undefined;
+    setIsAuth(false);
+    setUser({});
+    setSocket(null);
+    // Fijo, no pasajero: quien vuelve al equipo tiene que poder leer por que
+    // esta en el login.
+    toast.info(i18n.t("auth.inactivity.loggedOut"), { autoClose: false });
+    history.push("/login");
+    cerrandoPorInactividadRef.current = false;
   };
 
   const getCurrentUserInfo = async () => {
@@ -339,10 +496,13 @@ Entre em contato com o Suporte para mais informações! `);
 
   return {
     isAuth,
+    bloqueoAcceso,
+    limpiarBloqueo,
     user,
     loading,
     handleLogin,
     handleLogout,
+    cerrarSesionPorInactividad,
     getCurrentUserInfo,
     socket,
   };

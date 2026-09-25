@@ -17,6 +17,7 @@ import ContactWallet from "../../models/ContactWallet";
 import removeAccents from "remove-accents";
 
 import FindCompanySettingOneService from "../CompaniesSettings/FindCompanySettingOneService";
+import { getWaitStartByTicket } from "./TicketWaitTimeService";
 
 interface Request {
   searchParam?: string;
@@ -111,9 +112,12 @@ const ListTicketsService = async ({
         }]
     },
     {
+      // ativarRoteador y tempoRoteador viajan para que el contador de
+      // espera sepa contra que umbral avisar: son los que deciden cuando
+      // la rotacion automatica le quita el lead al asesor. Solo se leen.
       model: Queue,
       as: "queue",
-      attributes: ["id", "name", "color"]
+      attributes: ["id", "name", "color", "ativarRoteador", "tempoRoteador"]
     },
     {
       model: User,
@@ -533,6 +537,22 @@ const ListTicketsService = async ({
     offset,
     order: [["updatedAt", sortTickets]],
     subQuery: false
+  });
+
+  // Desde cuándo espera respuesta el cliente en cada ticket, para el
+  // contador que la lista pinta sobre la conversación.
+  //
+  // Va en una consulta aparte y no como include porque hay que comparar
+  // los mensajes del cliente contra la última respuesta humana, y eso no
+  // se expresa con una asociación. Solo se pide para los tickets de esta
+  // página, y se apoya en el índice ("ticketId", "createdAt") que ya
+  // existe.
+  const esperaPorTicket = await getWaitStartByTicket(tickets.map(t => t.id));
+  tickets.forEach(t => {
+    (t as any).setDataValue(
+      "waitingSince",
+      esperaPorTicket.get(t.id) || null
+    );
   });
 
   const hasMore = count > offset + tickets.length;

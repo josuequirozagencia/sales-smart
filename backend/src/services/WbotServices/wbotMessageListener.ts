@@ -100,7 +100,11 @@ import { handleOpenAiFlow } from "../IntegrationsServices/OpenAiService";
 import { IOpenAi } from "../../@types/openai";
 import WhatsappLidMap from "../../models/WhatsapplidMap";
 import { getJidOf } from "./getJidOf";
+import { contactoCreadoDesde, registrarLeadEntrante } from "../ConversionServices/ConversionService";
 import { verifyContact } from "./verifyContact";
+import { telefonoDeClave } from "../../helpers/LidTelefono";
+import { atenderMensajeEntrante } from "../AiAgentServices/AtenderConAgente";
+import { pausarPorMensajeHumano } from "../AiAgentServices/EstadoIaTicket";
 // import { verifyContact } from "./verifyContact";
 const os = require("os");
 
@@ -441,14 +445,20 @@ const getContactMessage = async (msg: proto.IWebMessageInfo, wbot: Session) => {
   // Usa o identificador normalizado que considera o lid
   // const normalizedId = normalizeContactIdentifier(msg);
 
+  // El telefono que WhatsApp adjunta cuando direcciona por LID. Va junto al
+  // identificador para que verifyContact no tenga que adivinarlo.
+  const pn = telefonoDeClave(msg.key as any);
+
   return isGroup
     ? {
       id: getSenderMessage(msg, wbot),
-      name: msg.pushName
+      name: msg.pushName,
+      pn
     }
     : {
       id: msg.key.remoteJid,
-      name: msg.key.fromMe ? rawNumber : msg.pushName
+      name: msg.key.fromMe ? rawNumber : msg.pushName,
+      pn
     };
 };
 
@@ -3148,7 +3158,7 @@ const handleOpenAi = async (
     messagesOpenAi.push({ role: "user", content: bodyMessage! });
 
     const chat = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo-1106",
+      model: prompt.model || "gpt-5.6-luna",
       messages: messagesOpenAi,
       max_tokens: prompt.maxTokens,
       temperature: prompt.temperature
@@ -3219,7 +3229,7 @@ const handleOpenAi = async (
     }
     messagesOpenAi.push({ role: "user", content: transcription.text });
     const chat = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo-1106",
+      model: prompt.model || "gpt-5.6-luna",
       messages: messagesOpenAi,
       max_tokens: prompt.maxTokens,
       temperature: prompt.temperature
@@ -3419,7 +3429,17 @@ const handleMessage = async (
       groupContact = await verifyContact(msgGroupContact, wbot, companyId);
     }
 
+    const antesDeVerificarContacto = Date.now();
     const contact = await verifyContact(msgContact, wbot, companyId);
+
+    // Meta Conversions API: lead solo si ESTE mensaje, entrante y fuera de
+    // un grupo, creo el contacto. registrarLeadEntrante descarta ademas los
+    // mensajes viejos que llegan al importar el historial. Solo encola.
+    if (!msg.key.fromMe && !isGroup && contactoCreadoDesde(contact, antesDeVerificarContacto)) {
+      registrarLeadEntrante(contact, {
+        mensajeEn: getTimestampMessage(msg.messageTimestamp) * 1000
+      });
+    }
 
     let unreadMessages = 0;
 
@@ -3919,6 +3939,19 @@ const handleMessage = async (
     } catch (e) {
       Sentry.captureException(e);
       console.log(e);
+    }
+
+    // Agentes IA. Va antes del horario de la empresa y de colas, flujos e
+    // integraciones: si la conversacion tiene la IA activa y el agente esta en
+    // su horario, responde el agente y aqui se termina. Un mensaje enviado por
+    // una persona (celular, API) pausa la IA de la conversacion. Si el agente
+    // no atiende, todo sigue como siempre. Ver docs/AGENTES_IA.md.
+    if (!useLGPD && !isGroup) {
+      if (msg.key.fromMe) {
+        await pausarPorMensajeHumano(ticket, { wid: msg.key.id });
+      } else if (await atenderMensajeEntrante({ ticket, contact, wid: msg.key.id })) {
+        return;
+      }
     }
 
     let currentSchedule;

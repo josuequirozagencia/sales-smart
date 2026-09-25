@@ -6,6 +6,8 @@ import Box from "@material-ui/core/Box";
 import LoggedInLayout from "../layout";
 import Login from "../pages/Login/";
 import Signup from "../pages/Signup";
+import ForgotPassword from "../pages/ForgotPassword";
+import ResetPassword from "../pages/ResetPassword";
 import { AuthProvider } from "../context/Auth/AuthContext";
 import { TicketsContextProvider } from "../context/Tickets/TicketsContext";
 import { WhatsAppsProvider } from "../context/WhatsApp/WhatsAppsContext";
@@ -28,6 +30,7 @@ const Loading = () => (
 const Dashboard = lazy(() => import("../pages/Dashboard/"));
 const TicketResponsiveContainer = lazy(() => import("../pages/TicketResponsiveContainer"));
 const Connections = lazy(() => import("../pages/Connections/"));
+const GoHighLevel = lazy(() => import("../pages/GoHighLevel/"));
 const Settings = lazy(() => import("../pages/Settings/"));
 const Financeiro = lazy(() => import("../pages/Financeiro/"));
 const Users = lazy(() => import("../pages/Users"));
@@ -50,9 +53,13 @@ const CampaignReport = lazy(() => import("../pages/CampaignReport"));
 const Annoucements = lazy(() => import("../pages/Annoucements"));
 const Chat = lazy(() => import("../pages/Chat"));
 const Prompts = lazy(() => import("../pages/Prompts"));
+const AiAgents = lazy(() => import("../pages/AiAgents"));
+const WhatsAppTemplates = lazy(() => import("../pages/WhatsAppTemplates"));
 const AllConnections = lazy(() => import("../pages/AllConnections/"));
 const Reports = lazy(() => import("../pages/Reports"));
+const ResponseTime = lazy(() => import("../pages/ResponseTime"));
 const RelatorioVendas = lazy(() => import("../pages/RelatorioVendas"));
+const Sales = lazy(() => import("../pages/Sales"));
 const Subscription = lazy(() => import("../pages/Subscription/"));
 const QueueIntegration = lazy(() => import("../pages/QueueIntegration"));
 const Files = lazy(() => import("../pages/Files/"));
@@ -86,6 +93,9 @@ const Routes = () => {
             <Switch>
             <Route exact path="/login" component={Login} />
             <Route exact path="/signup" component={Signup} />
+            {/* Publicas: quien ha perdido la contrasena no tiene sesion. */}
+            <Route exact path="/forgot-password" component={ForgotPassword} />
+            <Route exact path="/reset-password" component={ResetPassword} />
             <WhatsAppsProvider>
               <LoggedInLayout>
                 <Route
@@ -129,6 +139,12 @@ const Routes = () => {
                 />
                 <Route
                   exact
+                  path="/gohighlevel"
+                  component={GoHighLevel}
+                  isPrivate
+                />
+                <Route
+                  exact
                   path="/quick-messages"
                   component={QuickMessages}
                   isPrivate
@@ -167,6 +183,13 @@ const Routes = () => {
                 <Route exact path="/reports" component={Reports} isPrivate />
                 <Route
                   exact
+                  path="/response-time"
+                  component={ResponseTime}
+                  isPrivate
+                />
+                <Route exact path="/sales" component={Sales} isPrivate />
+                <Route
+                  exact
                   path="/relatorio-vendas"
                   component={RelatorioVendas}
                   isPrivate
@@ -199,6 +222,8 @@ const Routes = () => {
                   isPrivate
                 />
                 <Route exact path="/prompts" component={Prompts} isPrivate />
+                <Route exact path="/ai-agents" component={AiAgents} isPrivate />
+                <Route exact path="/whatsapp-templates" component={WhatsAppTemplates} isPrivate />
                 <Route
                   exact
                   path="/allConnections"

@@ -27,6 +27,7 @@ import QueueIntegrations from "./QueueIntegrations";
 import Files from "./Files";
 import Prompt from "./Prompt";
 import ContactWallet from "./ContactWallet";
+import QueueProduct from "./QueueProduct";
 
 @Table
 class Queue extends Model<Queue> {
@@ -126,6 +127,12 @@ class Queue extends Model<Queue> {
 
   @HasMany(() => ContactWallet)
   contactWallets: ContactWallet[];
+
+  // Catalogo de lo que se vende desde esta cola. Si la cola desaparece
+  // se lleva su catalogo, pero no las ventas: esas guardan copiado el
+  // nombre del producto.
+  @HasMany(() => QueueProduct, { onDelete: "CASCADE", hooks: true })
+  products: QueueProduct[];
 
   @HasMany(() => Chatbot, {
     foreignKey: 'optQueueId', // Chave estrangeira que referencia o ID da fila

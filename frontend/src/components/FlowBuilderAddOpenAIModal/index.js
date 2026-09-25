@@ -1,6 +1,7 @@
 // frontend/openaiModal.jsx
 import React, { useState, useEffect, useRef } from "react";
 import * as Yup from "yup";
+import FlowAgentPicker, { datosNodoAgente, esquemaNodoAgente, useAgentesDeFlujo } from "../FlowAgentPicker";
 import { Formik, Form, Field, FieldArray } from "formik";
 import { makeStyles } from "@material-ui/core/styles";
 import { green } from "@material-ui/core/colors";
@@ -43,16 +44,12 @@ import {
 } from "@material-ui/icons";
 import { InputAdornment } from "@material-ui/core";
 
-// Lista de modelos OpenAI suportados
-const openAiModels = [
-  "gpt-3.5-turbo",
-  "gpt-3.5-turbo-1106", 
-  "gpt-3.5-turbo-16k",
-  "gpt-4",
-  "gpt-4-turbo",
-  "gpt-4o",
-  "gpt-4o-mini"
-];
+import {
+  OPENAI_MODELS,
+  DEFAULT_OPENAI_MODEL,
+  getModelDisplayName,
+  modelOptionsFor
+} from "../../constants/aiModels";
 
 // Lista de vozes disponíveis para OpenAI
 const availableVoices = [
@@ -159,9 +156,10 @@ const OpenAiSchema = Yup.object().shape({
   prompt: Yup.string()
     .min(50, "Muito curto!")
     .required("Descreva o treinamento para Inteligência Artificial"),
-  model: Yup.string()
-    .oneOf(openAiModels, "Modelo inválido")
-    .required("Informe o modelo"),
+  // Não se valida contra OPENAI_MODELS de propósito: um nó salvo com um
+  // modelo que saiu da lista precisa continuar salvável, senão o formulário
+  // trava e o usuário não consegue nem corrigir os outros campos.
+  model: Yup.string().required("Informe o modelo"),
   maxTokens: Yup.number()
     .min(10, "Mínimo 10 tokens")
     .max(4000, "Máximo 4000 tokens")
@@ -226,7 +224,7 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
   const initialState = {
     name: "",
     prompt: "",
-    model: "gpt-4o",
+    model: DEFAULT_OPENAI_MODEL,
     voice: "texto",
     voiceKey: "",
     voiceRegion: "",
@@ -235,6 +233,8 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
     apiKey: "",
     maxMessages: 10,
     queueId: 0,
+    // Vacio = configuracion manual. Con un agente el nodo guarda solo su id.
+    agentId: "",
     
     // Campos para controle de fluxo
     flowMode: "permanent",
@@ -252,6 +252,7 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
     btn: "Adicionar",
   });
   const [newKeyword, setNewKeyword] = useState("");
+  const agentes = useAgentesDeFlujo(open === "create" || open === "edit");
 
   useEffect(() => {
     if (open === "edit") {
@@ -263,9 +264,11 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
       setIntegration({
         ...initialState,
         ...typebotIntegration,
-        model: openAiModels.includes(typebotIntegration.model)
-          ? typebotIntegration.model
-          : "gpt-4o",
+        // Mantém o modelo já salvo mesmo que não esteja mais na lista.
+        // Trocar em silêncio mudaria o comportamento de fluxos em produção
+        // sem que ninguém percebesse; o modelo antigo aparece no seletor
+        // (ver modelOptionsFor no render) para ser trocado de propósito.
+        model: typebotIntegration.model || DEFAULT_OPENAI_MODEL,
         flowMode: typebotIntegration.flowMode || "permanent",
         continueKeywords: typebotIntegration.continueKeywords || ["continuar", "próximo", "avançar"],
         maxInteractions: typebotIntegration.maxInteractions || 5,
@@ -292,7 +295,7 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
   };
 
   const handleSavePrompt = (values, { setSubmitting }) => {
-    const promptData = {
+    const promptData = values.agentId ? datosNodoAgente(values, agentes, "openai") : {
       ...values,
       // Garantir que campos do modo temporário sejam nulos se modo for permanente
       maxInteractions: values.flowMode === "temporary" ? values.maxInteractions : null,
@@ -330,18 +333,6 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
     arrayHelpers.remove(index);
   };
 
-  const getModelDisplayName = (model) => {
-    const modelNames = {
-      "gpt-3.5-turbo": "GPT 3.5 Turbo",
-      "gpt-3.5-turbo-1106": "GPT 3.5 Turbo (1106)",
-      "gpt-3.5-turbo-16k": "GPT 3.5 Turbo 16K",
-      "gpt-4": "GPT 4",
-      "gpt-4-turbo": "GPT 4 Turbo",
-      "gpt-4o": "GPT 4o",
-      "gpt-4o-mini": "GPT 4o Mini"
-    };
-    return modelNames[model] || model;
-  };
 
   const getVoiceDisplayName = (voice) => {
     if (voice === "texto") return "Apenas Texto";
@@ -363,15 +354,24 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
         <Formik
           initialValues={integration}
           enableReinitialize={true}
-          validationSchema={OpenAiSchema}
+          validationSchema={Yup.lazy((v) => (v.agentId ? esquemaNodoAgente : OpenAiSchema))}
           onSubmit={handleSavePrompt}
         >
           {({ touched, errors, isSubmitting, values, setFieldValue }) => (
             <Form style={{ width: "100%" }}>
               <DialogContent dividers>
                 
-                {/* CONFIGURAÇÕES BÁSICAS */}
-                <Accordion className={classes.accordion} defaultExpanded>
+                <FlowAgentPicker
+                  agentes={agentes}
+                  value={values.agentId}
+                  onChange={(id) => setFieldValue("agentId", id)}
+                  className={classes.accordion}
+                  summaryClassName={classes.accordionSummary}
+                  titleClassName={classes.sectionTitle}
+                />
+
+                {/* CONFIGURAÇÕES BÁSICAS: con agente las pone el agente */}
+                <Accordion className={classes.accordion} defaultExpanded style={values.agentId ? { display: "none" } : undefined}>
                   <AccordionSummary 
                     expandIcon={<ExpandMore />}
                     className={classes.accordionSummary}
@@ -431,9 +431,10 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
                         label="Modelo OpenAI"
                         name="model"
                       >
-                        {openAiModels.map((model) => (
+                        {modelOptionsFor(OPENAI_MODELS, values.model).map((model) => (
                           <MenuItem key={model} value={model}>
                             {getModelDisplayName(model)}
+                            {!OPENAI_MODELS.includes(model) && " — descontinuado"}
                           </MenuItem>
                         ))}
                       </Field>
@@ -503,8 +504,8 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
                   </AccordionDetails>
                 </Accordion>
 
-                {/* CONFIGURAÇÕES DE VOZ */}
-                <Accordion className={classes.accordion}>
+                {/* CONFIGURAÇÕES DE VOZ: con agente la pone el agente */}
+                <Accordion className={classes.accordion} style={values.agentId ? { display: "none" } : undefined}>
                   <AccordionSummary 
                     expandIcon={<ExpandMore />}
                     className={classes.accordionSummary}

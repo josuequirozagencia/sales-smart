@@ -8,6 +8,7 @@ import Select from "@material-ui/core/Select";
 import FormHelperText from "@material-ui/core/FormHelperText";
 
 import useSettings from "../../hooks/useSettings";
+import { CURRENCIES, applyInstallationCurrency } from "../../utils/currencyUtils";
 import { ToastContainer, toast } from 'react-toastify';
 import { makeStyles } from "@material-ui/core/styles";
 import { grey, blue } from "@material-ui/core/colors";
@@ -15,6 +16,7 @@ import { grey, blue } from "@material-ui/core/colors";
 import { Tab, Tabs, TextField } from "@material-ui/core";
 import { i18n } from "../../translate/i18n";
 import useCompanySettings from "../../hooks/useSettings/companySettings";
+import SessionInactivity from "./SessionInactivity";
 
 const useStyles = makeStyles((theme) => ({
   container: {
@@ -54,7 +56,10 @@ const useStyles = makeStyles((theme) => ({
     textAlign: "left",
   },
   tab: {
-    backgroundColor: theme.mode === 'light' ? "#f2f2f2" : "#7f7f7f",
+    backgroundColor:
+      theme.mode === "light"
+        ? theme.palette.tokens.surface.surfaceSecondary
+        : theme.palette.tokens.surface.surface,
     borderRadius: 4,
     width: "100%",
     "& .MuiTabs-flexContainer": {
@@ -75,7 +80,19 @@ export default function Options(props) {
   const [loadingScheduleType, setLoadingScheduleType] = useState(false);
 
   const [userCreation, setUserCreation] = useState("disabled");
+  // Aprobacion manual y datos de soporte. Viven junto al ajuste de
+  // registro porque se leen y se deciden juntos.
+  const [requireApproval, setRequireApproval] = useState("enabled");
+  const [loadingRequireApproval, setLoadingRequireApproval] = useState(false);
+  const [supportEmail, setSupportEmail] = useState("");
+  const [supportPhone, setSupportPhone] = useState("");
+  const [supportNote, setSupportNote] = useState("");
+  const [loadingSupport, setLoadingSupport] = useState(false);
   const [loadingUserCreation, setLoadingUserCreation] = useState(false);
+  // Moneda de la instalacion. Gobierna lo que se muestra en el registro
+  // publico y en el resto de pantallas que pintan importes.
+  const [currency, setCurrency] = useState("BRL");
+  const [loadingCurrency, setLoadingCurrency] = useState(false);
 
   const [SendGreetingAccepted, setSendGreetingAccepted] = useState("enabled");
   const [loadingSendGreetingAccepted, setLoadingSendGreetingAccepted] = useState(false);
@@ -213,6 +230,21 @@ const [loadingCopyContactPrefix, setLoadingCopyContactPrefix] = useState(false);
         setUserCreation(userPar.value);
       }
 
+      const aprobPar = oldSettings.find((s) => s.key === "requireApproval");
+      if (aprobPar) setRequireApproval(aprobPar.value);
+
+      const monedaPar = oldSettings.find((s) => s.key === "currency");
+      if (monedaPar && monedaPar.value) setCurrency(monedaPar.value);
+
+      const sEmail = oldSettings.find((s) => s.key === "supportEmail");
+      if (sEmail) setSupportEmail(sEmail.value || "");
+
+      const sPhone = oldSettings.find((s) => s.key === "supportPhone");
+      if (sPhone) setSupportPhone(sPhone.value || "");
+
+      const sNote = oldSettings.find((s) => s.key === "supportNote");
+      if (sNote) setSupportNote(sNote.value || "");
+
       // const downloadLimit = oldSettings.find((s) => s.key === "downloadLimit");
 
       // if (downloadLimit) {
@@ -285,6 +317,32 @@ const [loadingCopyContactPrefix, setLoadingCopyContactPrefix] = useState(false);
       if (key === "copyContactPrefix") setCopyContactPrefix(value);
     }
   }, [settings]);
+
+  async function handleChangeCurrency(value) {
+    setCurrency(value);
+    setLoadingCurrency(true);
+    await updateUserCreation({ key: "currency", value });
+    // Se aplica en el acto ademas de guardarla: si no, quien acaba de
+    // cambiarla seguiria viendo la anterior hasta recargar, y parece que
+    // no se ha guardado.
+    applyInstallationCurrency(value);
+    setLoadingCurrency(false);
+  }
+
+  async function handleChangeRequireApproval(value) {
+    setRequireApproval(value);
+    setLoadingRequireApproval(true);
+    await updateUserCreation({ key: "requireApproval", value });
+    setLoadingRequireApproval(false);
+  }
+
+  // Los datos de soporte se guardan al SALIR del campo, no en cada tecla:
+  // guardar por pulsacion mandaria una peticion por letra.
+  async function guardarSoporte(key, value) {
+    setLoadingSupport(true);
+    await updateUserCreation({ key, value });
+    setLoadingSupport(false);
+  }
 
   async function handleChangeUserCreation(value) {
     setUserCreation(value);
@@ -652,6 +710,11 @@ async function handleCopyContactPrefix(value) {
     <>
       <Grid spacing={3} container>
 
+        {/* CIERRE DE SESION POR INACTIVIDAD (de la empresa, solo admin) */}
+        {user?.profile === "admin" && (
+          <SessionInactivity className={classes.selectContainer} />
+        )}
+
         {/* CRIAÇÃO DE COMPANY/USERS */}
         {isSuper() ?
           <Grid xs={12} sm={6} md={4} item>
@@ -680,6 +743,110 @@ async function handleCopyContactPrefix(value) {
             </FormControl>
           </Grid>
           : null}
+
+        {/* APROBACION MANUAL Y SOPORTE */}
+        {isSuper() ?
+          <Grid xs={12} sm={6} md={4} item>
+            <FormControl className={classes.selectContainer}>
+              <InputLabel id="RequireApproval-label">
+                {i18n.t("settings.settings.options.requireApproval")}
+              </InputLabel>
+              <Select
+                labelId="RequireApproval-label"
+                value={requireApproval}
+                onChange={async (e) => {
+                  handleChangeRequireApproval(e.target.value);
+                }}
+              >
+                <MenuItem value={"disabled"}>
+                  {i18n.t("settings.settings.options.disabled")}
+                </MenuItem>
+                <MenuItem value={"enabled"}>
+                  {i18n.t("settings.settings.options.enabled")}
+                </MenuItem>
+              </Select>
+              <FormHelperText>
+                {loadingRequireApproval
+                  ? i18n.t("settings.settings.options.updating")
+                  : i18n.t("settings.settings.options.requireApprovalHelp")}
+              </FormHelperText>
+            </FormControl>
+          </Grid>
+          : null}
+
+        {/* MONEDA DE LA INSTALACION */}
+        {isSuper() ?
+          <Grid xs={12} sm={6} md={4} item>
+            <FormControl className={classes.selectContainer}>
+              <InputLabel id="Currency-label">
+                {i18n.t("settings.settings.options.currency")}
+              </InputLabel>
+              <Select
+                labelId="Currency-label"
+                value={currency}
+                onChange={async (e) => {
+                  handleChangeCurrency(e.target.value);
+                }}
+              >
+                {CURRENCIES.map((m) => (
+                  <MenuItem key={m.code} value={m.code}>
+                    {`${m.symbol}  ${m.name} (${m.code})`}
+                  </MenuItem>
+                ))}
+              </Select>
+              <FormHelperText>
+                {loadingCurrency
+                  ? i18n.t("settings.settings.options.updating")
+                  : i18n.t("settings.settings.options.currencyHelp")}
+              </FormHelperText>
+            </FormControl>
+          </Grid>
+          : null}
+
+        {isSuper() ?
+          <Grid xs={12} sm={6} md={4} item>
+            <FormControl className={classes.selectContainer}>
+              <TextField
+                label={i18n.t("settings.settings.options.supportEmail")}
+                value={supportEmail}
+                onChange={(e) => setSupportEmail(e.target.value)}
+                onBlur={() => guardarSoporte("supportEmail", supportEmail)}
+              />
+              <FormHelperText>
+                {loadingSupport
+                  ? i18n.t("settings.settings.options.updating")
+                  : i18n.t("settings.settings.options.supportHelp")}
+              </FormHelperText>
+            </FormControl>
+          </Grid>
+          : null}
+
+        {isSuper() ?
+          <Grid xs={12} sm={6} md={4} item>
+            <FormControl className={classes.selectContainer}>
+              <TextField
+                label={i18n.t("settings.settings.options.supportPhone")}
+                value={supportPhone}
+                onChange={(e) => setSupportPhone(e.target.value)}
+                onBlur={() => guardarSoporte("supportPhone", supportPhone)}
+              />
+            </FormControl>
+          </Grid>
+          : null}
+
+        {isSuper() ?
+          <Grid xs={12} sm={6} md={4} item>
+            <FormControl className={classes.selectContainer}>
+              <TextField
+                label={i18n.t("settings.settings.options.supportNote")}
+                value={supportNote}
+                onChange={(e) => setSupportNote(e.target.value)}
+                onBlur={() => guardarSoporte("supportNote", supportNote)}
+              />
+            </FormControl>
+          </Grid>
+          : null}
+
 
         {/* LIMITAR DOWNLOAD */}
         {/* {isSuper() ?

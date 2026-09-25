@@ -1,5 +1,6 @@
-import React, { useState, useContext, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useContext, useEffect, useMemo, useCallback, useRef } from "react";
 import clsx from "clsx";
+import { useLocation } from "react-router-dom";
 import {
   makeStyles,
   Drawer,
@@ -51,11 +52,14 @@ import VersionControl from "../components/VersionControl";
 import useSocketListener from "../hooks/useSocketListener";
 import { FaGlobe } from "react-icons/fa";
 import LanguageSelector from "../components/LanguageSelector";
+import AvisoInactividad from "../components/AvisoInactividad";
 import logo from "../assets/logo.png";
 import logoBlack from "../assets/logo-black.png";
 
 const backendUrl = getBackendUrl();
-const drawerWidth = 240;
+// 264 y no 240: con siete categorias los titulos pedian mas sitio y a 240 se
+// partian en dos lineas. El ancho plegado (72px) no cambia.
+const drawerWidth = 264;
 
 
 const useStyles = makeStyles((theme) => ({
@@ -81,27 +85,127 @@ const useStyles = makeStyles((theme) => ({
       },
     },
     "& .MuiTab-textColorPrimary.Mui-selected": {
-      color: theme.palette.primary.main, // Usa cor do tema
+      // El violeta de relleno como TEXTO no contrasta en oscuro (2,50).
+      color: theme.palette.tokens.brand.onSurface,
       fontWeight: 700,
     },
   },
 
   chip: {
-    background: "red",
-    color: "white",
+    // Era literalmente background: "red".
+    background: theme.palette.tokens.semantic.error.fill,
+    color: theme.palette.tokens.onColor(
+      theme.palette.tokens.semantic.error.fill
+    ),
   },
 
   avatar: {
     width: "100%",
   },
 
+  // Pie del menu lateral: quien ha iniciado sesion y como salir.
+  //
+  // Estaba en la barra superior, entre las notificaciones y el idioma, donde
+  // competia con acciones que no tienen que ver con la cuenta. Aqui cierra la
+  // columna de navegacion, que es donde se busca.
+  pieUsuario: {
+    marginTop: "auto",
+    borderTop: `1px solid ${theme.palette.tokens.sidebar.border}`,
+    backgroundColor: theme.palette.tokens.sidebar.background,
+    padding: theme.palette.tokens.space.sm,
+    display: "flex",
+    alignItems: "center",
+    gap: theme.palette.tokens.space.sm,
+    cursor: "pointer",
+    transition: "background-color 180ms ease",
+    "&:hover": {
+      backgroundColor: theme.palette.tokens.sidebar.hover,
+    },
+  },
+  pieUsuarioPlegado: {
+    justifyContent: "center",
+    padding: theme.palette.tokens.space.xs,
+  },
+  pieDatos: {
+    minWidth: 0,
+    flex: 1,
+  },
+  pieNombre: {
+    fontSize: "0.8125rem",
+    fontWeight: 600,
+    color: theme.palette.tokens.sidebar.textActive,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  pieEmpresa: {
+    fontSize: "0.6875rem",
+    color: theme.palette.tokens.sidebar.textMuted,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+
+  // Cabecera y barra lateral forman una sola pieza alrededor del contenido.
+  // Antes la cabecera era un bloque del color de marca a plena saturacion, que
+  // es lo que daba el aspecto de plantilla antigua.
+  //
+  // Sus colores salen de tokens.sidebar y siguen al modo: claros en claro,
+  // oscuros en oscuro (hasta sep 2026 era oscura siempre). Por eso los iconos
+  // de la barra heredan el color (inherit) en vez de llevar blanco escrito.
   toolbar: {
     paddingRight: 24,
-    color: theme.palette.dark.main,
-    // Usa a cor primária do tema para o fundo do AppBar
-    background: theme.palette.primary.main, // Mudança principal aqui
-    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)", // Sombra sutil
-    transition: "all 0.3s ease",
+    // A 320px los siete botones de accion median 48px cada uno: 336px de
+    // controles en una pantalla de 320. El contenido se salia 186px.
+    //
+    // No se oculta ninguna accion. Se recorta el relleno de los botones y se
+    // retira el saludo, que es decorativo y no una funcion.
+    [theme.breakpoints.down("xs")]: {
+      paddingRight: 4,
+      // 12 y no 4: el boton del menu lleva edge="start" (margen -12px) y con 4
+      // de relleno quedaba 8px fuera de la pantalla, medido a 428px.
+      paddingLeft: 12,
+      "& .MuiIconButton-root": {
+        padding: 6,
+      },
+      // En moviles grandes (iPhone Pro Max, 428px) sobraban 114px a la derecha:
+      // los botones van un poco mas holgados, mejores para el dedo.
+      "@media (min-width: 400px)": {
+        "& .MuiIconButton-root": {
+          padding: 8,
+        },
+      },
+      // Y en los mas estrechos se compactan, para que a 320px siga cabiendo todo.
+      "@media (max-width: 359.95px)": {
+        "& .MuiIconButton-root": {
+          padding: 4,
+        },
+      },
+      // El selector de idioma se queda solo con la bandera. Ocupaba 120px mas
+      // 32 de margen: casi la mitad de una pantalla de 320. El control sigue
+      // ahi y sigue desplegando, unicamente pierde la palabra "Español", que
+      // la bandera ya comunica.
+      "& .MuiFormControl-root": {
+        // margin-left auto: sin el saludo (oculto aqui) no quedaba nada que
+        // empujara las acciones, y se apinaban a la izquierda. Asi van a la
+        // derecha, como en escritorio.
+        margin: "0 2px 0 auto",
+        minWidth: 0,
+      },
+      "& .MuiSelect-root .MuiTypography-root": {
+        display: "none",
+      },
+      // El avatar y su envoltorio, ajustados al mismo criterio.
+      "& .MuiAvatar-root": {
+        width: 28,
+        height: 28,
+      },
+    },
+    background: theme.palette.tokens.sidebar.background,
+    color: theme.palette.tokens.sidebar.textActive,
+    boxShadow: "none",
+    borderBottom: `1px solid ${theme.palette.tokens.sidebar.border}`,
+    transition: "background-color 180ms ease",
   },
 
   toolbarIcon: {
@@ -113,12 +217,18 @@ const useStyles = makeStyles((theme) => ({
     [theme.breakpoints.down("sm")]: {
       height: "48px",
     },
-    // ALTERAÇÃO: Fundo adaptativo baseado no tema
-    backgroundColor: theme.mode === "light" ? "#ffffff" : theme.palette.background.paper,
-    borderBottom: `1px solid ${theme.palette.divider}`, // Linha sutil para separação
+    // Mismo fondo que la cabecera y la navegacion: si fuera distinto, el logo
+    // quedaria en una isla entre las dos.
+    backgroundColor: theme.palette.tokens.sidebar.background,
+    borderBottom: `1px solid ${theme.palette.tokens.sidebar.border}`,
   },
 
   appBar: {
+    // El fondo lo pintaba el primario de la empresa (color="primary"), que en
+    // la empresa 1 es #D3D1DC: un gris lila apagado que no combina con nada.
+    // La barra superior es la misma pieza que el menu lateral, asi que comparte
+    // su superficie.
+    backgroundColor: theme.palette.tokens.sidebar.background,
     zIndex: theme.zIndex.drawer + 1,
     transition: theme.transitions.create(["width", "margin"], {
       easing: theme.transitions.easing.sharp,
@@ -145,9 +255,20 @@ const useStyles = makeStyles((theme) => ({
   title: {
     flexGrow: 1,
     fontSize: 14,
-    color: "white",
+    color: theme.palette.tokens.sidebar.textActive,
     fontWeight: 600,
     letterSpacing: "0.025em",
+    // Se recorta antes de empujar a los botones fuera de la pantalla.
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    minWidth: 0,
+    // Por debajo de 600px desaparece. Es un saludo —"Hola Admin, bienvenido
+    // a Empresa 1"—, no un control: no se pierde ninguna funcion, y el
+    // espacio que libera es lo que permite que quepan todas las acciones.
+    [theme.breakpoints.down("xs")]: {
+      display: "none",
+    },
   },
 
   drawerPaper: {
@@ -160,12 +281,39 @@ const useStyles = makeStyles((theme) => ({
     }),
     overflowX: "hidden",
     overflowY: "hidden",
-    // Melhorias sutis no drawer
-    borderRight: `1px solid ${theme.mode === "light" ? "#e0e0e0" : "#424242"}`,
-    boxShadow:
-      theme.mode === "light"
-        ? "2px 0 8px rgba(0, 0, 0, 0.1)"
-        : "2px 0 8px rgba(0, 0, 0, 0.3)",
+    // Fondo propio en vez de heredar el del Paper. Sin esto la navegacion
+    // era del mismo color que el contenido y no se distinguia como pieza.
+    backgroundColor: theme.palette.tokens.sidebar.background,
+    color: theme.palette.tokens.sidebar.text,
+    // Los colores fijos "#e0e0e0" y "#424242" salen del sistema de tokens.
+    borderRight: `1px solid ${theme.palette.tokens.sidebar.border}`,
+    // Sin sombra: el contraste de color ya separa las dos zonas, y una
+    // sombra encima solo ensucia el borde.
+    boxShadow: "none",
+
+    // Encabezados de seccion de la navegacion.
+    //
+    // Heredaban text.secondary del tema, que esta calculado para fondos
+    // claros: sobre este violeta daban 2.38 de contraste. Con el tono
+    // atenuado del propio sidebar suben a 5.23.
+    //
+    // El tratamiento en versalitas es el que usan las referencias para
+    // separar grupos sin que el rotulo compita con los elementos.
+    "& .MuiListSubheader-root": {
+      backgroundColor: "transparent",
+      color: theme.palette.tokens.sidebar.textMuted,
+      fontSize: "0.6875rem",
+      fontWeight: 600,
+      letterSpacing: "0.08em",
+      textTransform: "uppercase",
+      lineHeight: "32px",
+    },
+
+    // Los separadores heredaban el divisor claro del tema y quedaban como
+    // una linea blanca sobre el fondo oscuro.
+    "& .MuiDivider-root": {
+      backgroundColor: theme.palette.tokens.sidebar.border,
+    },
   },
 
   drawerPaperClose: {
@@ -188,8 +336,25 @@ const useStyles = makeStyles((theme) => ({
   content: {
     flex: 1,
     overflow: "auto",
+    // El marco de TODAS las paginas. Eran 24px que se sumaban al relleno
+    // propio de cada pantalla: en Chat Interno el panel empezaba a 112px del
+    // menu y a 88 del borde de arriba, y en el Kanban la primera columna a
+    // 96. La bandeja de conversaciones, que va a 0, se veia mucho mas amplia
+    // que el resto, y esa es la que Josue puso de referencia.
+    //
+    // 8px: lo justo para que el contenido no toque el borde del menu.
+    padding: theme.palette.tokens.space.sm, // 8px en escritorio
+    backgroundColor: theme.palette.tokens.surface.background,
+    [theme.breakpoints.down("xs")]: {
+      padding: theme.palette.tokens.space.xs, // 4px en movil
+    },
+  },
+
+  // La bandeja de conversaciones ocupa toda el area: sus tres columnas ya
+  // se separan con bordes, y el relleno de arriba solo le quitaba ancho a la
+  // conversacion (a 1366px se iba en scroll horizontal).
+  contentBandeja: {
     padding: 0,
-    margin: 0,
   },
 
   container: {
@@ -396,6 +561,8 @@ const SmallAvatar = withStyles((theme) => ({
 }))(Avatar);
 
 const LoggedInLayout = ({ children, themeToggle }) => {
+  const location = useLocation();
+  const esBandeja = location.pathname.startsWith("/tickets");
   const classes = useStyles();
   const [userModalOpen, setUserModalOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -403,6 +570,11 @@ const LoggedInLayout = ({ children, themeToggle }) => {
   const { handleLogout, loading, user, socket } = useContext(AuthContext);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerVariant, setDrawerVariant] = useState("permanent");
+  // Recuerda de que lado del umbral estabamos, para cerrar la barra solo al
+  // cruzarlo y no en cada evento de resize.
+  const eraMovilRef = useRef(
+    typeof window !== "undefined" ? window.innerWidth < 600 : false
+  );
 
   const [showOptions, setShowOptions] = useState(false);
   const [showAnnouncementsModal, setShowAnnouncementsModal] = useState(false);
@@ -479,12 +651,33 @@ const [updateInProgress, setUpdateInProgress] = useState(false);
   }, [user.defaultMenu, document.body.offsetWidth]);
 
   useEffect(() => {
-    if (document.body.offsetWidth < 600) {
-      setDrawerVariant("temporary");
-    } else {
-      setDrawerVariant("permanent");
-    }
-  }, [drawerOpen]);
+    // Antes esto leia document.body.offsetWidth y dependia de [drawerOpen],
+    // asi que la variante se decidia una sola vez y no volvia a evaluarse.
+    // Al girar una tablet o redimensionar la ventana, la barra se quedaba en
+    // el modo equivocado: en 320px seguia siendo permanente y ocupaba 240px,
+    // tres cuartas partes de la pantalla.
+    //
+    // Se escucha el resize de forma explicita en lugar de apoyarse en el
+    // useMediaQuery del archivo. Comprobado en el navegador: matchMedia
+    // devuelve el valor correcto al redimensionar, pero el hook de MUI v4 no
+    // propago el cambio a React y la barra se quedaba en el modo anterior.
+    const evaluar = () => {
+      const esMovil = window.innerWidth < 600;
+      setDrawerVariant(esMovil ? "temporary" : "permanent");
+
+      // Solo al CRUZAR el umbral hacia movil, no en cada evento: en un
+      // telefono el teclado virtual dispara resize, y cerrar aqui sin
+      // condicion cerraria el menu que el usuario acaba de abrir.
+      if (esMovil && !eraMovilRef.current) {
+        setDrawerOpen(false);
+      }
+      eraMovilRef.current = esMovil;
+    };
+
+    evaluar();
+    window.addEventListener("resize", evaluar);
+    return () => window.removeEventListener("resize", evaluar);
+  }, []);
 
   useEffect(() => {
   const companyId = user?.companyId;
@@ -654,6 +847,9 @@ useEffect(() => {
           ),
         }}
         open={drawerOpen}
+        // Sin onClose, un Drawer temporal de MUI no se cierra al pulsar el
+        // fondo ni con Escape: quedaba tapando la pantalla sin salida.
+        onClose={() => setDrawerOpen(false)}
       >
         <div className={classes.toolbarIcon}>
           <img
@@ -668,7 +864,14 @@ useEffect(() => {
             }}
             alt="logo"
           />
-          <IconButton onClick={() => setDrawerOpen(!drawerOpen)}>
+          <IconButton
+            onClick={() => setDrawerOpen(!drawerOpen)}
+            aria-label={drawerOpen ? "Cerrar menu" : "Abrir menu"}
+            // Heredaba el gris por defecto del MUI, que sobre el violeta
+            // oscuro de la barra quedaba practicamente invisible: el boton
+            // estaba ahi pero no se veia.
+            style={{ color: theme.palette.tokens.sidebar.textActive }}
+          >
             <ChevronLeftIcon />
           </IconButton>
         </div>
@@ -676,7 +879,32 @@ useEffect(() => {
           {/* {mainListItems} */}
           <MainListItems collapsed={!drawerOpen} />
         </List>
-        <Divider />
+
+        {/* Pie de usuario: el mismo menu de Perfil / Cerrar sesion que estaba
+            en la barra superior, con su mismo anchorEl y sus mismos handlers.
+            Plegado deja solo el avatar. */}
+        <div
+          className={clsx(
+            classes.pieUsuario,
+            !drawerOpen && classes.pieUsuarioPlegado
+          )}
+          onClick={handleMenu}
+          title={!drawerOpen ? user?.name : undefined}
+        >
+          <StyledBadge
+            overlap="circular"
+            anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+            variant="dot"
+          >
+            <Avatar alt={user?.name} className={classes.avatar2} src={profileUrl} />
+          </StyledBadge>
+          {drawerOpen && (
+            <div className={classes.pieDatos}>
+              <div className={classes.pieNombre}>{user?.name}</div>
+              <div className={classes.pieEmpresa}>{user?.company?.name}</div>
+            </div>
+          )}
+        </div>
       </Drawer>
 
       <AppBar
@@ -689,9 +917,15 @@ useEffect(() => {
             edge="start"
             variant="contained"
             aria-label="open drawer"
-            style={{ color: "white" }}
+            style={{ color: "inherit" }}
             onClick={() => setDrawerOpen(!drawerOpen)}
-            className={clsx(drawerOpen && classes.menuButtonHidden)}
+            // Solo se oculta en escritorio, donde la barra queda desplegada
+            // y tiene su propio boton de cerrar a la vista. En movil debe
+            // seguir accesible: era el caso en que el usuario se quedaba sin
+            // forma de abrir el menu.
+            className={clsx(
+              drawerOpen && greaterThenSm && classes.menuButtonHidden
+            )}
           >
             <MenuIcon />
           </IconButton>
@@ -730,11 +964,14 @@ useEffect(() => {
 
           <LanguageSelector variant="compact" />
 
-          <IconButton edge="start" onClick={colorMode.toggleColorMode}>
+          {/* Sin edge="start": ese margen de -12px es para el primer boton de la
+              barra, y aqui, en medio, montaba el icono 10px sobre el selector de
+              idioma (medido a 428px). */}
+          <IconButton onClick={colorMode.toggleColorMode} color="inherit">
             {theme.mode === "dark" ? (
-              <Brightness7Icon style={{ color: "white" }} />
+              <Brightness7Icon style={{ color: "inherit" }} />
             ) : (
-              <Brightness4Icon style={{ color: "white" }} />
+              <Brightness4Icon style={{ color: "inherit" }} />
             )}
           </IconButton>
 
@@ -745,7 +982,7 @@ useEffect(() => {
             aria-label={i18n.t("mainDrawer.appBar.refresh")}
             color="inherit"
           >
-            <CachedIcon style={{ color: "white" }} />
+            <CachedIcon style={{ color: "inherit" }} />
           </IconButton>
 
           {/* <DarkMode themeToggle={themeToggle} /> */}
@@ -757,22 +994,6 @@ useEffect(() => {
           <ChatPopover />
 
           <div className="user-menu-wrapper">
-            <StyledBadge
-              overlap="circular"
-              anchorOrigin={{
-                vertical: "bottom",
-                horizontal: "right",
-              }}
-              variant="dot"
-              onClick={handleMenu}
-            >
-              <Avatar
-                alt="Multi100"
-                className={classes.avatar2}
-                src={profileUrl}
-              />
-            </StyledBadge>
-
             <UserModal
               open={userModalOpen}
               onClose={() => setUserModalOpen(false)}
@@ -812,10 +1033,13 @@ useEffect(() => {
           </div>
         </Toolbar>
       </AppBar>
-      <main className={classes.content}>
+      <main className={clsx(classes.content, esBandeja && classes.contentBandeja)}>
         <div className={classes.appBarSpacer} />
         {children ? children : null}
       </main>
+
+      {/* Aviso y cierre de sesion por inactividad */}
+      <AvisoInactividad />
 
       {/* Modal de Informativos */}
       <Dialog

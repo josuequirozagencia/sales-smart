@@ -4,6 +4,7 @@ import cacheLayer from "../libs/cache";
 import { removeWbot, restartWbot } from "../libs/wbot";
 import Whatsapp from "../models/Whatsapp";
 import AppError from "../errors/AppError";
+import ListTemplatesService from "../services/WhatsappService/ListTemplatesService";
 import DeleteBaileysService from "../services/BaileysServices/DeleteBaileysService";
 import ShowCompanyService from "../services/CompanyService/ShowCompanyService";
 import {
@@ -16,6 +17,7 @@ import { StartWhatsAppSession } from "../services/WbotServices/StartWhatsAppSess
 
 import CreateWhatsAppService from "../services/WhatsappService/CreateWhatsAppService";
 import DeleteWhatsAppService from "../services/WhatsappService/DeleteWhatsAppService";
+import { eliminarConexion } from "../services/WhatsappService/EliminarConexionService";
 import ListWhatsAppsService from "../services/WhatsappService/ListWhatsAppsService";
 import ShowWhatsAppService from "../services/WhatsappService/ShowWhatsAppService";
 import UpdateWhatsAppService from "../services/WhatsappService/UpdateWhatsAppService";
@@ -26,6 +28,7 @@ import ListAllWhatsAppsService from "../services/WhatsappService/ListAllWhatsApp
 import ListFilterWhatsAppsService from "../services/WhatsappService/ListFilterWhatsAppsService";
 import User from "../models/User";
 import logger from "../utils/logger";
+import { puedeGestionarConexiones } from "../middleware/canManageConnections";
 import {
   CreateCompanyConnectionOficial,
   DeleteConnectionWhatsAppOficial,
@@ -255,6 +258,15 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
   if (["whatsapp"].includes(whatsapp.channel)) {
     StartWhatsAppSession(whatsapp, companyId);
   }
+
+  // GoHighLevel no abre sesion: la entrega la hace su API con el Private
+  // Integration Token de la empresa, que se configura aparte. La conexion
+  // nace conectada porque no hay nada que emparejar; si el token falta, el
+  // primer envio lo dira con ERR_GHL_NO_CONFIGURADO.
+  if (whatsapp.channel === "ghl") {
+    whatsapp.status = "CONNECTED";
+    await whatsapp.save();
+  }
   const io = getIO();
   io.of(String(companyId)).emit(`company-${companyId}-whatsapp`, {
     action: "update",
@@ -407,11 +419,20 @@ export const storeFacebook = async (
 
 export const show = async (req: Request, res: Response): Promise<Response> => {
   const { whatsappId } = req.params;
-  const { companyId } = req.user;
+  const { companyId, id: userId } = req.user;
   const { session } = req.query;
 
   // console.log("SHOWING WHATSAPP", whatsappId)
   const whatsapp = await ShowWhatsAppService(whatsappId, companyId, session);
+
+  // La ficha la lee cualquier usuario (la pantalla del ticket la consulta),
+  // pero sin credenciales: el modelo las quita al serializar. `token` es la
+  // clave de la API externa y el modal de la conexion la muestra para
+  // copiarla, asi que se anade solo para quien gestiona conexiones.
+  // send_token no se devuelve a nadie.
+  if (await puedeGestionarConexiones(userId)) {
+    return res.status(200).json({ ...whatsapp.toJSON(), token: whatsapp.token });
+  }
 
   return res.status(200).json(whatsapp);
 };
@@ -488,58 +509,17 @@ export const remove = async (
 
   const whatsapp = await ShowWhatsAppService(whatsappId, companyId);
 
-  if (whatsapp.channel === "whatsapp") {
-    await DeleteBaileysService(whatsappId);
-    await DeleteWhatsAppService(whatsappId);
-    await cacheLayer.delFromPattern(`sessions:${whatsappId}:*`);
-    removeWbot(+whatsappId);
+  // Cada canal tenia aqui su propio "if", y el que no estaba en la lista no
+  // se borraba: la API respondia 200 y la conexion seguia ahi. Le pasaba a
+  // GoHighLevel. Ahora la decision vive en un solo sitio y el caso por
+  // defecto es borrar.
+  const borradas = await eliminarConexion(whatsapp);
 
+  for (const id of borradas) {
     io.of(String(companyId)).emit(`company-${companyId}-whatsapp`, {
       action: "delete",
-      whatsappId: +whatsappId
+      whatsappId: id
     });
-  }
-
-  if (whatsapp.channel === "whatsapp_oficial") {
-    await Whatsapp.destroy({
-      where: {
-        id: +whatsappId
-      }
-    });
-
-    try {
-      await DeleteConnectionWhatsAppOficial(whatsapp.waba_webhook_id);
-    } catch (error) {
-      logger.info("ERROR", error);
-    }
-
-    io.of(String(companyId)).emit(`company-${companyId}-whatsapp`, {
-      action: "delete",
-      whatsappId: +whatsappId
-    });
-  }
-
-  if (whatsapp.channel === "facebook" || whatsapp.channel === "instagram") {
-    const { facebookUserToken } = whatsapp;
-
-    const getAllSameToken = await Whatsapp.findAll({
-      where: {
-        facebookUserToken
-      }
-    });
-
-    await Whatsapp.destroy({
-      where: {
-        facebookUserToken
-      }
-    });
-
-    for await (const whatsapp of getAllSameToken) {
-      io.of(String(companyId)).emit(`company-${companyId}-whatsapp`, {
-        action: "delete",
-        whatsappId: whatsapp.id
-      });
-    }
   }
 
   return res.status(200).json({ message: "Session disconnected." });
@@ -613,39 +593,15 @@ export const removeAdmin = async (
   console.log("REMOVING WHATSAPP ADMIN", whatsappId);
   const whatsapp = await ShowWhatsAppService(whatsappId, companyId);
 
-  if (whatsapp.channel === "whatsapp") {
-    await DeleteBaileysService(whatsappId);
-    await DeleteWhatsAppService(whatsappId);
-    await cacheLayer.delFromPattern(`sessions:${whatsappId}:*`);
-    removeWbot(+whatsappId);
+  // Aqui faltaban ademas la API oficial y GoHighLevel: desde administracion
+  // no se podia borrar ninguna de las dos.
+  const borradas = await eliminarConexion(whatsapp);
 
+  for (const id of borradas) {
     io.of(String(companyId)).emit(`admin-whatsapp`, {
       action: "delete",
-      whatsappId: +whatsappId
+      whatsappId: id
     });
-  }
-
-  if (whatsapp.channel === "facebook" || whatsapp.channel === "instagram") {
-    const { facebookUserToken } = whatsapp;
-
-    const getAllSameToken = await Whatsapp.findAll({
-      where: {
-        facebookUserToken
-      }
-    });
-
-    await Whatsapp.destroy({
-      where: {
-        facebookUserToken
-      }
-    });
-
-    for await (const whatsapp of getAllSameToken) {
-      io.of(String(companyId)).emit(`company-${companyId}-whatsapp`, {
-        action: "delete",
-        whatsappId: whatsapp.id
-      });
-    }
   }
 
   return res.status(200).json({ message: "Session disconnected." });
@@ -660,7 +616,20 @@ export const showAdmin = async (
   // console.log("SHOWING WHATSAPP ADMIN", whatsappId)
   const whatsapp = await ShowWhatsAppServiceAdmin(whatsappId);
 
-  return res.status(200).json(whatsapp);
+  // Ruta solo para super (whatsappRoutes): WhatsAppModalAdmin muestra el token.
+  return res.status(200).json({ ...whatsapp.toJSON(), token: whatsapp.token });
+};
+
+/**
+ * Plantillas de WhatsApp aprobadas por Meta para una conexion, en solo
+ * lectura y tal cual las devuelve Meta. La ve cualquier usuario de la empresa:
+ * tambien la usa quien responde un ticket para elegir plantilla.
+ */
+export const listTemplates = async (req: Request, res: Response): Promise<Response> => {
+  const { companyId } = req.user;
+  const whatsappId = Number(req.params.whatsappId);
+  if (!Number.isInteger(whatsappId) || whatsappId < 1) throw new AppError("ERR_NO_WAPP_FOUND", 404);
+  return res.status(200).json(await ListTemplatesService(whatsappId, companyId));
 };
 
 export const syncTemplatesOficial = async (

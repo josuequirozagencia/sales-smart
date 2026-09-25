@@ -8,7 +8,8 @@ module.exports = {
   // automock: false,
 
   // Stop running tests after `n` failures
-  bail: 1,
+  // bail desativado: numa suite pequena interessa ver todas as falhas.
+  bail: 0,
 
   // The directory where Jest should store its cached dependency information
   // cacheDirectory: "/tmp/jest_rs",
@@ -17,7 +18,9 @@ module.exports = {
   clearMocks: true,
 
   // Indicates whether the coverage information should be collected while executing the test
-  collectCoverage: true,
+  // Cobertura sob demanda (npm run test:coverage). Ligada por padrao ela
+  // instrumenta src/services inteiro e o ciclo passa de ~40s para ~140s.
+  collectCoverage: false,
 
   // An array of glob patterns indicating a set of files for which coverage information should be collected
   collectCoverageFrom: ["<rootDir>/src/services/**/*.ts"],
@@ -76,7 +79,12 @@ module.exports = {
   // ],
 
   // A map from regular expressions to module names or to arrays of module names that allow to stub out resources with a single module
-  // moduleNameMapper: {},
+  // axios 1.x declara su build CommonJS en "exports", que Jest 27 no lee: sin
+  // esto carga index.js, que es ESM, y cualquier test que importe un servicio
+  // con axios revienta al parsear. Node si lo resuelve, asi que solo afecta a Jest.
+  moduleNameMapper: {
+    "^axios$": "axios/dist/node/axios.cjs"
+  },
 
   // An array of regexp pattern strings, matched against all module paths before considered 'visible' to the module loader
   // modulePathIgnorePatterns: [],
@@ -89,6 +97,17 @@ module.exports = {
 
   // A preset that is used as a base for Jest's configuration
   preset: "ts-jest",
+
+  // isolatedModules: transpila sem checar tipos. Por padrão o ts-jest faz a
+  // checagem completa a cada execução e, com a árvore de models decorados do
+  // sequelize-typescript, isso levava a suíte de ~0,2s de testes reais para
+  // mais de 40s. A checagem de tipos continua garantida por `npm run build`
+  // e `npx tsc --noEmit`, que é onde ela pertence.
+  globals: {
+    "ts-jest": {
+      isolatedModules: true
+    }
+  },
 
   // Run tests from one or more projects
   // projects: undefined,

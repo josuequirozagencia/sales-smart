@@ -14,17 +14,21 @@ import {
   TableRow,
   IconButton,
   Select,
+  Button,
+  Tooltip,
 } from "@material-ui/core";
 import { Formik, Form, Field } from "formik";
 import ButtonWithSpinner from "../ButtonWithSpinner";
 import ConfirmationModal from "../ConfirmationModal";
 
-import { Edit as EditIcon } from "@material-ui/icons";
+import { Edit as EditIcon, FileCopyOutlined as DuplicateIcon } from "@material-ui/icons";
 
 import { toast } from "react-toastify";
 import useCompanies from "../../hooks/useCompanies";
 import usePlans from "../../hooks/usePlans";
 import ModalUsers from "../ModalUsers";
+import CloneCompanyConfigModal from "../CloneCompanyConfigModal";
+import DuplicateCompanyModal from "../DuplicateCompanyModal";
 import api from "../../services/api";
 import { head, isArray, has } from "lodash";
 import { useDate } from "../../hooks/useDate";
@@ -484,7 +488,7 @@ export function CompanyForm(props) {
 }
 
 export function CompaniesManagerGrid(props) {
-  const { records, onSelect } = props;
+  const { records, onSelect, onDuplicate } = props;
   const classes = useStyles();
   const { dateToClient, datetimeToClient } = useDate();
   const { mode } = useContext(ColorModeContext);
@@ -588,10 +592,21 @@ export function CompaniesManagerGrid(props) {
         <TableBody>
           {records.map((row, key) => (
             <TableRow style={rowStyle(row)} key={key}>
-              <TableCell style={{...cellStyle(row), width: "1%"}} align="center">
+              <TableCell style={{...cellStyle(row), width: "1%", whiteSpace: "nowrap"}} align="center">
                 <IconButton style={iconStyle(row)} onClick={() => onSelect(row)} aria-label="delete">
                   <EditIcon style={iconStyle(row)} />
                 </IconButton>
+                {onDuplicate && (
+                  <Tooltip title={i18n.t("duplicateCompany.action")}>
+                    <IconButton
+                      style={iconStyle(row)}
+                      onClick={() => onDuplicate(row)}
+                      aria-label={i18n.t("duplicateCompany.action")}
+                    >
+                      <DuplicateIcon style={iconStyle(row)} />
+                    </IconButton>
+                  </Tooltip>
+                )}
               </TableCell>
               <TableCell style={cellStyle(row)} align="left">{row.name || "-"}</TableCell>
               <TableCell style={cellStyle(row)} align="left" size="small">{row.email || "-"}</TableCell>
@@ -620,6 +635,10 @@ export default function CompaniesManager() {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [loading, setLoading] = useState(false);
   const [records, setRecords] = useState([]);
+  // Clonar configuracion y duplicar empresa. Esta pantalla solo la ve el
+  // superadministrador, y el backend lo vuelve a comprobar.
+  const [clonarAbierto, setClonarAbierto] = useState(false);
+  const [aDuplicar, setADuplicar] = useState(null);
   const [record, setRecord] = useState({
     name: "",
     email: "",
@@ -742,6 +761,15 @@ export default function CompaniesManager() {
   return (
     <Paper className={classes.mainPaper} elevation={0}>
       <Grid spacing={2} container>
+        <Grid xs={12} item className={classes.buttonContainer}>
+          <Button
+            variant="outlined"
+            color="primary"
+            onClick={() => setClonarAbierto(true)}
+          >
+            {i18n.t("cloneCompany.open")}
+          </Button>
+        </Grid>
         <Grid xs={12} item>
           <CompanyForm
             initialValue={record}
@@ -752,9 +780,23 @@ export default function CompaniesManager() {
           />
         </Grid>
         <Grid xs={12} item>
-          <CompaniesManagerGrid records={records} onSelect={handleSelect} />
+          <CompaniesManagerGrid
+            records={records}
+            onSelect={handleSelect}
+            onDuplicate={setADuplicar}
+          />
         </Grid>
       </Grid>
+      <CloneCompanyConfigModal
+        open={clonarAbierto}
+        onClose={() => setClonarAbierto(false)}
+      />
+      <DuplicateCompanyModal
+        open={Boolean(aDuplicar)}
+        company={aDuplicar}
+        onClose={() => setADuplicar(null)}
+        onDuplicated={() => loadPlans()}
+      />
       <ConfirmationModal
         title="Exclusão de Registro"
         open={showConfirmDialog}

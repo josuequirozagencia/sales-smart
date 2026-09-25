@@ -30,6 +30,20 @@ import UserQueue from "./models/UserQueue";
 import ShowTicketService from "./services/TicketServices/ShowTicketService";
 import SendWhatsAppMessage from "./services/WbotServices/SendWhatsAppMessage";
 import UpdateTicketService from "./services/TicketServices/UpdateTicketService";
+import momentTz from "moment-timezone";
+import {
+  isWithinWorkingHours,
+  isRotationDue,
+  hasReachedRotationLimit,
+  businessTimezone
+} from "./helpers/RotationPolicy";
+import {
+  logRouterAssignment,
+  getRotationState,
+  hasHumanReplySince,
+  markEscalated,
+  isEscalated
+} from "./services/TicketServices/TicketRotationService";
 import { addSeconds, differenceInSeconds } from "date-fns";
 const CronJob = require("cron").CronJob;
 import CompaniesSettings from "./models/CompaniesSettings";
@@ -44,11 +58,16 @@ import TicketTag from "./models/TicketTag";
 import Tag from "./models/Tag";
 import { delay } from "@whiskeysockets/baileys";
 import Plan from "./models/Plan";
+import { pickWeighted } from "./helpers/WeightedRoundRobin";
 import QueueState from "./models/QueueStates";
 import { getWbot } from "./libs/wbot";
 import { initializeBirthdayJobs, startBirthdayJob } from "./jobs/BirthdayJob";
 import { getJidOf } from "./services/WbotServices/getJidOf";
 import RecurrenceService from "./services/CampaignService/RecurrenceService";
+import GoogleCalendarIntegration from "./models/GoogleCalendarIntegration";
+import { pullFromGoogle } from "./services/GoogleCalendarServices/PullService";
+import { procesarConversion } from "./services/ConversionServices/ProcessConversionJob";
+import { iniciarSeguimientosAgentes } from "./services/AiAgentServices/SeguimientosWorker";
 
 const connection = process.env.REDIS_URI || "";
 const limiterMax = process.env.REDIS_OPT_LIMITER_MAX || 1;
@@ -87,6 +106,17 @@ export const sendScheduledMessages = new BullQueue(
 );
 export const campaignQueue = new BullQueue("CampaignQueue", connection);
 export const queueMonitor = new BullQueue("QueueMonitor", connection);
+
+// Sondeo del Google Calendar de cada empresa conectada.
+export const googleCalendarMonitor = new BullQueue(
+  "GoogleCalendarMonitor",
+  connection
+);
+
+// Envio de eventos a Meta Conversions API (Lead, Schedule, Purchase). Los
+// disparadores solo encolan; el envio y sus reintentos viven aqui, fuera del
+// camino de ventas, citas y contactos. Ver services/ConversionServices.
+export const metaConversionsQueue = new BullQueue("MetaConversions", connection);
 
 export const messageQueue = new BullQueue("MessageQueue", connection, {
   limiter: {
@@ -1537,20 +1567,52 @@ async function handleRandomUser() {
                     lastUserIndex: -1
                   }));
 
-                // Find next available online user
-                let nextIndex = (queueState.lastUserIndex + 1) % users.length;
-                const startIndex = nextIndex;
+                // Só entram na rotação quem está online e com peso acima de
+                // zero. Peso 0 é como se desativa quem está de licença sem
+                // tirá-la da fila; offline já era filtrado antes.
+                // Minutos desde medianoche en la zona horaria del negocio.
+                //
+                // No se usa la del sistema ni la de Sao Paulo escrita a mano
+                // en el resto del backend: para Ecuador esa constante
+                // adelanta la jornada 120 minutos y dejaria a las asesoras
+                // sin leads desde las 16:00 hora local.
+                const ahora = momentTz().tz(businessTimezone());
+                const minutosAhora = ahora.hours() * 60 + ahora.minutes();
 
-                do {
-                  if (users[nextIndex].online) {
-                    // Update the last used index
-                    await queueState.update({ lastUserIndex: nextIndex });
-                    return users[nextIndex].id;
-                  }
-                  nextIndex = (nextIndex + 1) % users.length;
-                } while (nextIndex !== startIndex);
+                // Entran en la rotacion quien esta en linea, con peso por
+                // encima de cero y dentro de su horario laboral.
+                //
+                // El filtro de horario se aplica aqui y no solo en la
+                // rotacion, para que valga igual en la primera asignacion:
+                // no tendria sentido repartir a alguien fuera de turno y
+                // rotar despues por su falta de respuesta.
+                const candidates = users
+                  .filter(u => u.online)
+                  .filter(u =>
+                    isWithinWorkingHours(u.startWork, u.endWork, minutosAhora)
+                  )
+                  .map(u => ({
+                    id: u.id,
+                    // Registros anteriores à migração podem vir sem peso.
+                    weight:
+                      u.distributionWeight === null ||
+                      u.distributionWeight === undefined
+                        ? 100
+                        : u.distributionWeight
+                  }));
 
-                return 0; // Return 0 if no online users found
+                const { selectedId, credits } = pickWeighted(
+                  candidates,
+                  queueState.weightState || {}
+                );
+
+                if (selectedId === null) {
+                  return 0; // ninguém online e elegível
+                }
+
+                await queueState.update({ weightState: credits });
+
+                return selectedId;
               } else {
                 // Original random selection logic
                 const randomIndex = Math.floor(Math.random() * userIds.length);
@@ -1623,15 +1685,36 @@ async function handleRandomUser() {
                     nextUserId !== undefined &&
                     (await findUserById(nextUserId, ticket.companyId)) > 0
                   ) {
-                    if (sendGreetingMessageOneQueues) {
-                      const ticketToSend = await ShowTicketService(
-                        ticket.id,
-                        ticket.companyId
-                      );
-                      await SendWhatsAppMessage({
-                        body: `\u200e *Assistente Virtual*:\nAguarde enquanto localizamos um atendente... Você será atendido em breve!`,
-                        ticket: ticketToSend
-                      });
+                    // El saludo de espera solo sabe salir por Baileys
+                    // (SendWhatsAppMessage). En cualquier otro canal —GHL, WhatsApp
+                    // oficial, Facebook, Instagram— no hay sesion de Baileys y getWbot
+                    // lanza ERR_WAPP_NOT_INITIALIZED; en WhatsApp normal pasa lo mismo si
+                    // la sesion esta caida.
+                    //
+                    // Como todo esto corre dentro de un map asincrono sin await, ese error
+                    // escapaba como rechazo no capturado y la asignacion de abajo no
+                    // llegaba a ejecutarse: el job elegia asesor, le gastaba los creditos
+                    // del reparto ponderado y el ticket se quedaba sin dueno para siempre,
+                    // reintentandolo cada dos minutos. Comprobado en local con un ticket
+                    // de GHL: con el saludo activado no se asignaba.
+                    //
+                    // Asignar es el trabajo de este job; el saludo es accesorio. Por eso
+                    // solo se intenta en WhatsApp, y si falla se anota y se asigna igual.
+                    if (sendGreetingMessageOneQueues && ticket.channel === "whatsapp") {
+                      try {
+                        const ticketToSend = await ShowTicketService(
+                          ticket.id,
+                          ticket.companyId
+                        );
+                        await SendWhatsAppMessage({
+                          body: `\u200e *Assistente Virtual*:\nAguarde enquanto localizamos um atendente... Você será atendido em breve!`,
+                          ticket: ticketToSend
+                        });
+                      } catch (errorSaludo) {
+                        logger.warn(
+                          `Saludo de reparto no enviado en el ticket ${ticket.id}: ${errorSaludo.message}. Se asigna igual.`
+                        );
+                      }
                     }
 
                     await UpdateTicketService({
@@ -1640,49 +1723,182 @@ async function handleRandomUser() {
                       companyId: ticket.companyId
                     });
 
+                    // Arranca el reloj de la rotacion. UpdateTicketService no
+                    // registra nada en la primera asignacion, porque las
+                    // cuatro ramas que escriben "transfered" exigen que el
+                    // ticket ya tuviera dueno.
+                    await logRouterAssignment(
+                      ticket.id,
+                      nextUserId,
+                      queueId
+                    );
+
                     logger.info(
                       `Ticket ID ${ticket.id} atualizado para UserId ${nextUserId} - ${ticket.updatedAt}`
                     );
                   }
-                } else if (
-                  userIds.includes(userId) &&
-                  tempoPassadoB > updatedAtV
-                ) {
-                  const availableUserIds = userIds.filter(id => id !== userId);
+                } else if (userIds.includes(userId)) {
+                  // ----------------------------------------------------
+                  // Rotacion por falta de respuesta humana.
+                  //
+                  // La condicion anterior comparaba contra
+                  // ticket.updatedAt, que mide "cuando cambio el registro
+                  // por ultima vez", no "cuando respondio el asesor". Como
+                  // cada mensaje entrante hace ticket.update({lastMessage}),
+                  // un lead ignorado que insiste reiniciaba su propio
+                  // contador de espera: el caso exacto que esta funcion
+                  // deberia cazar era el caso en que fallaba.
+                  //
+                  // Ahora el reloj arranca en el registro routerAssign, que
+                  // solo escribe el enrutador al asignar.
+                  // ----------------------------------------------------
+                  const estado = await getRotationState(ticket.id);
 
-                  if (availableUserIds.length > 0) {
-                    const nextUserId = await getNextUser(
-                      availableUserIds,
-                      ticket.companyId,
-                      queueId
-                    );
-
-                    if (
-                      nextUserId !== undefined &&
-                      (await findUserById(nextUserId, ticket.companyId)) > 0
-                    ) {
-                      if (sendGreetingMessageOneQueues) {
-                        const ticketToSend = await ShowTicketService(
-                          ticket.id,
-                          ticket.companyId
-                        );
-                        await SendWhatsAppMessage({
-                          body: "*Assistente Virtual*:\nAguarde enquanto localizamos um atendente... Você será atendido em breve!",
-                          ticket: ticketToSend
-                        });
-                      }
-
-                      await UpdateTicketService({
-                        ticketData: { status: "pending", userId: nextUserId },
-                        ticketId: ticket.id,
-                        companyId: ticket.companyId
-                      });
-
-                      logger.info(
-                        `Ticket ID ${ticket.id} atualizado para UserId ${nextUserId} - ${ticket.updatedAt}`
-                      );
-                    }
+                  // Ticket asignado antes de que existiera esta funcion: no
+                  // tiene reloj. Se registra ahora y empieza a contar desde
+                  // aqui, en lugar de rotarlo de golpe.
+                  if (!estado.lastAssignedAt) {
+                    await logRouterAssignment(ticket.id, userId, queueId);
+                    continue;
                   }
+
+                  // Todavia dentro del plazo configurado en la cola.
+                  if (
+                    !isRotationDue(
+                      estado.lastAssignedAt,
+                      tempoRoteador,
+                      new Date()
+                    )
+                  ) {
+                    continue;
+                  }
+
+                  // Hubo atencion real: ni bot, ni nota interna, ni mensaje
+                  // del propio cliente.
+                  const respondido = await hasHumanReplySince(
+                    ticket.id,
+                    estado.lastAssignedAt
+                  );
+                  if (respondido) continue;
+
+                  // Un ticket ya escalado espera al supervisor y no vuelve
+                  // a entrar en la rotacion automatica.
+                  const yaEscalado = await isEscalated(
+                    ticket.id,
+                    ticket.companyId
+                  );
+                  if (yaEscalado) continue;
+
+                  // Agotadas las rotaciones: se marca con la etiqueta y se
+                  // queda con el ultimo asesor, para que conserve dueno.
+                  if (hasReachedRotationLimit(estado.assignments)) {
+                    await markEscalated(ticket.id, ticket.companyId);
+                    logger.info(
+                      `Ticket ID ${ticket.id} escalado tras ${estado.assignments -
+                        1} rotaciones sin respuesta`
+                    );
+                    continue;
+                  }
+
+                  const availableUserIds = userIds.filter(id => id !== userId);
+                  if (availableUserIds.length === 0) continue;
+
+                  // Misma distribucion ponderada de siempre: getNextUser ya
+                  // respeta los pesos, salta a quien tenga peso 0 y ahora
+                  // tambien filtra por horario laboral.
+                  const nextUserId = await getNextUser(
+                    availableUserIds,
+                    ticket.companyId,
+                    queueId
+                  );
+
+                  if (
+                    nextUserId === undefined ||
+                    !((await findUserById(nextUserId, ticket.companyId)) > 0)
+                  ) {
+                    continue;
+                  }
+
+                  // Ultima comprobacion de respuesta, ya con el siguiente
+                  // asesor elegido. Entre la comprobacion anterior y este
+                  // punto hay varias consultas a la base, y en ese hueco el
+                  // asesor puede haber contestado. No se rota un ticket que
+                  // ya fue atendido.
+                  const respondidoAlFinal = await hasHumanReplySince(
+                    ticket.id,
+                    estado.lastAssignedAt
+                  );
+                  if (respondidoAlFinal) continue;
+
+                  // Reserva atomica de la rotacion.
+                  //
+                  // La condicion viaja dentro del propio UPDATE, de modo que
+                  // Postgres la resuelve en una sola operacion: de dos
+                  // procesos que lleguen a la vez, solo uno obtiene filas
+                  // afectadas y el otro ve cero y se retira. Una relectura
+                  // previa seguida de un update no da esa garantia, porque
+                  // entre leer y escribir cabe el otro proceso.
+                  //
+                  // Hace falta porque el cron no impide que una pasada
+                  // empiece antes de que acabe la anterior: si una vuelta
+                  // tarda mas de los dos minutos del intervalo, dos pasadas
+                  // miran los mismos tickets.
+                  //
+                  // silent evita tocar updatedAt: esto no es actividad del
+                  // cliente y no debe alterar lo que mire esa columna.
+                  const [reservado] = await Ticket.update(
+                    { userId: nextUserId },
+                    {
+                      where: { id: ticket.id, userId, status: "pending" },
+                      silent: true
+                    }
+                  );
+
+                  if (reservado === 0) {
+                    // Otro proceso se lo llevo, o el ticket dejo de estar
+                    // pendiente mientras se comprobaba.
+                    continue;
+                  }
+
+                  // La escritura ya la hizo la reserva. Se sigue llamando a
+                  // UpdateTicketService para conservar el resto de su
+                  // comportamiento; al encontrar el ticket ya asignado no
+                  // vuelve a registrar traslados, que es justo lo deseado:
+                  // la rotacion automatica lleva su propio registro.
+                  await UpdateTicketService({
+                    ticketData: { status: "pending", userId: nextUserId },
+                    ticketId: ticket.id,
+                    companyId: ticket.companyId
+                  });
+
+                  // UpdateTicketService solo emite cuando detecta un cambio
+                  // de usuario, y aqui ya habia cambiado por la reserva. Se
+                  // emite explicitamente para que las listas de los dos
+                  // asesores se refresquen.
+                  const ticketRotado = await ShowTicketService(
+                    ticket.id,
+                    ticket.companyId
+                  );
+                  getIO()
+                    .of(String(ticket.companyId))
+                    .emit(`company-${ticket.companyId}-ticket`, {
+                      action: "update",
+                      ticket: ticketRotado
+                    });
+
+                  // Reinicia el reloj para el nuevo asesor y suma una
+                  // rotacion. Ademas hace la operacion idempotente: otra
+                  // pasada del cron veria esta marca como reciente y no
+                  // volveria a rotar el mismo ticket.
+                  await logRouterAssignment(ticket.id, nextUserId, queueId);
+
+                  // Deliberadamente sin mensaje al cliente. El aviso de
+                  // espera se envia solo en la primera asignacion: repetirlo
+                  // en cada salto le esta anunciando que nadie le atiende.
+
+                  logger.info(
+                    `Ticket ID ${ticket.id} rotado de UserId ${userId} a ${nextUserId} (rotacion ${estado.assignments})`
+                  );
                 }
               }
             }
@@ -2029,6 +2245,50 @@ handleProcessLanes();
 handleCloseTicketsAutomatic();
 handleRandomUser();
 
+/**
+ * Trae los cambios del Google Calendar de cada empresa conectada.
+ *
+ * Se recorren las integraciones activas y se sincroniza una a una. Un
+ * fallo en la de una empresa no puede detener a las demas, asi que cada
+ * una va en su propio try.
+ */
+async function handleGoogleCalendarSync() {
+  try {
+    const integraciones = await GoogleCalendarIntegration.findAll({
+      where: { active: true }
+    });
+
+    for (const integracion of integraciones) {
+      try {
+        const r = await pullFromGoogle(integracion.companyId);
+        if (r && (r.creadas || r.actualizadas || r.canceladas)) {
+          logger.info(
+            `[GoogleCalendar] empresa ${integracion.companyId}: ` +
+              `${r.creadas} nuevas, ${r.actualizadas} actualizadas, ${r.canceladas} canceladas`
+          );
+        }
+      } catch (err) {
+        // Sin conexion a Google, token revocado o cuota agotada. Se anota
+        // y se sigue: la proxima pasada lo reintentara.
+        logger.error(
+          `[GoogleCalendar] fallo en empresa ${integracion.companyId}: ${err}`
+        );
+      }
+    }
+  } catch (err) {
+    Sentry.captureException(err);
+    logger.error(`[GoogleCalendar] fallo general: ${err}`);
+  }
+}
+
+async function handleMetaConversion(job) {
+  // Lanza solo en errores transitorios, para que Bull reintente con backoff.
+  await procesarConversion(job.data.logId, {
+    attemptsMade: job.attemptsMade,
+    maxAttempts: job.opts?.attempts || 1
+  });
+}
+
 export async function startQueueProcess() {
   logger.info("Iniciando processamento de filas");
 
@@ -2050,7 +2310,14 @@ export async function startQueueProcess() {
 
   queueMonitor.process("VerifyQueueStatus", handleVerifyQueue);
 
+  googleCalendarMonitor.process("SyncGoogleCalendar", handleGoogleCalendarSync);
+
+  metaConversionsQueue.process("Send", 3, handleMetaConversion);
+
   initializeBirthdayJobs();
+
+  // Seguimientos automaticos de los agentes IA (docs/AGENTES_IA.md).
+  iniciarSeguimientosAgentes();
 
   scheduleMonitor.add(
     "Verify",
@@ -2075,6 +2342,18 @@ export async function startQueueProcess() {
     {},
     {
       repeat: { cron: "* * * * *", key: "verify-login" },
+      removeOnComplete: true
+    }
+  );
+
+  // Cada cinco minutos. Mas a menudo gastaria cuota de la API de Google
+  // sin ganar nada: no hay push, asi que el retraso es inevitable, y cinco
+  // minutos es imperceptible para una agenda.
+  googleCalendarMonitor.add(
+    "SyncGoogleCalendar",
+    {},
+    {
+      repeat: { cron: "0 */5 * * * *", key: "sync-google-calendar" },
       removeOnComplete: true
     }
   );

@@ -25,6 +25,7 @@ import FindOrCreateTicketService from "./FindOrCreateTicketService";
 import formatBody from "../../helpers/Mustache";
 import { Mutex } from "async-mutex";
 import { getJidOf } from "../WbotServices/getJidOf";
+import CreateSaleService from "../SaleServices/CreateService";
 
 interface TicketData {
   status?: string;
@@ -337,6 +338,11 @@ const UpdateTicketService = async ({
 
       await ticketTraking.save();
 
+      // Se guarda antes de actualizar: es lo que permite distinguir una
+      // venta que se acaba de declarar de un ticket que ya la tenia y se
+      // vuelve a guardar por otro motivo.
+      const yaTeniaVenta = ticket.finalizadoComVenda === true;
+
       await ticket.update({
         status: "closed",
         lastFlowId: null,
@@ -350,6 +356,35 @@ const UpdateTicketService = async ({
             ? false
             : finalizadoComVenda
       });
+
+      // El modal de cierre alimenta la tabla de ventas, que es la unica
+      // fuente de "cuanto vendimos". Solo en la transicion a "si hubo
+      // venta": sin esa condicion, cada guardado posterior del mismo
+      // ticket crearia una venta repetida.
+      //
+      // syncTicket va en false porque el ticket acaba de escribirse con
+      // estos mismos datos dos lineas mas arriba.
+      if (finalizadoComVenda === true && !yaTeniaVenta) {
+        try {
+          await CreateSaleService({
+            companyId,
+            contactId: ticket.contactId,
+            userId: ticket.userId,
+            ticketId: ticket.id,
+            queueId: ticket.queueId,
+            total: Number(valorVenda) || 0,
+            // El modal de cierre no pregunta ni producto ni forma de pago,
+            // asi que la venta queda registrada sin ellos y se completan
+            // despues si hace falta.
+            deposit: 0,
+            syncTicket: false
+          });
+        } catch (err) {
+          // Una venta que no se pudo anotar no debe impedir cerrar el
+          // ticket: el asesor perderia el trabajo hecho en la conversacion.
+          Sentry.captureException(err);
+        }
+      }
 
       io.of(String(companyId))
         // .to(oldStatus)

@@ -235,6 +235,8 @@ export default function Whitelabel(props) {
   const logoFaviconInput = useRef(null);
   const backgroundLightInput = useRef(null);
   const backgroundDarkInput = useRef(null);
+  const chatBackgroundLightInput = useRef(null);
+  const chatBackgroundDarkInput = useRef(null);
   const appNameInput = useRef(null);
   const [appName, setAppName] = useState(settingsLoaded.appName || "");
   const [enabledLanguages, setEnabledLanguages] = useState(["pt", "en"]);
@@ -277,6 +279,13 @@ export default function Whitelabel(props) {
       const appLogoBackgroundDark = settings.find(
         (s) => s.key === "appLogoBackgroundDark"
       )?.value;
+      // Papel tapiz de la ventana de conversacion, por modo.
+      const chatBackgroundLight = settings.find(
+        (s) => s.key === "chatBackgroundLight"
+      )?.value;
+      const chatBackgroundDark = settings.find(
+        (s) => s.key === "chatBackgroundDark"
+      )?.value;
       const appName = settings.find((s) => s.key === "appName")?.value;
       const enabledLanguagesSetting = settings.find(
         (s) => s.key === "enabledLanguages"
@@ -300,6 +309,8 @@ export default function Whitelabel(props) {
           appLogoFavicon,
           appLogoBackgroundLight,
           appLogoBackgroundDark,
+          chatBackgroundLight,
+          chatBackgroundDark,
           appName,
           enabledLanguages: langs,
         });
@@ -777,6 +788,112 @@ export default function Whitelabel(props) {
                                 color="default"
                                 onClick={() => {
                                   backgroundDarkInput.current.click();
+                                }}
+                              >
+                                <AttachFile
+                                  titleAccess={i18n.t("whitelabel.upload")}
+                                />
+                              </IconButton>
+                            </label>
+                          </>
+                        ),
+                      }}
+                    />
+                  </FormControl>
+                </Grid>
+
+                <Grid xs={12} sm={6} md={6} item>
+                  <FormControl className={classes.formField} fullWidth>
+                    <TextField
+                      id="chat-background-light-upload-field"
+                      label={i18n.t("whitelabel.chatBackgroundLight")}
+                      variant="outlined"
+                      value={settingsLoaded.chatBackgroundLight || ""}
+                      size="small"
+                      className={classes.uploadField}
+                      InputProps={{
+                        readOnly: true,
+                        endAdornment: (
+                          <>
+                            {settingsLoaded.chatBackgroundLight && (
+                              <IconButton
+                                size="small"
+                                color="default"
+                                onClick={() => {
+                                  handleSaveSetting("chatBackgroundLight", "");
+                                }}
+                              >
+                                <Delete
+                                  titleAccess={i18n.t("whitelabel.delete")}
+                                />
+                              </IconButton>
+                            )}
+                            <input
+                              type="file"
+                              id="upload-chat-background-light-button"
+                              ref={chatBackgroundLightInput}
+                              className={classes.uploadInput}
+                              onChange={(e) => uploadLogo(e, "ChatBackgroundLight")}
+                            />
+                            <label htmlFor="upload-chat-background-light-button">
+                              <IconButton
+                                size="small"
+                                color="default"
+                                onClick={() => {
+                                  chatBackgroundLightInput.current.click();
+                                }}
+                              >
+                                <AttachFile
+                                  titleAccess={i18n.t("whitelabel.upload")}
+                                />
+                              </IconButton>
+                            </label>
+                          </>
+                        ),
+                      }}
+                    />
+                  </FormControl>
+                </Grid>
+
+                <Grid xs={12} sm={6} md={6} item>
+                  <FormControl className={classes.formField} fullWidth>
+                    <TextField
+                      id="chat-background-dark-upload-field"
+                      label={i18n.t("whitelabel.chatBackgroundDark")}
+                      variant="outlined"
+                      value={settingsLoaded.chatBackgroundDark || ""}
+                      size="small"
+                      className={classes.uploadField}
+                      InputProps={{
+                        readOnly: true,
+                        endAdornment: (
+                          <>
+                            {settingsLoaded.chatBackgroundDark && (
+                              <IconButton
+                                size="small"
+                                color="default"
+                                onClick={() => {
+                                  handleSaveSetting("chatBackgroundDark", "");
+                                }}
+                              >
+                                <Delete
+                                  titleAccess={i18n.t("whitelabel.delete")}
+                                />
+                              </IconButton>
+                            )}
+                            <input
+                              type="file"
+                              id="upload-chat-background-dark-button"
+                              ref={chatBackgroundDarkInput}
+                              className={classes.uploadInput}
+                              onChange={(e) => uploadLogo(e, "ChatBackgroundDark")}
+                            />
+                            <label htmlFor="upload-chat-background-dark-button">
+                              <IconButton
+                                size="small"
+                                color="default"
+                                onClick={() => {
+                                  chatBackgroundDarkInput.current.click();
                                 }}
                               >
                                 <AttachFile

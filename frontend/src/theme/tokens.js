@@ -1,0 +1,509 @@
+/**
+ * Sistema visual base — Fase 1.
+ *
+ * ESTADO: este archivo todavía no lo importa nadie. Es una propuesta
+ * ejecutable, no una migración. Nada de lo que hay aquí afecta a la
+ * aplicación hasta que se conecte al tema de forma explícita.
+ *
+ * Por qué existe
+ * --------------
+ * El inventario del frontend encontró 342 valores de color distintos en
+ * 1347 usos, repartidos por 397 archivos. Al agruparlos por cercanía
+ * perceptual (deltaE < 8, es decir, colores que el ojo no distingue en uso
+ * normal) quedan 135 grupos: aproximadamente la mitad son duplicados
+ * literales del mismo color escrito de otra forma.
+ *
+ * Seis de esos grupos son neutros —blancos, grises y negros— y entre ellos
+ * concentran 603 de los 1347 usos con 77 variantes. Ahí está el grueso del
+ * desorden, y por eso la escala de neutros es la parte más desarrollada de
+ * este archivo.
+ *
+ * Todos los contrastes anotados están medidos, no estimados, y cumplen
+ * WCAG AA (4.5:1 para texto normal) tanto sobre `surface` como sobre
+ * `background`.
+ */
+
+// ---------------------------------------------------------------------------
+// NEUTROS
+// ---------------------------------------------------------------------------
+// Escala de 11 pasos con una ligera desviación fría. Sustituye a los 77
+// valores neutros dispersos que hay hoy.
+//
+// La desviación fría es deliberada: un gris puro sobre blanco puro tiende a
+// verse sucio en pantallas modernas. El tinte azulado es lo que da la
+// sensación "limpia" de los productos SaaS actuales, y a la vez mantiene
+// pasos de contraste predecibles entre niveles.
+export const neutral = {
+  0: "#ffffff",
+  50: "#f8fafc",
+  100: "#f1f5f9",
+  200: "#e2e8f0",
+  300: "#cbd5e1",
+  400: "#94a3b8",
+  500: "#64748b",
+  600: "#475569",
+  700: "#334155",
+  800: "#1e293b",
+  900: "#0f172a",
+};
+
+// ---------------------------------------------------------------------------
+// COLOR PRIMARIO
+// ---------------------------------------------------------------------------
+// ATENCIÓN: el primario NO es una constante de este archivo.
+//
+// La aplicación lo lee del backend por empresa
+// (getPublicSetting("primaryColorLight") en App.js), de modo que cada
+// cliente puede tener el suyo. Por eso `hover` y `active` se DERIVAN del
+// color configurado en lugar de escribirse a mano: si se fijaran aquí,
+// cualquier cliente que personalice su marca se quedaría con estados de
+// hover de otro color.
+//
+// El valor de abajo es solo el que se usa cuando el backend no devuelve
+// nada.
+//
+// Es el azul de la interfaz de referencia que eligio Josue (#198fcc,
+// muestreado de su captura), oscurecido un 15 %: el original da 3.59 con
+// texto blanco encima y un boton primario lleva texto blanco. A este tono
+// le corresponden 4.75, que ya pasa, y a simple vista es el mismo azul.
+export const primaryDefault = "#157aad";
+
+/**
+ * El azul de la referencia sin oscurecer. Solo para rellenos sin texto
+ * encima —iconos, indicadores, graficos—, donde 3.59 basta segun la WCAG.
+ * Para cualquier cosa con letras encima va primaryDefault.
+ */
+export const acentoReferencia = "#198fcc";
+
+// El secundario NO se configura desde el backend hoy; solo existe el primario.
+// Se elige un slate en lugar de un color con carácter por una razón concreta:
+// `color="secondary"` aparece en 79 archivos, y como el primario lo decide
+// cada cliente, cualquier secundario saturado chocaría con la marca de alguien.
+// Un neutro oscuro funciona de apoyo junto a cualquier primario.
+//
+// Hoy esta clave no está definida en el tema, así que MUI aplica su rosa por
+// defecto (#f50057), que nadie eligió.
+export const secondaryDefault = "#475569";
+
+// Contraparte para modo oscuro. El neutro de arriba se eligio contra fondo
+// claro (8,6 sobre blanco); sobre superficie oscura cae a 1,93 y deja
+// invisibles los botones "secondary", que son botones activos, no
+// deshabilitados. Un solo tono no puede servir a los dos modos.
+export const secondaryDefaultDark = neutral[400];
+
+// ---------------------------------------------------------------------------
+// ESCALA DE MARCA
+// ---------------------------------------------------------------------------
+// Derivada del logo de GROWTH muestreando sus píxeles: tono 266°, saturación
+// 86%. No es un violeta elegido a ojo, es el de la marca.
+//
+// Se conserva la escala entera aunque el tema use solo dos niveles, porque
+// las fases siguientes —panel, gráficos, estados— necesitarán los tonos
+// intermedios, y conviene que salgan de este tono y no de otro violeta.
+export const brandScale = {
+  50: "#f7f2fd",
+  100: "#e3d3f8",
+  300: "#b084eb",
+  500: "#803adf",
+  600: "#6720c5", // primario interactivo — blanco encima da 8.11
+  700: "#50199a",
+  900: "#200a3d" // superficies oscuras, el color del logo
+};
+
+/**
+ * Devuelve un "#rrggbb" válido, o el respaldo si la entrada no lo es.
+ *
+ * Existe porque el color de marca no es una constante: se escribe a mano en
+ * Ajustes > Whitelabel y llega desde el backend o desde localStorage. Sin
+ * validar, un valor mal escrito se propagaría como "#NaNNaNNaN" a todo el
+ * tema, y como el tema alimenta la aplicación entera, el fallo no sería
+ * discreto.
+ *
+ * Acepta la forma corta de tres dígitos y tolera que falte la almohadilla.
+ */
+export function normalizeHex(value, fallback = primaryDefault) {
+  if (typeof value !== "string") return fallback;
+  let v = value.trim();
+  if (v.charAt(0) !== "#") v = "#" + v;
+  if (/^#[0-9a-fA-F]{3}$/.test(v)) {
+    v = "#" + v[1] + v[1] + v[2] + v[2] + v[3] + v[3];
+  }
+  return /^#[0-9a-fA-F]{6}$/.test(v) ? v.toLowerCase() : fallback;
+}
+
+/**
+ * Oscurece un color una fracción dada. Sirve para derivar los estados
+ * hover y active a partir del primario que configure cada empresa.
+ *
+ * @param {string} hex   color en formato "#rrggbb"
+ * @param {number} amount  0 = sin cambio, 1 = negro
+ */
+export function darken(hex, amount) {
+  const n = parseInt(normalizeHex(hex).replace("#", ""), 16);
+  const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) =>
+    Math.max(0, Math.round(c * (1 - amount)))
+  );
+  return "#" + ch.map((c) => c.toString(16).padStart(2, "0")).join("");
+}
+
+export const primaryStates = (base) => ({
+  main: base,
+  hover: darken(base, 0.08),
+  active: darken(base, 0.16),
+});
+
+/**
+ * Luminancia relativa segun WCAG. Auxiliar de contrastRatio.
+ */
+function luminance(hex) {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.substr(i, 2), 16));
+  const f = (v) => {
+    v /= 255;
+    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  };
+  return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+}
+
+/**
+ * Relacion de contraste entre dos colores opacos, de 1 a 21.
+ */
+export function contrastRatio(a, b) {
+  const x = luminance(a);
+  const y = luminance(b);
+  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+}
+
+/**
+ * Color de texto legible sobre un fondo dado.
+ *
+ * Esta es la pieza que faltaba. La aplicacion asumia texto blanco sobre
+ * cualquier color, y como el color de marca lo configura cada cliente, un
+ * naranja como #f7953b dejaba los botones en 2.25 de contraste, muy por
+ * debajo del 4.5 que exige la WCAG para texto normal.
+ *
+ * La regla es determinista y sin casos especiales: si el blanco alcanza el
+ * umbral sobre ese fondo, se usa blanco; si no, se usa el tinta oscura.
+ * Es el mismo criterio que aplica MUI en getContrastText, de modo que el
+ * tema y los componentes que usen este helper coinciden siempre.
+ *
+ * @param {string} background  fondo en formato "#rrggbb"
+ * @returns {string} neutral[0] o neutral[900]
+ */
+export function onColor(background, options = {}) {
+  const {
+    threshold = 4.5,
+    light = neutral[0],
+    dark = neutral[900],
+  } = options;
+  return contrastRatio(normalizeHex(background), light) >= threshold
+    ? light
+    : dark;
+}
+
+/**
+ * El mismo color, oscurecido lo justo para leerse sobre un fondo claro.
+ *
+ * El primario lo elige cada empresa en Whitelabel y puede ser tan claro
+ * que, usado como texto o borde sobre blanco, casi no se vea: #D3D1DC da
+ * 1,5. Se oscurece en pasos del 5 % hasta llegar al contraste pedido (4,5
+ * para texto; 3 para bordes y otros componentes, segun la WCAG). Un color
+ * que ya lo cumple sale igual, asi que una marca oscura no cambia.
+ *
+ * Solo para fondos claros: oscurecer no acerca al contraste sobre fondo
+ * oscuro.
+ *
+ * @param {string} color  color en formato "#rrggbb"
+ * @param {string} fondo  fondo claro en formato "#rrggbb"
+ * @param {number} minimo contraste minimo
+ * @returns {string} "#rrggbb"
+ */
+export function legibleSobre(color, fondo, minimo = 4.5) {
+  let actual = normalizeHex(color);
+  for (let i = 0; i < 60 && contrastRatio(actual, fondo) < minimo; i++) {
+    actual = darken(actual, 0.05);
+  }
+  return actual;
+}
+
+// ---------------------------------------------------------------------------
+// COLORES SEMÁNTICOS
+// ---------------------------------------------------------------------------
+// Dos tonos por significado, y la distinción importa:
+//
+//   `fill` es para rellenos con texto blanco encima (botones, insignias).
+//   `text` es para texto de ese color sobre fondo claro.
+//
+// Son distintos porque un verde que funciona como fondo suele ser
+// demasiado claro como texto. Ese es exactamente el fallo que tenía la
+// hora de los mensajes no leídos: usaba el mismo verde para ambas cosas y
+// daba 3.30 de contraste como texto.
+export const semantic = {
+  success: { fill: "#16a34a", text: "#15803d", soft: "#dcfce7" },
+  warning: { fill: "#f59e0b", text: "#b45309", soft: "#fef3c7" },
+  error: { fill: "#dc2626", text: "#b91c1c", soft: "#fee2e2" },
+  info: { fill: "#3b82f6", text: "#1d4ed8", soft: "#dbeafe" },
+};
+
+// ---------------------------------------------------------------------------
+// SUPERFICIES Y TEXTO
+// ---------------------------------------------------------------------------
+// Los valores claros salen de la captura de referencia, contados sobre la
+// imagen: el fondo de trabajo ocupa el 48 % de la pantalla y es #f6f8f9, los
+// paneles el 40 % y son blancos, y los bordes son #e5e7eb con #d6dce1 para
+// los que separan zonas.
+export const light = {
+  background: "#f6f8f9",
+  surface: neutral[0],
+  surfaceSecondary: "#edf1f3",
+  // Tercer nivel de superficie. La referencia apila fondo, tarjeta y tarjeta
+  // destacada; con solo dos niveles no hay forma de decir que algo está por
+  // encima de otra cosa sin recurrir a una sombra pesada.
+  surfaceElevated: neutral[0],
+  border: "#e5e7eb",
+  borderStrong: "#d6dce1",
+  textPrimary: "#0c2c45", // 14.37 sobre surface — el azul oscuro de la referencia
+  textSecondary: "#45535f", // 8.90
+  textMuted: "#5b6b7a", // 5.48
+};
+
+export const dark = {
+  background: neutral[900],
+  surface: neutral[800],
+  // En oscuro la elevación no se expresa con sombra —sobre fondo oscuro casi
+  // no se percibe— sino aclarando la superficie. Por eso el nivel elevado es
+  // más claro que el normal, al revés que en modo claro.
+  surfaceElevated: "#243044",
+  surfaceSecondary: neutral[700],
+  border: neutral[700],
+  borderStrong: neutral[600],
+  textPrimary: neutral[50],
+  textSecondary: neutral[300],
+  textMuted: neutral[400],
+};
+
+// ---------------------------------------------------------------------------
+// BARRA LATERAL
+// ---------------------------------------------------------------------------
+// Tokens de la barra lateral y de la barra superior, que comparten cromo.
+//
+// Hasta el 15 sep 2026 eran oscuras en los dos modos, para dar estructura al
+// producto. Josue lo reviso en produccion: en modo claro esperaba verlas
+// claras, y el cromo oscuro hacia que el modo claro pareciera a medias. Ahora
+// siguen al modo; la separacion con el contenido la dan el borde y el fondo
+// del area de trabajo (neutral 50), no el contraste de color.
+//
+// hover, iconBackground e iconHover son los velos de los elementos del menu:
+// antes estaban escritos a mano en blanco, que sobre fondo claro no se ve.
+// El acento del menu es FIJO, no el color que cada empresa configura en
+// Whitelabel: ese se elige para botones y puede ser cualquier cosa —el de la
+// empresa 1 es #D3D1DC, casi blanco—, y sobre el menu dejaba el elemento
+// activo invisible.
+//
+// Hasta el 21 sep 2026 fue el violeta de la marca. Josue paso una captura de
+// otra herramienta como referencia y pidio esos colores por defecto: azul
+// sobre blanco. Se usa el mismo tono oscurecido que el primario, porque el
+// icono activo lleva el fondo del acento y un simbolo blanco encima.
+const acentoMenu = primaryDefault;
+const acentoMenuOscuro = "#67c3ef";
+
+export const sidebar = {
+  // Como la referencia: el menu y la barra superior son blancos, el area de
+  // trabajo es el gris frio de al lado, y lo que esta abierto se marca con un
+  // azul muy lavado en vez de con un bloque de color.
+  light: {
+    background: "#ffffff",
+    surface: "#f6f8f9",
+    border: "#e5e7eb",
+    text: "#45535f", // 8.9 sobre el fondo
+    textActive: "#0c2c45", // 14.4
+    textMuted: "#5b6b7a", // 5.5
+    hover: "rgba(25, 143, 204, 0.08)",
+    iconBackground: "rgba(25, 143, 204, 0.10)",
+    iconHover: "rgba(25, 143, 204, 0.16)",
+    accent: acentoMenu,
+    accentText: "#12648f", // 6.5 sobre el fondo
+    accentSoft: "#e8f4fb",
+  },
+  dark: {
+    background: "#150e26",
+    surface: "#1f1636",
+    border: "rgba(255, 255, 255, 0.06)",
+    text: "#c4bcd6",
+    textActive: "#ffffff",
+    textMuted: "#857c99",
+    hover: "rgba(255, 255, 255, 0.06)",
+    iconBackground: "rgba(255, 255, 255, 0.06)",
+    iconHover: "rgba(255, 255, 255, 0.10)",
+    accent: acentoMenuOscuro,
+    accentText: "#bfe4f7", // 12.0 sobre el fondo
+    accentSoft: "rgba(103, 195, 239, 0.18)",
+  }
+};
+
+// ---------------------------------------------------------------------------
+// COLORES DE MARCA AJENA
+// ---------------------------------------------------------------------------
+// Estos NO son tokens y no deben unificarse con la paleta: son la identidad
+// de servicios de terceros. El verde de WhatsApp es el verde de WhatsApp
+// aunque el cliente tenga la marca en naranja. Se listan aquí solo para que
+// consten como intencionales y nadie los "arregle" en una limpieza futura.
+export const brand = {
+  whatsapp: "#25D366",
+  facebook: "#4267B2",
+  instagram: "#E1306C",
+};
+
+// ---------------------------------------------------------------------------
+// TIPOGRAFÍA
+// ---------------------------------------------------------------------------
+// Ocho niveles que sustituyen a los 35 tamaños distintos que hay hoy,
+// escritos además mezclando px, em y rem.
+//
+// Todo en rem para que respete el tamaño de letra que el usuario tenga
+// configurado en su sistema operativo. La base de la aplicación es 14px,
+// pero rem se calcula sobre la raíz (16px), de ahí los decimales.
+//
+// El mínimo es 11px. Deliberadamente no hay nada menor: el 0.6em de la
+// lista de tickets daba 8.4px reales y era el problema de legibilidad más
+// grave que encontró la auditoría.
+export const typography = {
+  caption: { size: "0.6875rem", weight: 500, lh: 1.45 }, // 11px
+  label: { size: "0.75rem", weight: 500, lh: 1.45 }, //  12px
+  bodySm: { size: "0.8125rem", weight: 400, lh: 1.5 }, //  13px
+  body: { size: "0.875rem", weight: 400, lh: 1.55 }, //  14px  base
+  subtitle: { size: "1rem", weight: 600, lh: 1.5 }, //  16px
+  h3: { size: "1.125rem", weight: 600, lh: 1.4 }, //  18px
+  h2: { size: "1.375rem", weight: 700, lh: 1.3 }, //  22px
+  h1: { size: "1.75rem", weight: 700, lh: 1.25 }, //  28px
+};
+
+// Solo cuatro pesos. Hoy conviven 600, 500, "bold", "'bold" y varios "00"
+// que son restos de un reemplazo mal hecho y que el navegador descarta.
+export const weight = { regular: 400, medium: 500, semibold: 600, bold: 700 };
+
+// ---------------------------------------------------------------------------
+// ESPACIADO
+// ---------------------------------------------------------------------------
+// Escala de base 4. Los valores sueltos que hay hoy (10, 18, 20, 40...) no
+// forman ninguna progresión, y por eso las pantallas se ven descuadradas
+// entre sí.
+export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32, xxxl: 48 };
+
+// ---------------------------------------------------------------------------
+// RADIOS
+// ---------------------------------------------------------------------------
+// Cuatro valores frente a los doce actuales.
+export const radius = {
+  sm: 4, //  insignias, chips
+  md: 8, //  botones, campos de formulario
+  lg: 12, //  tarjetas, modales
+  full: 9999, //  avatares, píldoras
+};
+
+// ---------------------------------------------------------------------------
+// SOMBRAS
+// ---------------------------------------------------------------------------
+// Tres niveles, todos con tinte azulado en lugar de negro puro, que es lo
+// que evita el halo gris sucio.
+//
+// Las sombras actuales del tipo "1px 1px 5px #CCC" y "0 1px 1px #b3b3b3"
+// son el rasgo que más delata la edad de la interfaz: desplazamiento
+// diagonal, poco difuminado y color sólido.
+export const shadow = {
+  sm: "0 1px 2px rgba(15, 23, 42, 0.06)",
+  md: "0 4px 12px rgba(15, 23, 42, 0.08)",
+  lg: "0 12px 32px rgba(15, 23, 42, 0.12)",
+};
+
+// ---------------------------------------------------------------------------
+// AVATARES SIN FOTO
+// ---------------------------------------------------------------------------
+// Cuando un contacto no tiene foto se pinta un circulo de color con sus
+// iniciales. El color NO es aleatorio ni depende del orden de la lista: sale
+// de un valor estable del contacto, asi que el mismo contacto se ve del mismo
+// color en la lista, en el panel y en cualquier otro sitio. Un avatar que
+// cambia de color al recargar deja de servir para reconocer a alguien de un
+// vistazo, que es justamente para lo que esta.
+//
+// Ninguno es morado: compiten con el color de marca y se confundirian con los
+// elementos interactivos. Todos llevan blanco encima con holgura sobre 4.5,
+// pero el texto se decide igual con onColor() por si esta paleta cambia.
+export const avatarPalette = [
+  "#0f766e", // teal
+  "#1d4ed8", // azul
+  "#b91c1c", // rojo
+  "#a16207", // ambar oscuro
+  "#15803d", // verde
+  "#0e7490", // cian
+  "#9d174d", // frambuesa
+  "#475569", // pizarra
+];
+
+/**
+ * Elige un color de la paleta a partir de una semilla estable.
+ *
+ * Se usa el id del contacto cuando se tiene —no cambia aunque lo renombren—
+ * y el nombre como respaldo. El reparto es un hash sencillo: no hace falta
+ * que sea uniforme, solo que sea SIEMPRE el mismo para la misma entrada.
+ */
+export function avatarColor(semilla) {
+  const texto = String(semilla == null ? "" : semilla);
+  if (!texto) return avatarPalette[0];
+
+  let acumulado = 0;
+  for (let i = 0; i < texto.length; i += 1) {
+    // El desplazamiento evita que dos nombres con las mismas letras en
+    // distinto orden caigan en el mismo color.
+    acumulado = (acumulado * 31 + texto.charCodeAt(i)) % 100000;
+  }
+  return avatarPalette[acumulado % avatarPalette.length];
+}
+
+/**
+ * Iniciales de un nombre: dos letras cuando hay nombre y apellido, y una
+ * sola —o dos de la misma palabra— cuando solo hay una.
+ *
+ * Se descartan las particulas ("de", "del", "da", "van"...) porque un
+ * "Maria de la Cruz" con iniciales "MD" no dice nada.
+ */
+const PARTICULAS = ["de", "del", "da", "das", "do", "dos", "la", "las", "los",
+  "van", "von", "y", "e"];
+
+export function avatarInitials(nombre) {
+  const palabras = String(nombre || "")
+    .trim()
+    .split(/\s+/)
+    .filter(p => p && !PARTICULAS.includes(p.toLowerCase()));
+
+  if (palabras.length === 0) return "?";
+  if (palabras.length === 1) {
+    // Una sola palabra: dos letras si las tiene, para no dejar un circulo
+    // casi vacio.
+    return palabras[0].slice(0, 2).toUpperCase();
+  }
+  return (palabras[0][0] + palabras[palabras.length - 1][0]).toUpperCase();
+}
+
+export default {
+  neutral,
+  primaryDefault,
+  secondaryDefault,
+  secondaryDefaultDark,
+  brandScale,
+  sidebar,
+  normalizeHex,
+  contrastRatio,
+  onColor,
+  legibleSobre,
+  primaryStates,
+  darken,
+  semantic,
+  light,
+  dark,
+  brand,
+  typography,
+  weight,
+  space,
+  radius,
+  shadow,
+};

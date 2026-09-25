@@ -13,9 +13,11 @@ build/
 *.tsbuildinfo
 
 # Secretos y configuración local
+# (los .env.example / .env.exemple SÍ se versionan: son plantillas)
 .env
 .env.local
 .env.*.local
+.env.original
 .credentials
 *.pem
 *.key
@@ -25,6 +27,8 @@ build/
 backend/public/*
 !backend/public/.gitkeep
 backend/uploads/*
+# Archivos de las instantaneas de configuracion (ver docs/INSTANTANEAS.md)
+backend/snapshots/*
 !backend/uploads/.gitkeep
 backend/private/*
 !backend/private/.gitkeep
@@ -32,6 +36,8 @@ backend/private/*
 # Backups y dumps
 backups/
 *.sql
+# Las migraciones de Prisma son codigo, no dumps (railway up tambien respeta este archivo)
+!api_oficial/prisma/migrations/**/migration.sql
 *.sql.gz
 *.tar.gz
 *.bak
@@ -62,3 +68,6 @@ desktop.ini
 !.vscode/settings.json.example
 *.swp
 .~*
+
+# Proyecto aparte, con su propio repositorio.
+/capa-comercial/

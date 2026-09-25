@@ -22,6 +22,8 @@ import ListSettingsService from "../SettingServices/ListSettingsService";
 import { isNil, isNull, head } from "lodash";
 import FindOrCreateATicketTrakingService from "../TicketServices/FindOrCreateATicketTrakingService";
 import { handleMessageIntegration, handleRating, verifyRating } from "../WbotServices/wbotMessageListener";
+import { atenderMensajeEntrante } from "../AiAgentServices/AtenderConAgente";
+import { pausarPorMensajeHumano } from "../AiAgentServices/EstadoIaTicket";
 import CompaniesSettings from "../../models/CompaniesSettings";
 import { sendFacebookMessage } from "./sendFacebookMessage";
 import { Mutex } from "async-mutex";
@@ -39,6 +41,7 @@ import { get } from "http";
 import { WebhookModel } from "../../models/Webhook";
 import { is } from "bluebird";
 import ShowTicketService from "../TicketServices/ShowTicketService";
+import { contactoCreadoDesde, registrarLeadEntrante } from "../ConversionServices/ConversionService";
 
 interface IMe {
   name: string;
@@ -516,7 +519,14 @@ export const handleMessage = async (
         msgContact = await profilePsid(senderPsid, token.facebookUserToken);
       }
 
+      const antesDeVerificarContacto = Date.now();
       const contact = await verifyContact(msgContact, token, companyId);
+
+      // Meta Conversions API: lead solo si ESTE mensaje entrante (no un eco
+      // de lo que envia la pagina) creo el contacto. Solo encola.
+      if (!fromMe && contactoCreadoDesde(contact, antesDeVerificarContacto)) {
+        registrarLeadEntrante(contact, { mensajeEn: webhookEvent.timestamp || null });
+      }
 
       const unreadCount = fromMe ? 0 : 1;
 
@@ -818,6 +828,15 @@ export const handleMessage = async (
         await verifyMessageMedia(message, ticket, contact);
       } else {
         await verifyMessageFace(message, message.text, ticket, contact);
+      }
+
+      // Agentes IA: un mensaje escrito por una persona (bandeja de Meta) pausa la
+      // IA de la conversacion; uno del cliente lo atiende el agente si la IA
+      // esta activa y en horario. Si el agente no atiende, sigue lo de siempre.
+      if (fromMe) {
+        await pausarPorMensajeHumano(ticket, { wid: message.mid });
+      } else if (await atenderMensajeEntrante({ ticket, contact, wid: message.mid })) {
+        return;
       }
 
 

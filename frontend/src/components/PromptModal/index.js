@@ -18,6 +18,12 @@ import { MenuItem, FormControl, InputLabel, Select } from "@material-ui/core";
 import { Visibility, VisibilityOff } from "@material-ui/icons";
 import { InputAdornment, IconButton } from "@material-ui/core";
 import QueueSelectSingle from "../../components/QueueSelectSingle";
+import {
+    OPENAI_MODELS,
+    DEFAULT_PROMPT_MODEL,
+    getModelDisplayName,
+    modelOptionsFor
+} from "../../constants/aiModels";
 
 import api from "../../services/api";
 import toastError from "../../errors/toastError";
@@ -79,6 +85,7 @@ const PromptModal = ({ open, onClose, promptId }) => {
     const initialState = {
         name: "",
         prompt: "",
+        model: DEFAULT_PROMPT_MODEL,
         voice: "texto",
         voiceKey: "",
         voiceRegion: "",
@@ -200,6 +207,21 @@ const PromptModal = ({ open, onClose, promptId }) => {
                                             ),
                                         }}
                                     />
+                                </FormControl>
+                                <FormControl fullWidth margin="dense" variant="outlined">
+                                    <InputLabel>Modelo</InputLabel>
+                                    <Field
+                                        as={Select}
+                                        label="Modelo"
+                                        name="model"
+                                    >
+                                        {modelOptionsFor(OPENAI_MODELS, values.model).map((model) => (
+                                            <MenuItem key={model} value={model}>
+                                                {getModelDisplayName(model)}
+                                                {!OPENAI_MODELS.includes(model) && " — descontinuado"}
+                                            </MenuItem>
+                                        ))}
+                                    </Field>
                                 </FormControl>
                                 <Field
                                     as={TextField}

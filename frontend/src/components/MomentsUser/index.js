@@ -246,7 +246,7 @@ const DashboardManage = () => {
                       <ListItemAvatar>
                         <Avatar
                           alt={`${ticket.contact.urlPicture}`}
-                          src={`${ticket.contact.urlPicture}`}
+                          src={ticket.contact.urlPicture || undefined}
                         />
                       </ListItemAvatar>
                       <ListItemText
@@ -369,7 +369,7 @@ const DashboardManage = () => {
                       <ListItemAvatar>
                         <Avatar
                           alt={`${ticket.contact.urlPicture}`}
-                          src={`${ticket.contact.urlPicture}`}
+                          src={ticket.contact.urlPicture || undefined}
                         />
                       </ListItemAvatar>
                       <ListItemText

@@ -282,6 +282,18 @@ export class WebhookService {
                       idFile,
                       idMessage: message.id,
                       quoteMessageId,
+                      // Anuncio Click-to-WhatsApp del que viene el mensaje. El CRM lo
+                      // guarda para atribuir conversiones en Meta; aqui solo se reenvia.
+                      referral: message.referral
+                        ? {
+                            ctwa_clid: message.referral.ctwa_clid,
+                            source_id: message.referral.source_id,
+                            source_type: message.referral.source_type,
+                            source_url: message.referral.source_url,
+                            headline: message.referral.headline,
+                            media_type: message.referral.media_type,
+                          }
+                        : undefined,
                     };
 
                     const data: IReceivedWhatsppOficial = {

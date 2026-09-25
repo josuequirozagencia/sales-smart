@@ -1,5 +1,9 @@
 import User from "../../models/User";
 import AppError from "../../errors/AppError";
+import { evaluarAccesoDeUsuario } from "../../helpers/CompanyAccessPolicy";
+import CreateAuthAuditService, {
+  EVENTOS
+} from "../AuthAuditServices/CreateAuthAuditService";
 import {
   createAccessToken,
   createRefreshToken
@@ -7,6 +11,7 @@ import {
 import { SerializeUser } from "../../helpers/SerializeUser";
 import Queue from "../../models/Queue";
 import Company from "../../models/Company";
+import Plan from "../../models/Plan";
 import Setting from "../../models/Setting";
 import CompaniesSettings from "../../models/CompaniesSettings";
 
@@ -32,6 +37,8 @@ interface SerializedUser {
 interface Request {
   email: string;
   password: string;
+  /** Direccion de quien intenta entrar, solo para la auditoria. */
+  ip?: string | null;
 }
 
 interface Response {
@@ -42,7 +49,8 @@ interface Response {
 
 const AuthUserService = async ({
   email,
-  password
+  password,
+  ip
 }: Request): Promise<Response> => {
   const user = await User.findOne({
     where: { email },
@@ -57,28 +65,62 @@ const AuthUserService = async ({
     throw new AppError("ERR_INVALID_CREDENTIALS", 401);
   }
 
-  const Hr = new Date();
+  // El horario de atencion no se le aplica al superadministrador. Es la
+  // cuenta con la que se arregla todo lo demas: si alguien le toca el horario
+  // por error, con la comprobacion puesta nadie puede entrar a deshacerlo.
+  if (!user.super) {
+    const Hr = new Date();
 
-  const hh: number = Hr.getHours() * 60 * 60;
-  const mm: number = Hr.getMinutes() * 60;
-  const hora = hh + mm;
+    const hh: number = Hr.getHours() * 60 * 60;
+    const mm: number = Hr.getMinutes() * 60;
+    const hora = hh + mm;
 
-  const inicio: string = user.startWork;
-  const hhinicio = Number(inicio.split(":")[0]) * 60 * 60;
-  const mminicio = Number(inicio.split(":")[1]) * 60;
-  const horainicio = hhinicio + mminicio;
+    const inicio: string = user.startWork;
+    const hhinicio = Number(inicio.split(":")[0]) * 60 * 60;
+    const mminicio = Number(inicio.split(":")[1]) * 60;
+    const horainicio = hhinicio + mminicio;
 
-  const termino: string = user.endWork;
-  const hhtermino = Number(termino.split(":")[0]) * 60 * 60;
-  const mmtermino = Number(termino.split(":")[1]) * 60;
-  const horatermino = hhtermino + mmtermino;
+    const termino: string = user.endWork;
+    const hhtermino = Number(termino.split(":")[0]) * 60 * 60;
+    const mmtermino = Number(termino.split(":")[1]) * 60;
+    const horatermino = hhtermino + mmtermino;
 
-  if (hora < horainicio || hora > horatermino) {
-    throw new AppError("ERR_OUT_OF_HOURS", 401);
+    if (hora < horainicio || hora > horatermino) {
+      throw new AppError("ERR_OUT_OF_HOURS", 401);
+    }
   }
 
   if (await user.checkPassword(password)) {
-    const company = await Company.findByPk(user?.companyId);
+    // Se incluye el plan: la politica necesita saber si es una prueba
+    // para decidir el corte por vencimiento. Sin el, isTrial seria siempre
+    // falso y el corte no actuaria nunca, fallando en silencio.
+    const company = await Company.findByPk(user?.companyId, {
+      include: [{ model: Plan }]
+    });
+
+    // La contrasena es correcta, pero puede que la empresa no pueda
+    // entrar: pendiente de aprobacion, rechazada, suspendida o con la
+    // prueba vencida.
+    //
+    // Se comprueba DESPUES de validar la contrasena a proposito: hacerlo
+    // antes revelaria el estado de una empresa a quien solo conoce un
+    // correo, sin demostrar que es de los suyos.
+    const bloqueo = evaluarAccesoDeUsuario(user, company);
+    if (bloqueo) {
+      // Se anota antes de cortar. Un acceso denegado es justo lo que
+      // hay que poder mirar despues, cuando alguien llama diciendo que
+      // no puede entrar.
+      await CreateAuthAuditService({
+        event: EVENTOS.LOGIN_BLOCKED,
+        companyId: user.companyId,
+        userId: user.id,
+        email: user.email,
+        detail: bloqueo,
+        ip
+      });
+      throw new AppError(bloqueo, 401);
+    }
+
     await company.update({
       lastLogin: new Date()
     });

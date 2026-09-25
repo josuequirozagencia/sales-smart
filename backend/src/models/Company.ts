@@ -51,8 +51,28 @@ class Company extends Model<Company> {
   @Column
   lastLogin: Date;
 
+  /** Activa o desactivada. NO es el ciclo de aprobacion: eso es
+   *  approvalStatus. Son dos cosas distintas y ya habia codigo leyendo
+   *  esta como booleano. */
   @Column
   status: boolean;
+
+  /**
+   * Ciclo de la solicitud: pending | approved | rejected | suspended.
+   * Las empresas anteriores a esto quedaron en "approved".
+   */
+  @Default("approved")
+  @Column
+  approvalStatus: string;
+
+  @Column
+  approvedByUserId: number;
+
+  @Column
+  approvalAt: Date;
+
+  @Column(DataType.TEXT)
+  rejectionReason: string;
 
   @Column
   dueDate: string;

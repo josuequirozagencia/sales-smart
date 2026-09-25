@@ -1,10 +1,14 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import api from "./services/api";
 import "react-toastify/dist/ReactToastify.css";
 import { QueryClient, QueryClientProvider } from "react-query";
 import { ptBR } from "@material-ui/core/locale";
 import { createTheme, ThemeProvider } from "@material-ui/core/styles";
-import { useMediaQuery } from "@material-ui/core";
+import {
+  createTheme as createThemeV5,
+  ThemeProvider as ThemeProviderV5,
+} from "@mui/material/styles";
+import { CssBaseline, useMediaQuery } from "@material-ui/core";
 import ColorModeContext from "./layout/themeContext";
 import { ActiveMenuProvider } from "./context/ActiveMenuContext";
 import Favicon from "react-favicon";
@@ -14,6 +18,8 @@ import defaultLogoLight from "./assets/logo.png";
 import defaultLogoDark from "./assets/logo-black.png";
 import defaultLogoFavicon from "./assets/favicon.ico";
 import useSettings from "./hooks/useSettings";
+import { applyInstallationCurrency } from "./utils/currencyUtils";
+import tokens, { onColor } from "./theme/tokens";
 
 import "./styles/animations.css";
 
@@ -24,7 +30,9 @@ const App = () => {
   const appColorLocalStorage =
     localStorage.getItem("primaryColorLight") ||
     localStorage.getItem("primaryColorDark") ||
-    "#065183";
+    // Azul por defecto. Es solo el valor mientras el backend responde; si la
+    // empresa tiene color configurado en Whitelabel, ese gana.
+    tokens.primaryDefault;
   const appNameLocalStorage = localStorage.getItem("appName") || "";
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
   const preferredTheme = window.localStorage.getItem("preferredTheme");
@@ -40,15 +48,27 @@ const App = () => {
   const [appLogoFavicon, setAppLogoFavicon] = useState(defaultLogoFavicon);
   const [appName, setAppName] = useState(appNameLocalStorage);
   const { getPublicSetting } = useSettings();
+  // El modo vigente, para el conmutador: leerlo de localStorage podia
+  // desincronizarse del estado y dejar el boton sin efecto.
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
 
   const colorMode = useMemo(
     () => ({
       toggleColorMode: () => {
-        setMode((prevMode) => {
-          const newMode = prevMode === "light" ? "dark" : "light";
-          window.localStorage.setItem("preferredTheme", newMode); // Persistindo o tema no localStorage
-          return newMode;
-        });
+        const newMode = modeRef.current === "light" ? "dark" : "light";
+        window.localStorage.setItem("preferredTheme", newMode);
+
+        // Cambiar de tema obliga a MUI v4 a regenerar los estilos de todo lo
+        // que hay montado: entre 250ms y 700ms segun la pagina. Durante esa
+        // pausa el navegador no pinta, y justo despues arrancaban a la vez
+        // todas las transiciones de color (menu, tarjetas, botones): el cambio
+        // se veia en dos tiempos, un tiron y luego un fundido. Apagarlas
+        // mientras dura el cambio lo deja en un solo paso.
+        const html = document.documentElement;
+        html.classList.add("cambiando-tema");
+        setMode(newMode);
+        setTimeout(() => html.classList.remove("cambiando-tema"), 120);
       },
       setPrimaryColorLight,
       setPrimaryColorDark,
@@ -65,10 +85,57 @@ const App = () => {
     [appLogoLight, appLogoDark, appLogoFavicon, appName, mode]
   );
 
-  const theme = useMemo(
-    () =>
-      createTheme(
-        {
+  // Opções do tema numa variável só, para alimentar as DUAS versões do MUI.
+  //
+  // O projeto usa @material-ui (v4) em 251 arquivos e @mui (v5) em 66, e os
+  // dois leem de contextos React diferentes. Como só existia o ThemeProvider
+  // da v4, os componentes da v5 caíam no tema padrão do MUI: cor, tipografia
+  // e espaçamentos do projeto simplesmente não chegavam neles. Era por isso
+  // que a interface parecia inconsistente de uma tela para outra.
+  const themeOptions = useMemo(
+    () => {
+      // Superficies, texto y bordes del modo activo. Claro y oscuro no
+      // comparten valores: invertir el claro produce grises que se pierden
+      // sobre fondo oscuro, asi que cada modo tiene su propio juego.
+      const t = mode === "light" ? tokens.light : tokens.dark;
+
+      // El primario lo configura cada empresa desde Ajustes > Whitelabel, de
+      // modo que aqui puede llegar cualquier cosa. normalizeHex lo garantiza
+      // valido antes de derivar hover y active.
+      const brandPrimary = tokens.normalizeHex(
+        mode === "light" ? primaryColorLight : primaryColorDark
+      );
+      const brandSecondary =
+        mode === "light"
+          ? tokens.secondaryDefault
+          : tokens.secondaryDefaultDark;
+
+      // El primario como TEXTO o BORDE sobre la superficie. Como lo elige
+      // cada empresa, puede ser muy claro: #D3D1DC da 1,5 sobre blanco y
+      // dejaba casi invisibles los botones con borde, las pestanas activas
+      // y los titulos. En claro se oscurece lo justo para llegar a 4,5
+      // (texto) o 3 (bordes); una marca que ya cumple sale igual. En oscuro
+      // se mantiene el nivel 300 de la marca, como hasta ahora.
+      const brandText =
+        mode === "light"
+          ? tokens.legibleSobre(brandPrimary, t.surface)
+          : tokens.brandScale[300];
+      const brandBorder =
+        mode === "light"
+          ? tokens.legibleSobre(brandPrimary, t.surface, 3)
+          : tokens.brandScale[300];
+
+      return {
+          // 19 componentes leem `theme.mode` para decidir cores, mas essa
+          // chave nunca existiu no tema: no MUI v4 o correto é
+          // `theme.palette.type`. Como `undefined === "light"` é sempre
+          // falso, todos esses ternários caíam na opção de modo escuro
+          // mesmo com a interface em claro — daí textos cinza claro sobre
+          // fundo branco e a sensação de que nada se distingue.
+          //
+          // Expor `mode` aqui conserta os 19 de uma vez. O certo a longo
+          // prazo é migrá-los para `palette.mode`, que é o nome na v5.
+          mode,
           // Scrollbar styles melhorados mas usando cores do tema
           scrollbarStyles: {
             "&::-webkit-scrollbar": {
@@ -105,16 +172,121 @@ const App = () => {
 
           palette: {
             type: mode,
+            // Limite para escolher entre texto claro e escuro sobre uma cor.
+            // O padrão do MUI é 3, que só atende ao WCAG AA em texto grande;
+            // 4.5 é o exigido para texto normal.
+            contrastThreshold: 4.5,
             primary: {
               main: mode === "light" ? primaryColorLight : primaryColorDark, // Usa cores dinâmicas
-              light: mode === "light"
-                ? `${primaryColorLight}80`
-                : `${primaryColorDark}80`,
-              dark: mode === "light"
-                ? `${primaryColorLight}CC`
-                : `${primaryColorDark}CC`,
-              contrastText: "#ffffff",
+              // light, dark e contrastText saem do main, calculados pelo MUI.
+              //
+              // Antes eram `${cor}80` e `${cor}CC`, ou seja, a MESMA cor com
+              // opacidade — não um tom mais claro e outro mais escuro. Duas
+              // consequências: primary.light ficava translúcido (texto branco
+              // em cima dava contraste 2.52, abaixo do mínimo de 4.5) e
+              // primary.dark não escurecia nada, então o hover dos botões
+              // quase não mudava.
+              //
+              // O contrastText também era fixo em branco. Como a cor da marca
+              // se configura em Ajustes > Whitelabel, uma cor clara deixava os
+              // botões ilegíveis: verde #4CAF50 dá 2.78 e amarelo #F4C430 dá
+              // 1.64 com texto branco. Deixando o MUI decidir, ele troca para
+              // texto escuro quando a cor pede.
             },
+            // --- Claves estandar de MUI, alimentadas desde los tokens -----
+            //
+            // Ninguna de estas estaba definida, asi que hasta ahora regian
+            // los valores por defecto de MUI. Definirlas es lo que hace que
+            // el sistema llegue a los componentes sin tocar ninguno:
+            // text.secondary lo leen 21 archivos, background.paper otros 21
+            // y divider 15.
+            //
+            // contrastText se calcula en vez de fijarse en blanco. Es la
+            // correccion del fallo central de la auditoria: el naranja
+            // #f7953b con texto blanco da 2.25 de contraste; con texto
+            // oscuro da 7.92.
+            secondary: {
+              main: brandSecondary,
+              contrastText: onColor(brandSecondary),
+            },
+            background: {
+              default: t.background,
+              paper: t.surface,
+            },
+            text: {
+              primary: t.textPrimary,
+              secondary: t.textSecondary,
+              disabled: t.textMuted,
+            },
+            divider: t.border,
+            success: {
+              main: tokens.semantic.success.fill,
+              contrastText: onColor(tokens.semantic.success.fill),
+            },
+            warning: {
+              main: tokens.semantic.warning.fill,
+              contrastText: onColor(tokens.semantic.warning.fill),
+            },
+            error: {
+              main: tokens.semantic.error.fill,
+              contrastText: onColor(tokens.semantic.error.fill),
+            },
+            info: {
+              main: tokens.semantic.info.fill,
+              contrastText: onColor(tokens.semantic.info.fill),
+            },
+
+            // --- Espacio propio del sistema visual ------------------------
+            //
+            // Lo que MUI no tiene donde guardar. Las fases siguientes leen de
+            // aqui; nada de lo de arriba ni de lo de abajo cambia por ello.
+            tokens: {
+              brand: {
+                primary: brandPrimary,
+                primaryHover: tokens.darken(brandPrimary, 0.08),
+                primaryActive: tokens.darken(brandPrimary, 0.16),
+                onPrimary: onColor(brandPrimary),
+                // El color de marca en un tono legible COMO TEXTO sobre la
+                // superficie del modo activo. El primario a secas no sirve
+                // para eso: en oscuro, el tono que lleva texto blanco encima
+                // es demasiado oscuro; en claro, un primario muy claro no se
+                // lee sobre blanco. Ver brandText.
+                onSurface: brandText,
+                secondary: brandSecondary,
+                secondaryHover: tokens.darken(brandSecondary, 0.08),
+                onSecondary: onColor(brandSecondary),
+              },
+              surface: {
+                background: t.background,
+                surface: t.surface,
+                surfaceSecondary: t.surfaceSecondary,
+                elevated: t.surfaceElevated,
+              },
+              // La navegacion se trata como pieza oscura y separada del
+              // contenido, igual en los dos modos.
+              sidebar: tokens.sidebar[mode === "light" ? "light" : "dark"],
+              brandScale: tokens.brandScale,
+              text: {
+                primary: t.textPrimary,
+                secondary: t.textSecondary,
+                muted: t.textMuted,
+              },
+              border: {
+                border: t.border,
+                strong: t.borderStrong,
+              },
+              semantic: tokens.semantic,
+              external: tokens.brand,
+              space: tokens.space,
+              radius: tokens.radius,
+              shadow: tokens.shadow,
+              onColor,
+            },
+
+            // --- Claves personalizadas preexistentes ----------------------
+            // Se dejan intactas por compatibilidad: hay componentes leyendo
+            // tabHeaderBackground (6), optionsBackground (3), barraSuperior,
+            // fancyBackground y total (2 cada una) e inputBackground (1).
             textPrimary:
               mode === "light" ? primaryColorLight : primaryColorDark,
             borderPrimary:
@@ -142,29 +314,54 @@ const App = () => {
               'Arial',
               'sans-serif',
             ].join(','),
+            // Tamanos explicitos. Los de serie del MUI v4 son enormes —h1
+            // son 96px— porque estan pensados para paginas, no para una
+            // herramienta densa que se usa ocho horas al dia.
+            //
+            // body2 se deja intacto a proposito: el CssBaseline lo aplica al
+            // body, asi que es la base de la aplicacion y tocarlo encogeria
+            // el texto de las 397 pantallas de golpe.
             h1: {
+              fontSize: '1.75rem', // 28px
               fontWeight: 700,
+              lineHeight: 1.25,
               letterSpacing: '-0.025em',
             },
             h2: {
+              fontSize: '1.375rem', // 22px
               fontWeight: 700,
-              letterSpacing: '-0.025em',
+              lineHeight: 1.3,
+              letterSpacing: '-0.02em',
             },
             h3: {
+              fontSize: '1.125rem', // 18px
               fontWeight: 600,
-              letterSpacing: '-0.025em',
+              lineHeight: 1.4,
+              letterSpacing: '-0.015em',
             },
             h4: {
+              fontSize: '1rem', // 16px
               fontWeight: 600,
-              letterSpacing: '-0.025em',
+              lineHeight: 1.45,
+              letterSpacing: '-0.01em',
             },
             h5: {
+              fontSize: '0.9375rem', // 15px
               fontWeight: 600,
-              letterSpacing: '-0.025em',
+              lineHeight: 1.45,
             },
             h6: {
+              fontSize: '0.875rem', // 14px
               fontWeight: 600,
-              letterSpacing: '-0.025em',
+              lineHeight: 1.45,
+            },
+            body1: {
+              fontSize: '0.9375rem', // 15px
+              lineHeight: 1.55,
+            },
+            caption: {
+              fontSize: '0.75rem', // 12px
+              lineHeight: 1.45,
             },
             button: {
               fontWeight: 600,
@@ -183,21 +380,152 @@ const App = () => {
                 borderRadius: 8,
                 textTransform: 'none',
                 fontWeight: 600,
-                letterSpacing: '0.025em',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                '&:hover': {
-                  transform: 'translateY(-1px)',
-                },
-                '&:active': {
-                  transform: 'translateY(0)',
-                }
+                letterSpacing: '0.01em',
+                // 180ms. Los 300ms anteriores se notan como lentitud en una
+                // herramienta que se usa a diario.
+                transition: 'background-color 180ms ease, box-shadow 180ms ease, border-color 180ms ease',
+                minHeight: 36,
+                paddingLeft: 16,
+                paddingRight: 16,
+                // Se retira el translateY del hover: el boton saltaba un
+                // pixel al pasar por encima, que es un efecto de plantilla y
+                // ademas descuadra las filas de botones.
               },
               contained: {
-                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                boxShadow: tokens.shadow.sm,
                 '&:hover': {
-                  boxShadow: '0 4px 8px rgba(0, 0, 0, 0.15)',
-                }
-              }
+                  boxShadow: tokens.shadow.md,
+                },
+              },
+              outlined: {
+                borderColor: t.border,
+              },
+              // Mismo caso que MuiTypography: aqui el primario es texto, no
+              // relleno. El borde de serie es el primario al 50 %, que con un
+              // primario claro desaparece: se usa el tono de borde legible.
+              textPrimary: {
+                color: brandText,
+              },
+              outlinedPrimary: {
+                color: brandText,
+                borderColor: brandBorder,
+                '&:hover': {
+                  borderColor: brandText,
+                },
+              },
+            },
+
+            // Campos de formulario. Sin esto quedan con el aspecto de serie
+            // del MUI v4, que es lo que mas delata la edad de la interfaz.
+            MuiOutlinedInput: {
+              root: {
+                borderRadius: tokens.radius.md,
+                backgroundColor: t.surface,
+                transition: 'border-color 180ms ease, box-shadow 180ms ease',
+                '& fieldset': {
+                  borderColor: t.border,
+                },
+                '&:hover fieldset': {
+                  borderColor: t.borderStrong,
+                },
+                '&.Mui-focused fieldset': {
+                  borderWidth: 1,
+                },
+                // Halo de foco. Ademas de estetico es de accesibilidad: deja
+                // claro donde esta el cursor al navegar con el teclado.
+                '&.Mui-focused': {
+                  boxShadow: `0 0 0 3px ${brandPrimary}22`,
+                },
+              },
+              input: {
+                paddingTop: 10,
+                paddingBottom: 10,
+              },
+            },
+
+            // La etiqueta, colocada para el alto REAL del campo.
+            //
+            // El relleno de arriba deja los campos en 38px, pero MUI sitúa la
+            // etiqueta sin encoger a 20px del borde, que es lo que centra en
+            // los 56px de serie: quedaba montada sobre la línea de abajo en
+            // todos los campos con etiqueta flotante de la aplicación. 12px es
+            // el mismo valor que MUI usa para su variante densa, que tiene
+            // justo este alto.
+            MuiInputLabel: {
+              outlined: {
+                transform: 'translate(14px, 12px) scale(1)',
+                '&.MuiInputLabel-marginDense': {
+                  transform: 'translate(14px, 12px) scale(1)',
+                },
+                // Encogida sigue en su sitio: sobre el borde superior.
+                '&.MuiInputLabel-shrink': {
+                  transform: 'translate(14px, -6px) scale(0.75)',
+                },
+              },
+            },
+
+            // El primario como COLOR DE TEXTO sobre superficie oscura.
+            //
+            // Un solo tono no puede servir para las dos cosas: el que lleva
+            // texto blanco encima con contraste suficiente (#803adf, 5.85) es
+            // demasiado oscuro para leerse sobre el fondo oscuro, donde se
+            // queda en 2.5. Aparecio en el panel en tres sitios y es el mismo
+            // problema que ya resolvimos para los semanticos separando fill y
+            // text.
+            //
+            // Se corrige aqui, en los dos sitios donde MUI aplica el primario
+            // como texto, en vez de perseguir cada componente: en claro se
+            // oscurece solo si hace falta (ver brandText), y en oscuro sube al
+            // nivel 300 de la marca, que da 6.25 sobre el fondo.
+            MuiTypography: {
+              colorPrimary: {
+                color: brandText,
+              },
+            },
+
+            // Pestanas. La etiqueta activa y la barra indicadora usan el
+            // primario como texto: brandText, legible en los dos modos. Aqui
+            // se corrigen todas las pestanas del CRM a la vez en lugar de
+            // pantalla por pantalla.
+            //
+            // Habia un segundo MuiTab mas abajo en este mismo objeto; al ser
+            // la misma clave, anulaba a este entero y la pestana activa
+            // volvia al primario crudo. Ahora es uno solo.
+            MuiTab: {
+              root: {
+                textTransform: 'none',
+                fontWeight: 600,
+                letterSpacing: '0.025em',
+                borderRadius: '8px 8px 0 0',
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  backgroundColor: `${brandPrimary}08`,
+                },
+                // Tambien para las pestanas con textColor inherit.
+                '&.Mui-selected': {
+                  color: brandText,
+                },
+              },
+              textColorPrimary: {
+                "&.Mui-selected": {
+                  color: brandText,
+                },
+              },
+            },
+            MuiTabs: {
+              indicator: {
+                backgroundColor: brandText,
+              },
+            },
+
+            // Insignias y etiquetas.
+            MuiChip: {
+              root: {
+                borderRadius: tokens.radius.sm,
+                fontWeight: 500,
+                fontSize: '0.75rem',
+                height: 24,
+              },
             },
 
             MuiContainer: {
@@ -238,14 +566,17 @@ const App = () => {
               rounded: {
                 borderRadius: 12,
               },
+              // Sombras con tinte azulado en vez de negro puro. El negro
+              // sobre un fondo claro produce un halo gris sucio; es el rasgo
+              // que mas delataba la edad de la interfaz.
               elevation1: {
-                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+                boxShadow: tokens.shadow.sm,
               },
               elevation2: {
-                boxShadow: '0 2px 6px rgba(0, 0, 0, 0.1)',
+                boxShadow: tokens.shadow.md,
               },
               elevation3: {
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                boxShadow: tokens.shadow.lg,
               }
             },
 
@@ -289,29 +620,10 @@ const App = () => {
                   },
                   '&.Mui-focused': {
                     '& .MuiOutlinedInput-notchedOutline': {
-                      borderColor: mode === "light" ? primaryColorLight : primaryColorDark,
+                      borderColor: mode === "light" ? brandBorder : primaryColorDark,
                       borderWidth: 2,
                     }
                   }
-                }
-              }
-            },
-
-            // Tabs usando cor do tema
-            MuiTab: {
-              root: {
-                textTransform: 'none',
-                fontWeight: 600,
-                letterSpacing: '0.025em',
-                borderRadius: '8px 8px 0 0',
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  backgroundColor: mode === "light"
-                    ? `${primaryColorLight}08`
-                    : `${primaryColorDark}08`,
-                },
-                '&.Mui-selected': {
-                  color: mode === "light" ? primaryColorLight : primaryColorDark,
                 }
               }
             },
@@ -354,9 +666,8 @@ const App = () => {
             }
             return appLogoLight;
           },
-        },
-        locale
-      ),
+        };
+    },
     [
       appLogoLight,
       appLogoDark,
@@ -369,6 +680,58 @@ const App = () => {
     ]
   );
 
+  const theme = useMemo(
+    () => createTheme(themeOptions, locale),
+    [themeOptions, locale]
+  );
+
+  // Mesmo tema, traduzido para a v5. As chaves personalizadas
+  // (scrollbarStyles, palette.tabHeaderBackground, fancyBackground e afins)
+  // vêm junto por serem o mesmo objeto, então um componente que leia
+  // theme.palette.tabHeaderBackground funciona nas duas versões.
+  //
+  // Duas diferenças precisam de tradução:
+  //   palette.type -> palette.mode   (renomeado na v5)
+  //   overrides    -> components     (formato incompatível; fica só na v4,
+  //                                   que é quem tem 251 arquivos)
+  const themeV5 = useMemo(() => {
+    const { overrides, palette, ...rest } = themeOptions;
+
+    return createThemeV5({
+      ...rest,
+      palette: {
+        ...palette,
+        mode: palette.type,
+      },
+      // El tema v5 no heredaba los overrides: la v4 los declara en
+      // "overrides" y la v5 en "components", y esa clave se descarta al
+      // traducir. Por eso los botones y textos que vienen de @mui/material
+      // seguian usando el primario como color de texto sobre fondo oscuro,
+      // donde da 3.05.
+      //
+      // Se repite aqui la misma correccion, en el formato de la v5.
+      components: {
+        MuiTypography: {
+          styleOverrides: {
+            colorPrimary: {
+              color: palette.tokens.brand.onSurface,
+            },
+          },
+        },
+        MuiButton: {
+          styleOverrides: {
+            textPrimary: {
+              color: palette.tokens.brand.onSurface,
+            },
+            outlinedPrimary: {
+              color: palette.tokens.brand.onSurface,
+            },
+          },
+        },
+      },
+    });
+  }, [themeOptions]);
+
   useEffect(() => {
     window.localStorage.setItem("preferredTheme", mode);
   }, [mode]);
@@ -376,14 +739,22 @@ const App = () => {
   useEffect(() => {
     getPublicSetting("primaryColorLight")
       .then((color) => {
-        setPrimaryColorLight(color || "#0000FF");
+        // El respaldo era "#0000FF", azul puro: el azul de enlace sin
+        // estilar de los noventa, y nadie lo habia elegido. Se sustituye por
+        // el violeta de la marca. Sigue ganando lo que configure la empresa.
+        setPrimaryColorLight(color || tokens.brandScale[600]);
       })
       .catch((error) => {
         console.log("Error reading setting", error);
       });
     getPublicSetting("primaryColorDark")
       .then((color) => {
-        setPrimaryColorDark(color || "#39ACE7");
+        // En oscuro hace falta un tono mas claro que en claro, para que se
+        // despegue del fondo. Pero no demasiado: el nivel 300 se veia bien
+        // sobre el fondo y en cambio dejaba el texto blanco de los botones en
+        // 2.86 de contraste. El 500 es el unico que cumple las dos cosas,
+        // 5.85 con blanco encima y 3.05 contra el fondo.
+        setPrimaryColorDark(color || tokens.brandScale[500]);
       })
       .catch((error) => {
         console.log("Error reading setting", error);
@@ -422,6 +793,17 @@ const App = () => {
       .catch((error) => {
         console.log("Error reading setting", error);
         setAppName("Multi100");
+      });
+
+    // Moneda de la instalacion. Manda el servidor sobre lo que hubiera
+    // guardado el navegador; si falla la lectura no se toca nada y se
+    // sigue con la ultima conocida.
+    getPublicSetting("currency")
+      .then((code) => {
+        applyInstallationCurrency(code);
+      })
+      .catch((error) => {
+        console.log("Error reading setting", error);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -508,12 +890,25 @@ const App = () => {
         }
       />
       <ColorModeContext.Provider value={{ colorMode }}>
+        {/*
+          Os dois ThemeProvider aninhados são propositais: cada versão do MUI
+          tem o seu contexto, e sem os dois metade da interface ignora o tema.
+          Sai quando a migração para a v5 estiver completa.
+        */}
         <ThemeProvider theme={theme}>
-          <QueryClientProvider client={queryClient}>
-            <ActiveMenuProvider>
-              <Routes />
-            </ActiveMenuProvider>
-          </QueryClientProvider>
+          {/*
+            Dentro do ThemeProvider de proposito: e daqui que o CssBaseline
+            tira a tipografia, o fundo e a cor de texto que aplica ao body.
+            Fora dele usava o tema por omissao do MUI.
+          */}
+          <CssBaseline />
+          <ThemeProviderV5 theme={themeV5}>
+            <QueryClientProvider client={queryClient}>
+              <ActiveMenuProvider>
+                <Routes />
+              </ActiveMenuProvider>
+            </QueryClientProvider>
+          </ThemeProviderV5>
         </ThemeProvider>
       </ColorModeContext.Provider>
     </>

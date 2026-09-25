@@ -50,6 +50,10 @@ class Prompt extends Model<Prompt> {
   @Column({ defaultValue: 0 })
   totalTokens: number;
 
+  @AllowNull(true)
+  @Column({ defaultValue: "gpt-5.6-luna" })
+  model: string;
+
   @AllowNull(false)
   @Column
   voice: string;

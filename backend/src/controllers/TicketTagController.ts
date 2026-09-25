@@ -8,6 +8,8 @@ import ShowTicketService from "../services/TicketServices/ShowTicketService";
 import { isNil } from "lodash";
 import SendWhatsAppMessage from "../services/WbotServices/SendWhatsAppMessage";
 import { sendFacebookMessage } from "../services/FacebookServices/sendFacebookMessage";
+// El espejo hacia GHL nunca lanza: si falla, se anota y el asesor sigue.
+import { sincronizarEtiquetasTicket } from "../services/GhlServices/SyncGhlTags";
 
 export const store = async (req: Request, res: Response): Promise<Response> => {
   const { ticketId, tagId } = req.params;
@@ -15,6 +17,10 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
 
   try {
     const ticketTag = await TicketTag.create({ ticketId, tagId });
+
+    // Sin await: una etiqueta no debe hacer esperar al asesor por una
+    // llamada a un servicio de terceros.
+    sincronizarEtiquetasTicket(ticketId, [Number(tagId)], "add").catch(() => {});
 
     if (ticketTag) {
       const nextTag = await Tag.findOne({ where: { id: tagId } });
@@ -91,6 +97,10 @@ export const remove = async (req: Request, res: Response): Promise<Response> => 
     const tagIdsWithKanbanOne = tagsWithKanbanOne.map((tag) => tag.id);
     if (tagIdsWithKanbanOne)
       await TicketTag.destroy({ where: { ticketId, tagId: tagIdsWithKanbanOne } });
+
+    if (tagIdsWithKanbanOne.length) {
+      sincronizarEtiquetasTicket(ticketId, tagIdsWithKanbanOne, "remove").catch(() => {});
+    }
 
 
     const ticket = await ShowTicketService(ticketId, companyId);

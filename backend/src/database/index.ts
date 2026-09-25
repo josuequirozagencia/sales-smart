@@ -18,6 +18,7 @@ import TicketTraking from "../models/TicketTraking";
 import UserRating from "../models/UserRating";
 import Schedule from "../models/Schedule";
 import Tag from "../models/Tag";
+import KanbanPipeline from "../models/KanbanPipeline";
 import TicketTag from "../models/TicketTag";
 import ContactList from "../models/ContactList";
 import ContactListItem from "../models/ContactListItem";
@@ -43,6 +44,12 @@ import LogTicket from "../models/LogTicket";
 import Prompt from "../models/Prompt";
 import Partner from "../models/Partner";
 import ContactWallet from "../models/ContactWallet";
+import QueueProduct from "../models/QueueProduct";
+import Sale from "../models/Sale";
+import Appointment from "../models/Appointment";
+import AppointmentReminder from "../models/AppointmentReminder";
+import GoogleCalendarIntegration from "../models/GoogleCalendarIntegration";
+import AuthAuditLog from "../models/AuthAuditLog";
 import ScheduledMessages from "../models/ScheduledMessages";
 import ScheduledMessagesEnvio from "../models/ScheduledMessagesEnvio";
 import Versions from "../models/Versions";
@@ -59,6 +66,17 @@ import QueueState from "../models/QueueStates";
 import TicketFinalizationReason from "../models/TicketFinalizationReason";
 import PresetWebhookModel from "../models/PresetWebhook";
 import WhatsappLidMap from "../models/WhatsapplidMap";
+import GhlConfig from "../models/GhlConfig";
+import CompanyConfigClone from "../models/CompanyConfigClone";
+import ConfigSnapshot from "../models/ConfigSnapshot";
+import ConfigSnapshotApplication from "../models/ConfigSnapshotApplication";
+import MetaConfig from "../models/MetaConfig";
+import ContactAttribution from "../models/ContactAttribution";
+import ConversionEventLog from "../models/ConversionEventLog";
+import AiAgent from "../models/AiAgent";
+import AiAgentChannel from "../models/AiAgentChannel";
+import AiAgentFollowUpJob from "../models/AiAgentFollowUpJob";
+import AiAgentTicketState from "../models/AiAgentTicketState";
 
 // eslint-disable-next-line
 const dbConfig = require("../config/database");
@@ -86,6 +104,7 @@ const models = [
   UserRating,
   Schedule,
   Tag,
+  KanbanPipeline,
   TicketTag,
   ContactList,
   ContactListItem,
@@ -100,6 +119,17 @@ const models = [
   Chatbot,
   DialogChatBots,
   QueueIntegrations,
+  GhlConfig,
+  CompanyConfigClone,
+  ConfigSnapshot,
+  ConfigSnapshotApplication,
+  MetaConfig,
+  ContactAttribution,
+  ConversionEventLog,
+  AiAgent,
+  AiAgentChannel,
+  AiAgentFollowUpJob,
+  AiAgentTicketState,
   Invoices,
   Subscriptions,
   ApiUsages,
@@ -110,6 +140,12 @@ const models = [
   Prompt,
   Partner,
   ContactWallet,
+  QueueProduct,
+  Sale,
+  Appointment,
+  AppointmentReminder,
+  GoogleCalendarIntegration,
+  AuthAuditLog,
   ScheduledMessages,
   ScheduledMessagesEnvio,
   Versions,

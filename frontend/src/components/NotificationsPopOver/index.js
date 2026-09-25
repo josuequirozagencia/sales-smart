@@ -333,7 +333,7 @@ const onCompanyAppMessageNotificationsPopover = (data) => {
 				ref={anchorEl}
 				aria-label="Open Notifications"
 				color="inherit"
-				style={{ color: "white" }}
+				style={{ color: "inherit" }}
 			>
 				<Badge overlap="rectangular" badgeContent={notifications.length} color="secondary">
 					<ChatIcon />

@@ -1,4 +1,5 @@
 import { ArrowForwardIos, Message, RocketLaunch } from "@mui/icons-material";
+import { i18n } from "../../../translate/i18n";
 import React, { memo } from "react";
 
 import { Handle } from "react-flow-renderer";
@@ -32,11 +33,11 @@ export default memo(({ data, isConnectable }) => {
           }}
         />
         <div style={{ color: "#232323", fontSize: "16px" }}>
-          Inicio do fluxo
+          {i18n.t("flows.flowStart")}
         </div>
       </div>
       <div style={{ color: "#727272", fontSize: "12px" }}>
-        Este bloco marca o inicio do seu fluxo!
+        {i18n.t("flows.flowStartHelp")}
       </div>
       <Handle
         type="source"

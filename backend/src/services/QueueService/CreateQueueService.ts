@@ -93,7 +93,12 @@ const CreateQueueService = async (queueData: QueueData): Promise<Queue> => {
     throw new AppError(err.message);
   }
 
-  const queue = await Queue.create(queueData, {
+  // chatbots precisa ser um array mesmo quando não vem na requisição: com
+  // undefined ou null o Sequelize tenta construir um Chatbot a partir do
+  // valor em vez de ignorar a associação, e falha com
+  // "notNull Violation: Chatbot.name cannot be null". A tela de filas sempre
+  // envia [], mas quem chama o serviço direto (integrações, scripts) não.
+  const queue = await Queue.create({ ...queueData, chatbots: queueData.chatbots ?? [] }, {
     include: [
       {
         model: Chatbot,

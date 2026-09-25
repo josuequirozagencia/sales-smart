@@ -8,6 +8,8 @@ import TabPanel from "../../components/TabPanel";
 
 import SchedulesForm from "../../components/SchedulesForm";
 import CompaniesManager from "../../components/CompaniesManager";
+import ConfigSnapshotsManager from "../../components/ConfigSnapshotsManager";
+import MetaConversionsSettings from "../../components/MetaConversionsSettings";
 import PlansManager from "../../components/PlansManager";
 import HelpsManager from "../../components/HelpsManager";
 import Options from "../../components/Settings/Options";
@@ -37,7 +39,10 @@ const useStyles = makeStyles((theme) => ({
   },
   tab: {
     // background: "#f2f5f3",
-    backgroundColor: theme.mode === "light" ? "#f2f2f2" : "#7f7f7f",
+    backgroundColor:
+      theme.mode === "light"
+        ? theme.palette.tokens.surface.surfaceSecondary
+        : theme.palette.tokens.surface.surface,
     borderRadius: 4,
   },
   paper: {
@@ -181,6 +186,12 @@ const SettingsCustom = () => {
               {(isSuper() || user.profile === "admin") ? (
                 <Tab label={i18n.t("settings.tabs.plans")} value={"plans"} />
               ) : null}
+              {(isSuper() || user.profile === "admin") ? (
+                <Tab label={i18n.t("snapshots.tab")} value={"snapshots"} />
+              ) : null}
+              {user.profile === "admin" ? (
+                <Tab label={i18n.t("metaConversions.tab")} value={"integrations"} />
+              ) : null}
               {isSuper() ? (
                 <Tab label={i18n.t("settings.tabs.helps")} value={"helps"} />
               ) : null}
@@ -210,6 +221,26 @@ const SettingsCustom = () => {
                   name={"plans"}
                 >
                   <PlansManager />
+                </TabPanel>
+              )}
+              {/* Instantaneas: el super crea y carga; el admin carga en su empresa */}
+              {(isSuper() || currentUser.profile === "admin") && (
+                <TabPanel
+                  className={classes.container}
+                  value={tab}
+                  name={"snapshots"}
+                >
+                  <ConfigSnapshotsManager company={company} />
+                </TabPanel>
+              )}
+              {/* Integraciones > Meta: credenciales de la propia empresa, solo admin */}
+              {currentUser.profile === "admin" && (
+                <TabPanel
+                  className={classes.container}
+                  value={tab}
+                  name={"integrations"}
+                >
+                  <MetaConversionsSettings />
                 </TabPanel>
               )}
               

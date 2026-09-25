@@ -4,7 +4,12 @@ import { makeStyles } from "@material-ui/core/styles";
 
 const useStyles = makeStyles(theme => ({
 	MainHeaderButtonsWrapper: {
-		flex: "none",
+		// "none" impedia encoger, asi que el grupo empujaba fuera de la
+		// pantalla en vez de adaptarse. Ahora encoge y sus piezas envuelven.
+		flex: "0 1 auto",
+		display: "flex",
+		flexWrap: "wrap",
+		alignItems: "center",
 		marginLeft: "auto",
 		"& > *": {
 			margin: theme.spacing(1),

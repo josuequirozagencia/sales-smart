@@ -43,9 +43,22 @@ export const initIO = (httpServer: Server): SocketIO => {
       return socket.disconnect();
     }
 
-    if (token !== token_api_oficial) {
+    // api_oficial se identifica SOLO con el token compartido (su TOKEN_ADMIN,
+    // que debe ser igual a TOKEN_API_OFICIAL). Si la variable esta vacia,
+    // nadie puede pasar por api_oficial.
+    const esApiOficial = token_api_oficial !== "" && token === token_api_oficial;
+
+    if (!esApiOficial) {
       try {
-        const decoded = verify(token, authConfig.secret);
+        // Un JWT caducado se sigue aceptando porque el frontend (SocketWorker)
+        // guarda el token al crear el socket y reconecta siempre con el
+        // mismo: desconectarlo dejaria sin tiempo real a cualquier usuario a
+        // los 15 minutos. Pero la firma y la empresa se comprueban igual;
+        // antes el caducado saltaba al catch y se quedaba conectado al
+        // namespace de CUALQUIER empresa.
+        const decoded = verify(token, authConfig.secret, {
+          ignoreExpiration: true
+        });
         const companyId = socket.nsp.name.split("/")[1]
 
         const decodedPayload = decoded as JwtPayload;
@@ -57,9 +70,7 @@ export const initIO = (httpServer: Server): SocketIO => {
         }
       } catch (error) {
         logger.error(JSON.stringify(error), "Error decoding token");
-        if (error.message !== "jwt expired") {
-          return socket.disconnect();
-        }
+        return socket.disconnect();
       }
     } else {
       logger.info(`Client connected namespace ${socket.nsp.name}`);
@@ -70,7 +81,7 @@ export const initIO = (httpServer: Server): SocketIO => {
     const handleHeartbeat = async (socket: any) => {
       try {
         const companyId = socket.nsp.name.split("/")[1];
-        const decoded = verify(token !== token_api_oficial ? token : "", authConfig.secret);
+        const decoded = verify(!esApiOficial ? token : "", authConfig.secret);
         const decodedPayload = decoded as JwtPayload;
         const userId = decodedPayload.id;
 
@@ -145,7 +156,7 @@ export const initIO = (httpServer: Server): SocketIO => {
     // 🎂 EVENTO: Quando cliente se conecta
     socket.on("connect", async () => {
       try {
-        if (token !== token_api_oficial) {
+        if (!esApiOficial) {
           const decoded = verify(token, authConfig.secret);
           const decodedPayload = decoded as JwtPayload;
           const userId = decodedPayload.id;
@@ -218,15 +229,38 @@ export const initIO = (httpServer: Server): SocketIO => {
       socket.leave(ticketId);
     });
 
-    socket.on("receivedMessageWhatsAppOficial", (data: any) => {
-      const receivedService = new ReceibedWhatsAppService();
-      receivedService.getMessage(data);
-    });
+    // Mensajes y lecturas de WhatsApp Oficial: solo los puede mandar
+    // api_oficial. getMessage crea contacto, ticket, mensaje y atribucion de
+    // anuncio (ctwa_clid) a partir del payload sin mas prueba que el token de
+    // la conexion, que cualquier usuario de la empresa podia leer. Un socket
+    // de usuario que los emita no tiene handler: el evento se descarta.
+    // Se registran sin await previo para no perder lo que api_oficial emite
+    // nada mas conectar.
+    if (esApiOficial) {
+      socket.on("receivedMessageWhatsAppOficial", (data: any) => {
+        const receivedService = new ReceibedWhatsAppService();
+        receivedService.getMessage(data);
+      });
 
-    socket.on("readMessageWhatsAppOficial", (data: any) => {
-      const receivedService = new ReceibedWhatsAppService();
-      receivedService.readMessage(data);
-    });
+      socket.on("readMessageWhatsAppOficial", (data: any) => {
+        const receivedService = new ReceibedWhatsAppService();
+        receivedService.readMessage(data);
+      });
+    } else {
+      const avisarEventoRechazado = (evento: string) => () => {
+        logger.warn(
+          `Socket de usuario emitio ${evento} en ${socket.nsp.name}; ignorado (solo api_oficial)`
+        );
+      };
+      socket.on(
+        "receivedMessageWhatsAppOficial",
+        avisarEventoRechazado("receivedMessageWhatsAppOficial")
+      );
+      socket.on(
+        "readMessageWhatsAppOficial",
+        avisarEventoRechazado("readMessageWhatsAppOficial")
+      );
+    }
 
     // 🎂 NOVO: Heartbeat para manter usuário online e verificar aniversários periodicamente
     socket.on("heartbeat", () => handleHeartbeat(socket));
@@ -234,7 +268,7 @@ export const initIO = (httpServer: Server): SocketIO => {
     // 🎂 EVENTO: Quando cliente se desconecta
     socket.on("disconnect", async () => {
       try {
-        if (token !== token_api_oficial) {
+        if (!esApiOficial) {
           const companyId = parseInt(socket.nsp.name.split("/")[1]);
           const decoded = verify(token, authConfig.secret);
           const decodedPayload = decoded as JwtPayload;

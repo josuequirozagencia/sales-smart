@@ -6,6 +6,7 @@
  * @param:companyId
  */
 import { Request, Response } from "express";
+import AppError from "../errors/AppError";
 import FindCompanySettingsService from "../services/CompaniesSettings/FindCompanySettingsService";
 import UpdateCompanySettingsService from "../services/CompaniesSettings/UpdateCompanySettingService";
 import FindCompanySettingOneService from "../services/CompaniesSettings/FindCompanySettingOneService";
@@ -50,6 +51,13 @@ export const update = async(
   req: Request,
   res: Response
 ): Promise<Response> => {
+  // La pantalla que usa esto (Configuracion > Opciones) ya esta cerrada al
+  // perfil "user", pero la ruta llevaba solo isAuth: cualquier usuario con
+  // sesion podia cambiar los ajustes de su empresa llamandola a mano.
+  if (req.user.profile !== "admin") {
+    throw new AppError("ERR_NO_PERMISSION", 403);
+  }
+
   const {  column, data } = req.body as IndexGetCompanySettingQuery;
   const { companyId } = req.user;
 

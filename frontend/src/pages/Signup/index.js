@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useContext } from "react";
-import qs from 'query-string'
 
 import * as Yup from "yup";
 import { useHistory } from "react-router-dom";
@@ -24,6 +23,8 @@ import { i18n } from "../../translate/i18n";
 import { FormControl } from "@material-ui/core";
 import { InputLabel, MenuItem, Select } from "@material-ui/core";
 import CircularProgress from "@material-ui/core/CircularProgress";
+import FormHelperText from "@material-ui/core/FormHelperText";
+import { formatCurrency } from "../../utils/currencyUtils";
 
 import { openApi } from "../../services/api";
 import toastError from "../../errors/toastError";
@@ -47,7 +48,11 @@ const useStyles = makeStyles(theme => ({
     // Container específico para signup - forçar centralização
     containerSignup: {
         padding: "16px !important",
-        maxWidth: "500px !important", // Signup é um pouco maior que login
+        // min() y no 500px a secas: el contenedor es un elemento flex con
+        // flex:none, asi que no encoge por su cuenta, y en un movil de 375
+        // px la tarjeta se salia 62 px por cada lado. max-width si acota a
+        // un elemento flex aunque no pueda encoger.
+        maxWidth: "min(500px, 100%) !important", // Signup é um pouco maior que login
         width: "auto !important",
         margin: "0 auto !important",
         position: "relative !important",
@@ -65,7 +70,7 @@ const useStyles = makeStyles(theme => ({
         backgroundColor: theme.palette.background.paper,
         borderRadius: theme.shape.borderRadius,
         boxShadow: theme.shadows[3],
-        maxWidth: "480px !important",
+        maxWidth: "min(480px, 100%) !important",
         width: "100% !important",
         margin: "0 auto !important",
     },
@@ -82,6 +87,42 @@ const useStyles = makeStyles(theme => ({
     },
 }));
 
+/**
+ * Nombre y precio: lo que se ve en el campo YA cerrado.
+ *
+ * El resumen completo no cabe de una linea y el navegador lo cortaba a
+ * media palabra, asi que el detalle se reserva para el desplegable, donde
+ * hay sitio.
+ */
+const resumenCorto = (plan, moneda) =>
+    `${plan.name} — ${formatCurrency(plan.amount, moneda)}`;
+
+/**
+ * Descripcion completa, para las opciones del desplegable.
+ *
+ * Nombre, precio y los tres limites que de verdad condicionan la
+ * decision. El importe se formatea con el helper que ya usa el resto de
+ * la aplicacion, para que el registro y la pantalla de planes no muestren
+ * la misma cifra de dos maneras.
+ */
+const resumenDePlan = (plan, moneda) => {
+    const partes = [resumenCorto(plan, moneda)];
+
+    const limites = [];
+    if (plan.users) limites.push(i18n.t("signup.plan.users", { n: plan.users }));
+    if (plan.connections) limites.push(i18n.t("signup.plan.connections", { n: plan.connections }));
+    if (plan.queues) limites.push(i18n.t("signup.plan.queues", { n: plan.queues }));
+    if (limites.length) partes.push(limites.join(" · "));
+
+    // Los dias de prueba solo se anuncian si el plan es de prueba: en uno
+    // de pago el campo existe igual y valdria cero.
+    if (plan.trial && plan.trialDays) {
+        partes.push(i18n.t("signup.plan.trial", { n: plan.trialDays }));
+    }
+
+    return partes.join("  |  ");
+};
+
 const UserSchema = Yup.object().shape({
     name: Yup.string()
         .min(2, "Too Short!")
@@ -94,6 +135,10 @@ const UserSchema = Yup.object().shape({
     password: Yup.string().min(5, "Too Short!").max(50, "Too Long!"),
     email: Yup.string().email("Invalid email").required("Required"),
     phone: Yup.string().required("Required"),
+    // Obligatorio, aunque venga preseleccionado: si la instalacion se
+    // queda sin planes publicos, enviar sin plan crearia una empresa que
+    // el servidor no sabe a que acogerse.
+    planId: Yup.string().required("Required"),
 });
 
 const SignUp = () => {
@@ -102,21 +147,39 @@ const SignUp = () => {
     const { handleLogin } = useContext(AuthContext);
     const { getPlanList } = usePlans()
     const [plans, setPlans] = useState([])
+    // Moneda de la instalacion.
+    //
+    // Se pide AQUI y no se confia en la que ya haya aplicado el arranque:
+    // esta pantalla la ve alguien que llega por primera vez, sin nada
+    // guardado, y si se pintara antes de que llegue esa lectura mostraria
+    // el precio en la moneda por defecto. Un precio equivocado en la
+    // primera pantalla que ve un cliente no es un detalle.
+    const [moneda, setMoneda] = useState(null);
     const [loading, setLoading] = useState(false);
     const { getPublicSetting } = useSettings();
 
-    let companyId = null
-    const params = qs.parse(window.location.search)
-    if (params.companyId !== undefined) {
-        companyId = params.companyId
-    }
-
-    const initialState = { name: "", email: "", password: "", phone: "", companyId, companyName: "", planId: "" };
+    // El registro publico crea siempre una empresa nueva.
+    //
+    // Aqui se leia un companyId de la URL y se enviaba al servidor, que
+    // hasta ahora lo obedecia: /signup?companyId=3 creaba una cuenta de
+    // administrador dentro de esa empresa, sin invitacion. El servidor ya
+    // no lo acepta, y se quita tambien de aqui para no dejar un formulario
+    // que aparenta hacer algo que no hace.
+    const initialState = { name: "", email: "", password: "", phone: "", companyName: "", planId: "" };
 
     const [user, setUser] = useState(initialState);
 
     useEffect(() => {
-        getPublicSetting("userCreation", companyId)
+        getPublicSetting("currency")
+            .then((code) => {
+                if (code) setMoneda(code);
+            })
+            .catch(() => {
+                // Sin respuesta se deja en null y formatCurrency usa la
+                // que ya estuviera aplicada. Mejor eso que no pintar nada.
+            });
+
+        getPublicSetting("userCreation")
             .then((data) => {
                 if (data === "disabled") {
                     toast.error(i18n.t("signup.toasts.disabled"));
@@ -152,9 +215,23 @@ const SignUp = () => {
 
     const handleSignUp = async values => {
         try {
-            await openApi.post("/auth/signup", values);
+            const { data } = await openApi.post("/auth/signup", values);
+
+            // Si la instalacion exige aprobacion, la empresa nace
+            // PENDIENTE y todavia no puede entrar. Se comprueba por el
+            // valor que devuelve el servidor y no por el ajuste, porque
+            // lo que importa es lo que de verdad se guardo.
+            if (data?.approvalStatus === "pending") {
+                // Ni mensaje de bienvenida ni intento de entrar: lo uno
+                // prometeria un acceso que no hay, y lo otro fallaria a
+                // proposito y dejaria dos avisos que se contradicen.
+                toast.success(i18n.t("signup.toasts.pending"));
+                history.push("/login");
+                return;
+            }
+
             toast.success(i18n.t("signup.toasts.success"));
-            
+
             // Login automático após cadastro bem-sucedido
             try {
                 await handleLogin({
@@ -194,7 +271,7 @@ const SignUp = () => {
                 className={classes.containerSignup}
                 style={{
                     // Backup inline styles para forçar centralização
-                    maxWidth: '500px',
+                    maxWidth: 'min(500px, 100%)',
                     width: 'auto',
                     margin: '0 auto',
                     padding: '16px',
@@ -316,7 +393,50 @@ const SignUp = () => {
                                         />
                                     </Grid> */}
 
-                                    {/* Campo de plano removido - será selecionado automaticamente */}
+                                    {/* Plan.
+                                        Solo se ofrecen los marcados como
+                                        publicos en la pantalla de Planes;
+                                        esa lista ya la filtra el servidor. */}
+                                    <Grid item xs={12}>
+                                        <FormControl
+                                            variant="outlined"
+                                            fullWidth
+                                            error={touched.planId && Boolean(errors.planId)}
+                                        >
+                                            <InputLabel id="planId-label">
+                                                {i18n.t("signup.form.plan")}
+                                            </InputLabel>
+                                            <Field
+                                                as={Select}
+                                                labelId="planId-label"
+                                                id="planId"
+                                                name="planId"
+                                                label={i18n.t("signup.form.plan")}
+                                                disabled={loading || plans.length === 0}
+                                                renderValue={(id) => {
+                                                    const elegido = plans.find((x) => x.id === id);
+                                                    return elegido ? resumenCorto(elegido, moneda) : "";
+                                                }}
+                                            >
+                                                {plans.map((plan) => (
+                                                    <MenuItem key={plan.id} value={plan.id}>
+                                                        {resumenDePlan(plan, moneda)}
+                                                    </MenuItem>
+                                                ))}
+                                            </Field>
+                                            <FormHelperText>
+                                                {loading && (
+                                                    <>
+                                                        <CircularProgress size={12} style={{ marginRight: 6 }} />
+                                                        {i18n.t("signup.plan.loading")}
+                                                    </>
+                                                )}
+                                                {/* Sin planes publicos no hay nada que elegir. Se dice,
+                                                    en vez de dejar un desplegable vacio sin explicacion. */}
+                                                {!loading && plans.length === 0 && i18n.t("signup.plan.none")}
+                                            </FormHelperText>
+                                        </FormControl>
+                                    </Grid>
 
                                 </Grid>
                                 <Button

@@ -43,6 +43,16 @@ const withWidth = () => (WrappedComponent) => (props) =>
   <WrappedComponent {...props} width="xs" />;
 
 const useStyles = makeStyles((theme) => ({
+  // Estas barras fijas tenian "#fff" y "1px solid #eee" escritos a mano, que
+  // son el mismo blanco en los dos modos: en oscuro dejaban una franja clara
+  // con el texto encima ilegible (1,48).
+  barraFija: {
+    background: theme.palette.tokens.surface.surface,
+  },
+  barraFijaBorde: {
+    background: theme.palette.tokens.surface.surface,
+    borderBottom: `1px solid ${theme.palette.tokens.border.border}`,
+  },
   mainContainer: {
     display: "flex",
     flexDirection: "column",
@@ -882,13 +892,12 @@ function Chat(props) {
           <Grid item xs={12}>
             {/* Cabeçalho da lista com botão Criar grupo */}
             <div
+              className={classes.barraFijaBorde}
               style={{
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "flex-end",
                 padding: "16px 16px 0 16px",
-                background: "#fff",
-                borderBottom: "1px solid #eee",
                 position: "sticky",
                 top: 0,
                 zIndex: 100,
@@ -905,8 +914,8 @@ function Chat(props) {
             </div>
             {/* Abas de Chats e Grupos */}
             <div
+              className={classes.barraFija}
               style={{
-                background: "#fff",
                 position: "sticky",
                 top: 56,
                 zIndex: 99,
@@ -976,12 +985,11 @@ function Chat(props) {
           >
             {/* Cabeçalho mobile da conversa */}
             <div
+              className={classes.barraFijaBorde}
               style={{
                 display: "flex",
                 alignItems: "center",
                 padding: "10px",
-                borderBottom: "1px solid #eee",
-                background: "#fff",
                 position: "sticky",
                 top: 0,
                 zIndex: 100,

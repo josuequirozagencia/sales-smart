@@ -12,16 +12,19 @@ import SimpleListService from "../services/TagServices/SimpleListService";
 import SyncTagService from "../services/TagServices/SyncTagsService";
 import KanbanListService from "../services/TagServices/KanbanListService";
 import ContactTag from "../models/ContactTag";
+import Contact from "../models/Contact";
+import { sincronizarEtiquetasContacto } from "../services/GhlServices/SyncGhlTags";
 
 type IndexQuery = {
   searchParam?: string;
   pageNumber?: string | number;
   kanban?: number;
   tagId?: number;
+  pipelineId?: number;
 };
 
 export const index = async (req: Request, res: Response): Promise<Response> => {
-  const { pageNumber, searchParam, kanban, tagId } = req.query as IndexQuery;
+  const { pageNumber, searchParam, kanban, tagId, pipelineId } = req.query as IndexQuery;
   const { companyId } = req.user;
 
   const { tags, count, hasMore } = await ListService({
@@ -29,7 +32,8 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
     pageNumber,
     companyId,
     kanban,
-    tagId
+    tagId,
+    pipelineId
   });
 
   return res.json({ tags, count, hasMore });
@@ -40,7 +44,8 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     timeLane,
     nextLaneId,
     greetingMessageLane,
-    rollbackLaneId } = req.body;
+    rollbackLaneId,
+    pipelineId } = req.body;
   const { companyId } = req.user;
 
   const tag = await CreateService({
@@ -51,7 +56,8 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     timeLane,
     nextLaneId,
     greetingMessageLane,
-    rollbackLaneId
+    rollbackLaneId,
+    pipelineId
   });
 
   const io = getIO();
@@ -129,8 +135,11 @@ export const list = async (req: Request, res: Response): Promise<Response> => {
 
 export const kanban = async (req: Request, res: Response): Promise<Response> => {
   const { companyId } = req.user;
+  // Sin embudo devuelve todas las etapas de la empresa, como antes de que
+  // existieran los embudos.
+  const { pipelineId } = req.query as { pipelineId?: string };
 
-  const tags = await KanbanListService({ companyId });
+  const tags = await KanbanListService({ companyId, pipelineId });
 
   return res.json({ lista: tags });
 };
@@ -162,6 +171,11 @@ export const removeContactTag = async (
       contactId
     }
   });
+
+  // Espejo hacia GHL. Sin await y sin propagar: si el contacto no es de
+  // ese canal o la empresa no lo tiene, el servicio lo ignora solo.
+  const contacto = await Contact.findByPk(contactId);
+  sincronizarEtiquetasContacto(contacto, [Number(tagId)], "remove").catch(() => {});
 
   const tag = await ShowService(tagId);
 

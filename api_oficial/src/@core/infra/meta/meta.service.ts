@@ -183,22 +183,37 @@ export class MetaService {
         Authorization: `Bearer ${token}`,
       };
 
-      const result = await fetch(
-        `${this.urlMeta}/${businessId}/message_templates`,
-        {
+      // Meta devuelve las plantillas por paginas (25 por defecto). Antes solo
+      // se leia la primera y una cuenta con mas plantillas se veia recortada.
+      // Se piden de 100 en 100 y se sigue paging.next, con un tope de paginas
+      // para que un cursor mal formado no deje la peticion en bucle.
+      const data: IResultTemplates['data'] = [];
+      let paging: IResultTemplates['paging'] | undefined;
+      let url: string | null =
+        `${this.urlMeta}/${businessId}/message_templates?limit=100`;
+
+      for (let pagina = 0; url && pagina < 20; pagina++) {
+        const result = await fetch(url, {
           method: 'GET',
           headers,
-        },
-      );
+        });
 
-      if (result.status != 200) {
-        const resultError = await result.json();
-        throw new Error(
-          resultError.error.message || 'Falha ao enviar mensagem para a meta',
-        );
+        if (result.status != 200) {
+          const resultError = await result.json();
+          throw new Error(
+            resultError.error.message || 'Falha ao enviar mensagem para a meta',
+          );
+        }
+
+        const json = (await result.json()) as IResultTemplates & {
+          paging?: { next?: string };
+        };
+        data.push(...(json.data || []));
+        paging = json.paging;
+        url = json.paging?.next || null;
       }
 
-      return (await result.json()) as IResultTemplates;
+      return { data, paging } as IResultTemplates;
     } catch (error: any) {
       this.logger.error(`getListTemplates - ${error.message}`);
       throw Error('Erro ao enviar a mensagem');

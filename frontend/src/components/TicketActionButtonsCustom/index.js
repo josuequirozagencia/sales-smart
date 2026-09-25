@@ -7,14 +7,21 @@ import { IconButton, Menu, CircularProgress } from "@material-ui/core";
 import {
   DeviceHubOutlined,
   History,
-  MoreVert,
   PictureAsPdf,
+} from "@material-ui/icons";
+// Los iconos que se ven en la barra del chat salen del set propio: en
+// trazo y del mismo grosor que el resto de la seccion. Los tres de arriba
+// se quedan porque solo aparecen en codigo comentado.
+import {
+  MoreVert,
   Replay,
   SwapHorizOutlined,
-  AccountBalanceWallet,
-  FileCopy as FileCopyIcon,
-  FlashOn,
-} from "@material-ui/icons";
+  AccountBalanceWalletIcon as AccountBalanceWallet,
+  FileCopyIcon,
+  FlashOnIcon as FlashOn,
+  HighlightOffIcon,
+  UndoIcon,
+} from "../Icons";
 import { v4 as uuidv4 } from "uuid";
 
 import { i18n } from "../../translate/i18n";
@@ -39,8 +46,7 @@ import TransferTicketModalCustom from "../TransferTicketModalCustom";
 import AcceptTicketWithouSelectQueue from "../AcceptTicketWithoutQueueModal";
 
 //icones
-import HighlightOffIcon from "@material-ui/icons/HighlightOff";
-import UndoIcon from "@material-ui/icons/Undo";
+// (HighlightOff y Undo ahora vienen del set propio, arriba.)
 
 import ScheduleModal from "../ScheduleModal";
 import MenuItem from "@material-ui/core/MenuItem";
@@ -62,22 +68,44 @@ const useStyles = makeStyles((theme) => ({
     flex: "none",
     alignSelf: "center",
     marginLeft: "auto",
-    // flexBasis: "50%",
     display: "flex",
+    alignItems: "center",
+    // Se separa con gap en lugar de dar margen a cada hijo. El margen de
+    // theme.spacing(1) se aplicaba a los cuatro lados de cada boton, asi que
+    // entre dos botones habia 16px y ademas empujaba arriba y abajo.
+    gap: theme.palette.tokens.space.sm,
     "& > *": {
-      margin: theme.spacing(1),
+      margin: 0,
+    },
+    // En movil el espacio es caro y estas acciones compiten con el nombre del
+    // contacto en la misma barra.
+    [theme.breakpoints.down("xs")]: {
+      gap: theme.palette.tokens.space.xs,
+      marginRight: 0,
     },
   },
   bottomButtonVisibilityIcon: {
-    padding: 1,
+    // Era padding: 1. Con un icono de 24px el area pulsable quedaba en 26px,
+    // por debajo de lo comodo para el dedo.
+    padding: 6,
     color: theme.mode === "light" ? theme.palette.primary.main : "#FFF",
+    transition: "background-color 180ms ease",
   },
   botoes: {
     display: "flex",
-    padding: "15px",
+    // 15px no estaba en ninguna escala; 12 es el paso md del sistema.
+    padding: theme.palette.tokens.space.md,
     justifyContent: "flex-end",
+    alignItems: "center",
+    gap: theme.palette.tokens.space.sm,
     maxWidth: "100%",
-    // alignItems: "center"
+    // Con varias acciones y poco ancho, que bajen de linea en vez de
+    // desbordar o comprimirse hasta ser inservibles.
+    flexWrap: "wrap",
+    [theme.breakpoints.down("xs")]: {
+      padding: theme.palette.tokens.space.sm,
+      gap: theme.palette.tokens.space.xs,
+    },
   },
 }));
 
@@ -801,29 +829,33 @@ const TicketActionButtonsCustom = ({
                 </Tooltip>
               </IconButton>
 
-              <IconButton className={classes.bottomButtonVisibilityIcon}>
+              {/* El onClick colgaba del icono y no del boton, asi que la
+                  mitad del area pulsable —el relleno del IconButton— no
+                  hacia nada. Lo mismo pasaba en devolver y transferir. */}
+              <IconButton
+                className={classes.bottomButtonVisibilityIcon}
+                onClick={handleClickResolver}
+              >
                 <Tooltip title={i18n.t("messagesList.header.buttons.resolve")}>
-                  <HighlightOffIcon onClick={handleClickResolver} />
+                  <HighlightOffIcon />
                 </Tooltip>
               </IconButton>
 
-              <IconButton className={classes.bottomButtonVisibilityIcon}>
+              <IconButton
+                className={classes.bottomButtonVisibilityIcon}
+                onClick={(e) => handleUpdateTicketStatus(e, "pending", null)}
+              >
                 <Tooltip title={i18n.t("tickets.buttons.returnQueue")}>
-                  <UndoIcon
-                    // color="primary"
-                    onClick={(e) =>
-                      handleUpdateTicketStatus(e, "pending", null)
-                    }
-                  />
+                  <UndoIcon />
                 </Tooltip>
               </IconButton>
 
-              <IconButton className={classes.bottomButtonVisibilityIcon}>
-                <Tooltip title="Transferir Ticket">
-                  <SwapHorizOutlined
-                    // color="primary"
-                    onClick={handleOpenTransferModal}
-                  />
+              <IconButton
+                className={classes.bottomButtonVisibilityIcon}
+                onClick={handleOpenTransferModal}
+              >
+                <Tooltip title={i18n.t("ticketOptionsMenu.transfer")}>
+                  <SwapHorizOutlined />
                 </Tooltip>
               </IconButton>
 
@@ -924,7 +956,7 @@ const TicketActionButtonsCustom = ({
           color="inherit"
           style={{ paddingHorizontal: 3, paddingTop: 10 }}
         >
-          <MoreVert style={{ fontSize: 16, padding: 0 }} />
+          <MoreVert />
         </IconButton>
         <Menu
           id="menu-appbar"

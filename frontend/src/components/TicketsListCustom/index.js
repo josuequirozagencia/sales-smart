@@ -50,7 +50,10 @@ const useStyles = makeStyles((theme) => ({
 
     noTicketsText: {
         textAlign: "center",
-        color: "rgb(104, 121, 146)",
+        // Contraste medido de 4.43 sobre o fundo branco, abaixo dos 4.5 que a
+        // WCAG AA exige para texto normal. A cor do tema passa e, ao contrario
+        // do valor fixo, acompanha o modo claro/escuro.
+        color: theme.palette.text.secondary,
         fontSize: "14px",
         lineHeight: "1.4",
     },
@@ -94,10 +97,46 @@ const ticketSortDesc = (a, b) => {
     return 0;
 }
 
+// Marca invisible con la que el sistema prefija los mensajes del bot.
+const MARCA_BOT = String.fromCharCode(8206);
+
+/**
+ * Mantiene al dia el inicio de la espera del cliente.
+ *
+ * El socket manda el ticket SIN waitingSince, porque ese dato lo calcula
+ * ListTicketsService y no viaja en los eventos. Si aqui se sustituyera el
+ * ticket sin mas, el contador desapareceria al primer evento, o —peor—
+ * seguiria corriendo despues de que el asesor ya hubiera contestado.
+ *
+ * Se aplica la misma regla que el backend, para que las dos no discrepen:
+ * solo cuenta como respuesta la de una persona, ni el bot ni las notas
+ * internas.
+ */
+const calcularEspera = (anterior, mensaje) => {
+    const previo = anterior ? anterior.waitingSince : null;
+
+    // Un evento sin mensaje —cambio de estado, asignacion— no altera la
+    // espera: se conserva la que hubiera.
+    if (!mensaje) return previo || null;
+
+    if (mensaje.fromMe) {
+        const esBot =
+            typeof mensaje.body === "string" && mensaje.body.includes(MARCA_BOT);
+        // Respuesta de una persona: la espera termina. El bot no atiende, y
+        // una nota interna el cliente no la ve.
+        if (!esBot && !mensaje.isPrivate) return null;
+        return previo || null;
+    }
+
+    // Mensaje del cliente: si ya estaba esperando se conserva el inicio, y
+    // si no, la espera empieza con este mensaje.
+    return previo || mensaje.createdAt || new Date().toISOString();
+};
+
 const reducer = (state, action) => {
     //console.log("action", action, state)
     const sortDir = action.sortDir;
-    
+
     if (action.type === "LOAD_TICKETS") {
         const newTickets = action.payload;
 
@@ -139,6 +178,7 @@ const reducer = (state, action) => {
 
         const ticketIndex = state.findIndex((t) => t.id === ticket.id);
         if (ticketIndex !== -1) {
+            ticket.waitingSince = calcularEspera(state[ticketIndex], action.message);
             state[ticketIndex] = ticket;
         } else {
             state.unshift(ticket);
@@ -155,6 +195,7 @@ const reducer = (state, action) => {
 
         const ticketIndex = state.findIndex((t) => t.id === ticket.id);
         if (ticketIndex !== -1) {
+            ticket.waitingSince = calcularEspera(state[ticketIndex], action.message);
             state[ticketIndex] = ticket;
             state.unshift(state.splice(ticketIndex, 1)[0]);
         } else {
@@ -330,6 +371,10 @@ const TicketsListCustom = (props) => {
             throttledDispatch({
                 type: "UPDATE_TICKET_UNREAD_MESSAGES",
                 payload: data.ticket,
+                // El mensaje dice quien acaba de hablar, que es lo unico
+                // que permite mantener el contador de espera al dia sin
+                // volver a pedir la lista entera.
+                message: data.message,
                 status: status,
                 sortDir: sortTickets
             });

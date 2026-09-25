@@ -1,9 +1,16 @@
 import { Request, Response } from "express";
 import AppError from "../errors/AppError";
+import logger from "../utils/logger";
 import { getIO } from "../libs/socket";
 
 import AuthUserService from "../services/UserServices/AuthUserService";
-import { SendRefreshToken } from "../helpers/SendRefreshToken";
+import RequestPasswordResetService from "../services/UserServices/RequestPasswordResetService";
+import ResetPasswordService from "../services/UserServices/ResetPasswordService";
+import { ipDePeticion } from "../services/AuthAuditServices/CreateAuthAuditService";
+import {
+  SendRefreshToken,
+  ClearRefreshToken
+} from "../helpers/SendRefreshToken";
 import { RefreshTokenService } from "../services/AuthServices/RefreshTokenService";
 import FindUserFromToken from "../services/AuthServices/FindUserFromToken";
 import User from "../models/User";
@@ -14,7 +21,8 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
 
   const { token, serializedUser, refreshToken } = await AuthUserService({
     email,
-    password
+    password,
+    ip: ipDePeticion(req)
   });
 
   SendRefreshToken(res, refreshToken);
@@ -46,18 +54,40 @@ export const update = async (
 ): Promise<Response> => {
   const token: string = req.cookies.jrt;
 
+  // Diagnostico de sesiones perdidas.
+  //
+  // Frontend y backend estan en sitios distintos (up.railway.app es un
+  // sufijo publico), asi que la cookie del refresco viaja como de terceros:
+  // SameSite=None; Secure; Partitioned. Los navegadores que no soportan
+  // CHIPS o que bloquean las cookies de terceros —habitual en el movil— no
+  // la mandan, y entonces la sesion se cae a los 15 minutos, cuando caduca
+  // el token de acceso. Desde fuera parece "se cerro sola" o "me la cerro
+  // el otro dispositivo".
+  //
+  // Esto anota si la cookie llego y con que navegador, para saber si es eso
+  // o es otra cosa. Nunca se escribe el token.
+  const agente = String(req.headers["user-agent"] || "").slice(0, 120);
+
   if (!token) {
+    logger.warn(`[SESION] Refresco SIN cookie jrt | ${agente}`);
     throw new AppError("ERR_SESSION_EXPIRED", 401);
   }
 
-  const { user, newToken, refreshToken } = await RefreshTokenService(
-    res,
-    token
-  );
+  try {
+    const { user, newToken, refreshToken } = await RefreshTokenService(
+      res,
+      token
+    );
 
-  SendRefreshToken(res, refreshToken);
+    SendRefreshToken(res, refreshToken);
 
-  return res.json({ token: newToken, user });
+    logger.info(`[SESION] Refresco OK para el usuario ${user.id} | ${agente}`);
+
+    return res.json({ token: newToken, user });
+  } catch (error) {
+    logger.warn(`[SESION] Refresco CON cookie pero rechazado | ${agente}`);
+    throw error;
+  }
 };
 
 export const me = async (req: Request, res: Response): Promise<Response> => {
@@ -79,7 +109,37 @@ export const remove = async (
     const user = await User.findByPk(id);
     await user.update({ online: false });
   }
-  res.clearCookie("jrt");
+  ClearRefreshToken(res);
 
   return res.send();
+};
+
+/**
+ * Pide el enlace de recuperacion.
+ *
+ * Responde SIEMPRE lo mismo, exista o no la cuenta. Distinguir los casos
+ * convertiria este formulario en una herramienta para averiguar quien tiene
+ * cuenta en el sistema.
+ */
+export const forgotPassword = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { email } = req.body;
+
+  await RequestPasswordResetService({ email, ip: ipDePeticion(req) });
+
+  return res.status(200).json({ ok: true });
+};
+
+/** Consume el enlace y cambia la contrasena. */
+export const resetPassword = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { token, password } = req.body;
+
+  await ResetPasswordService({ token, password, ip: ipDePeticion(req) });
+
+  return res.status(200).json({ ok: true });
 };

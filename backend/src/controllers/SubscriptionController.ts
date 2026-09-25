@@ -15,6 +15,11 @@ import Plan from "../models/Plan";
 import ListWhatsAppsService from "../services/WhatsappService/ListWhatsAppsService";
 import { StartWhatsAppSession } from "../services/WbotServices/StartWhatsAppSession";
 import * as Sentry from "@sentry/node";
+import logger from "../utils/logger";
+import {
+  eventoStripeVerificado,
+  secretoWebhookStripe
+} from "../helpers/StripeWebhook";
 
 // const app = express();
 
@@ -386,69 +391,73 @@ export const stripewebhook = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  const { type } = req.params;
-  const { evento } = req.body;
+  let evento: Stripe.Event;
 
-  //console.log(req.body);
-  //console.log(req.params);
-
-  if (req.body.data.object.id) {
-
-    if (req.body.type === "checkout.session.completed") {
-
-      const stripe_id = req.body.data.object.id;
-
-      const invoices = await Invoices.findOne({ where: { stripe_id: stripe_id } });
-      const invoiceID = invoices.id;
-
-      const companyId = invoices.companyId;
-      const company = await Company.findByPk(companyId);
-
-      const expiresAt = new Date(company.dueDate);
-      expiresAt.setDate(expiresAt.getDate() + 30);
-      const date = expiresAt.toISOString().split("T")[0];
-
-      if (company) {
-        await company.update({
-          dueDate: date
-        });
-        const invoi = await invoices.update({
-          id: invoiceID,
-          status: 'paid'
-        });
-        await company.reload();
-        const io = getIO();
-        const companyUpdate = await Company.findOne({
-          where: {
-            id: companyId
-          }
-        });
-
-        try {
-
-          const companyId = company.id
-          const whatsapps = await ListWhatsAppsService({ companyId: companyId });
-          if (whatsapps.length > 0) {
-            whatsapps.forEach(whatsapp => {
-              StartWhatsAppSession(whatsapp, companyId);
-            });
-          }
-        } catch (e) {
-          Sentry.captureException(e);
-        }
-
-        io.emit(`company-${companyId}-payment`, {
-          action: 'CONCLUIDA',
-          company: company
-        });
-      }
-
-    }
-
+  try {
+    evento = eventoStripeVerificado(
+      (req as any).rawBody,
+      req.headers["stripe-signature"],
+      await secretoWebhookStripe()
+    );
+  } catch (err) {
+    // Esta ruta no lleva autenticacion: lo unico que distingue a Stripe de
+    // cualquiera que sepa la URL es la firma. Lo que no la traiga valida no se
+    // mira. Se deja constancia porque esto tambien salta si el secreto esta mal
+    // puesto, y entonces los cobros de verdad dejarian de aplicarse.
+    logger.warn(`[STRIPE] Webhook rechazado: ${(err as Error).message}`);
+    Sentry.captureException(err);
+    return res.status(400).json({ error: "Firma no valida" });
   }
 
-  return res.json({ ok: true });
+  if (evento.type !== "checkout.session.completed") {
+    return res.json({ ok: true });
+  }
 
+  const sesion = evento.data.object as Stripe.Checkout.Session;
+
+  const invoices = await Invoices.findOne({ where: { stripe_id: sesion.id } });
+  if (!invoices) {
+    logger.warn(`[STRIPE] Sesion ${sesion.id} sin factura asociada`);
+    return res.json({ ok: true });
+  }
+
+  // Stripe reintenta el mismo evento si la respuesta tarda o falla. Sin esto,
+  // el segundo intento sumaba otros 30 dias sobre la misma factura.
+  if (invoices.status === "paid") {
+    return res.json({ ok: true });
+  }
+
+  const company = await Company.findByPk(invoices.companyId);
+  if (!company) {
+    logger.warn(`[STRIPE] Factura ${invoices.id} sin empresa`);
+    return res.json({ ok: true });
+  }
+
+  const expiresAt = new Date(company.dueDate);
+  expiresAt.setDate(expiresAt.getDate() + 30);
+  const date = expiresAt.toISOString().split("T")[0];
+
+  await company.update({ dueDate: date });
+  await invoices.update({ status: "paid" });
+  await company.reload();
+
+  try {
+    const whatsapps = await ListWhatsAppsService({ companyId: company.id });
+    if (whatsapps.length > 0) {
+      whatsapps.forEach(whatsapp => {
+        StartWhatsAppSession(whatsapp, company.id);
+      });
+    }
+  } catch (e) {
+    Sentry.captureException(e);
+  }
+
+  getIO().emit(`company-${company.id}-payment`, {
+    action: "CONCLUIDA",
+    company: company
+  });
+
+  return res.json({ ok: true });
 };
 
 export const mercadopagowebhook = async (

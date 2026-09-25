@@ -7,7 +7,8 @@ import {
   PrimaryKey,
   AutoIncrement,
   ForeignKey,
-  BelongsTo
+  BelongsTo,
+  DataType
 } from "sequelize-typescript";
 import Queue from "./Queue";
 
@@ -24,6 +25,11 @@ class QueueState extends Model<QueueState> {
 
   @Column
   lastUserIndex: number;
+
+  // Créditos acumulados do round-robin ponderado, indexados por id de usuário.
+  // Convive com lastUserIndex, que segue servindo a rotação simples.
+  @Column(DataType.JSONB)
+  weightState: Record<string, number>;
 
   @CreatedAt
   createdAt: Date;

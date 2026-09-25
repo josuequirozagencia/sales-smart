@@ -17,6 +17,7 @@ import { i18n } from "../../translate/i18n";
 import api from "../../services/api";
 import ButtonWithSpinner from "../ButtonWithSpinner";
 import MarkdownWrapper from "../MarkdownWrapper";
+import ContactAvatar from "../ContactAvatar";
 import { List, Tooltip } from "@material-ui/core";
 import { AuthContext } from "../../context/Auth/AuthContext";
 import { TicketsContext } from "../../context/Tickets/TicketsContext";
@@ -36,7 +37,6 @@ import { Done, HighlightOff, Replay, SwapHoriz } from "@material-ui/icons";
 import VisibilityIcon from "@material-ui/icons/Visibility"; // Ícone de spy
 import useCompanySettings from "../../hooks/useSettings/companySettings";
 import {
-  Avatar,
   Badge,
   ListItemAvatar,
   ListItem,
@@ -50,22 +50,77 @@ import {
   DialogContent,
 } from "@material-ui/core";
 
+import TicketWaitTimer from "../TicketWaitTimer";
+
 const useStyles = makeStyles((theme) => ({
   ticket: {
     position: "relative",
+    transition: "background-color 180ms ease",
+
+    // La fila media 80px: 20 del nombre, 19 de la vista previa, 22 de las
+    // etiquetas y 19 repartidos en margenes que no dicen nada. Se recortan
+    // esos margenes —los del bloque de texto y los de la propia fila— y la
+    // fila baja a unos 66 sin quitar ni un dato. En una pantalla de 715px
+    // son dos conversaciones mas a la vista.
+    paddingTop: 2,
+    paddingBottom: 2,
+    "& .MuiListItemText-multiline": {
+      marginTop: 2,
+      marginBottom: 2,
+    },
+
+    // Hover. Un velo tenue en vez de un cambio de color: funciona igual en
+    // claro y en oscuro, y no compite con el estado seleccionado.
+    "&:hover": {
+      backgroundColor:
+        theme.mode === "light"
+          ? "rgba(15, 23, 42, 0.035)"
+          : "rgba(255, 255, 255, 0.045)",
+    },
+
+    // Seleccionado. Antes se distinguia solo por el gris de serie del MUI,
+    // que sobre una lista larga no se localiza de un vistazo.
+    //
+    // Ahora lleva superficie tintada de marca mas una barra lateral: dos
+    // senales en vez de una, y la barra sigue siendo visible aunque el
+    // cliente configure un primario de bajo contraste.
+    "&.Mui-selected": {
+      backgroundColor:
+        theme.mode === "light"
+          ? `${theme.palette.primary.main}14`
+          : `${theme.palette.primary.main}26`,
+      "&:hover": {
+        backgroundColor:
+          theme.mode === "light"
+            ? `${theme.palette.primary.main}1f`
+            : `${theme.palette.primary.main}33`,
+      },
+      "&::before": {
+        content: '""',
+        position: "absolute",
+        left: 0,
+        top: 0,
+        bottom: 0,
+        width: 3,
+        backgroundColor: theme.palette.primary.main,
+      },
+    },
   },
 
   pendingTicket: {
     cursor: "unset",
   },
   queueTag: {
-    background: "#FCFCFC",
-    color: "#000",
-    marginRight: 1,
-    padding: 1,
-    fontWeight: "bold",
-    borderRadius: 3,
-    fontSize: "0.5em",
+    // El fondo casi blanco y el texto negro estaban fijos: en modo oscuro
+    // era una pastilla blanca que saltaba a la vista sin motivo.
+    background: theme.palette.tokens.surface.surfaceSecondary,
+    color: theme.palette.tokens.text.secondary,
+    marginRight: theme.palette.tokens.space.xs,
+    padding: "2px 6px",
+    fontWeight: 600,
+    borderRadius: theme.palette.tokens.radius.sm,
+    // 0.5em daban 7px reales, por debajo de cualquier tamano legible.
+    fontSize: "0.6875rem",
     whiteSpace: "nowrap",
   },
   noTicketsDiv: {
@@ -93,13 +148,27 @@ const useStyles = makeStyles((theme) => ({
     lineHeight: "1.4",
   },
   connectionTag: {
-    background: "green",
-    color: "#FFF",
+    // Eran la palabra "green" de CSS y blanco fijo. El verde del sistema
+    // con onColor() encima da 5.42 en vez de los 2.98 de antes.
+    background: theme.palette.tokens.semantic.success.fill,
+    color: theme.palette.tokens.onColor(
+      theme.palette.tokens.semantic.success.fill
+    ),
     marginRight: 1,
-    padding: 1,
+    // 0.6em herdava do body2 (14px), dando 8.4px reais — metade do texto
+    // normal. Numa lista onde se passa o dia, era ilegivel. 0.6875rem = 11px,
+    // agora em rem para respeitar o tamanho de letra escolhido pelo utilizador.
+    //
+    // O padding e o rem alargam a insignia ~30%. Medido antes de mudar: as tres
+    // insignias ocupavam 104px de 435px disponiveis no item, portanto ha folga
+    // de sobra e nao ha risco de transbordar.
+    // 1px 5px en vez de 2px 6px: se mantiene el tamano de letra, que ya se
+    // subio a 11px por legibilidad, y se recorta solo el aire de alrededor.
+    padding: "1px 5px",
     fontWeight: "bold",
-    borderRadius: 3,
-    fontSize: "0.6em",
+    borderRadius: 4,
+    fontSize: "0.6875rem",
+    letterSpacing: "0.02em",
   },
   noTicketsTitle: {
     textAlign: "center",
@@ -111,9 +180,18 @@ const useStyles = makeStyles((theme) => ({
   contactNameWrapper: {
     display: "flex",
     justifyContent: "space-between",
-    marginLeft: "5px",
-    fontWeight: "bold",
-    color: theme.mode === "light" ? "black" : "white",
+    alignItems: "baseline",
+    gap: theme.palette.tokens.space.sm,
+    marginLeft: theme.palette.tokens.space.xs,
+    // 700 en vez de "bold": el nombre es el ancla de la fila y conviene
+    // fijar el peso, no dejarlo a lo que interprete cada tipografia.
+    fontWeight: 700,
+    // 14px en vez de los 16 de serie: con nombre, vista previa, insignias y
+    // hora en cada fila, 16 hacia la lista mas alta sin decir nada mas.
+    fontSize: "0.875rem",
+    // Era negro y blanco literales. El token se adapta al modo y respeta
+    // el contraste que ya esta medido en el sistema.
+    color: theme.palette.tokens.text.primary,
   },
 
   lastMessageTime: {
@@ -122,7 +200,13 @@ const useStyles = makeStyles((theme) => ({
     position: "relative",
     top: -30,
     marginRight: "1px",
-    color: theme.mode === "light" ? "black" : grey[400],
+    // La hora es dato de apoyo, no titular: baja al gris atenuado y a 11px.
+    // En claro estaba en negro puro, al mismo peso visual que el nombre.
+    color: theme.palette.tokens.text.muted,
+    fontSize: "0.6875rem",
+    // Cifras de ancho fijo: sin esto la lista "baila" al pasar de 09:59 a
+    // 10:00, porque el 1 ocupa menos que el 0 en la mayoria de tipografias.
+    fontVariantNumeric: "tabular-nums",
   },
 
   lastMessageTimeUnread: {
@@ -130,9 +214,16 @@ const useStyles = makeStyles((theme) => ({
     textAlign: "right",
     position: "relative",
     top: -30,
-    color: "green",
-    fontWeight: "bold",
+    // Mesmo verde do badge de não lidas. Antes era o verde do CSS (#008000),
+    // diferente do green[500] do badge logo ao lado.
+    // green[600] dava contraste 3.30 sobre o fundo claro, abaixo dos 4.5.
+    // green[800] sobe para 5.13. No modo escuro o problema e o inverso — um
+    // verde escuro desaparece — dai o green[400].
+    color: theme.mode === "light" ? green[800] : green[400],
+    fontWeight: 600,
     marginRight: "1px",
+    fontSize: "0.6875rem",
+    fontVariantNumeric: "tabular-nums",
   },
 
   closedBadge: {
@@ -142,22 +233,38 @@ const useStyles = makeStyles((theme) => ({
     marginLeft: "auto",
   },
 
+  // Lido e não lido diferiam só pelo negrito, e com a mesma cor — que ainda
+  // por cima era sempre cinza claro por causa do theme.mode inexistente.
+  // Numa lista longa, negrito sozinho não separa nada.
+  //
+  // Agora a hierarquia é a mesma que WhatsApp e Gmail usam: o que já foi
+  // lido recua para a cor secundária, e o não lido fica na cor principal,
+  // em negrito. A diferença de peso soma-se à de contraste.
   contactLastMessage: {
     paddingRight: "0%",
     marginLeft: "5px",
-    color: theme.mode === "light" ? "black" : grey[400],
+    color: theme.palette.text.secondary,
+    // Un paso por debajo del nombre: la vista previa es apoyo, no titular.
+    fontSize: "0.8125rem",
   },
 
   contactLastMessageUnread: {
     paddingRight: 20,
-    fontWeight: "bold",
-    color: theme.mode === "light" ? "black" : grey[400],
-    width: "50%",
+    fontWeight: 600,
+    fontSize: "0.8125rem",
+    color: theme.palette.text.primary,
+    // A largura fixa de 50% cortava a pré-visualização num ponto diferente
+    // da versão lida, fazendo a lista "saltar" ao marcar como lida.
+    marginLeft: "5px",
   },
 
   badgeStyle: {
-    color: "white",
-    backgroundColor: green[500],
+    // El badge de mensajes sin leer usaba green[500] con texto blanco fijo:
+    // ~2.98 de contraste, por debajo del minimo de 4.5. Se cambia al verde de
+    // exito del sistema de tokens, con el mismo criterio de onColor que ya
+    // usan las insignias de conexion/cola/agente y ContactTag mas arriba.
+    color: theme.palette.tokens.onColor(theme.palette.tokens.semantic.success.fill),
+    backgroundColor: theme.palette.tokens.semantic.success.fill,
   },
 
   acceptButton: {
@@ -179,10 +286,18 @@ const useStyles = makeStyles((theme) => ({
   },
   secondaryContentSecond: {
     display: "flex",
-    alignItems: "flex-start",
-    flexWrap: "nowrap",
+    alignItems: "center",
+    // "nowrap" obligaba a las insignias a caber en una sola linea pasara lo
+    // que pasara: al estrechar la ventana se salian del item en vez de
+    // reacomodarse. Con "wrap" bajan a la linea siguiente, que es lo que
+    // hace falta cuando un ticket lleva conexion, cola, usuario, etiquetas
+    // y ahora tambien el tiempo de espera.
+    flexWrap: "wrap",
     flexDirection: "row",
     alignContent: "flex-start",
+    // Separacion propia en vez de los marginRight de 1px de cada insignia,
+    // que las dejaban pegadas entre si.
+    gap: 3,
   },
   ticketInfo1: {
     position: "relative",
@@ -523,11 +638,19 @@ const TicketListItemCustom = ({ setTabOpen, ticket }) => {
     }
 
     if (ticket.lastMessage.includes("data:image/png;base64")) {
-      return <MarkdownWrapper>Localização</MarkdownWrapper>;
+      return <MarkdownWrapper>{i18n.t("chat2.location")}</MarkdownWrapper>;
     }
 
     if (ticket.lastMessage.includes("BEGIN:VCARD")) {
-      return <MarkdownWrapper>Contato</MarkdownWrapper>;
+      return <MarkdownWrapper>{i18n.t("chat2.contact")}</MarkdownWrapper>;
+    }
+
+    // O backend grava a palavra "Áudio" no corpo da mensagem quando chega um
+    // áudio (wbotMessageListener), então o texto vem do banco já em português
+    // e traduzi-lo lá só afetaria mensagens novas — além de gravar um idioma
+    // dentro dos dados. Traduzir na exibição cobre também o histórico.
+    if (ticket.lastMessage.trim() === "Áudio") {
+      return <MarkdownWrapper>{i18n.t("chat2.audio")}</MarkdownWrapper>;
     }
 
     return (
@@ -536,6 +659,19 @@ const TicketListItemCustom = ({ setTabOpen, ticket }) => {
       </MarkdownWrapper>
     );
   };
+
+  // Franja de color a la izquierda de la fila, del mismo color que la
+  // primera etiqueta del ticket (o, si no tiene, la del contacto). Es una
+  // segunda lectura del estado sin tener que leer las insignias de texto:
+  // se ve el color de un vistazo, igual que la barra de "seleccionado" que
+  // ya existe en classes.ticket.
+  //
+  // Cuando el ticket esta seleccionado, la barra de seleccion (el primario
+  // de marca, vía classes.ticket) ya cumple ese papel, asi que la franja de
+  // etiqueta se omite ahi para no competir con ella.
+  const isSelected = Boolean(ticketId && ticketId === ticket.uuid);
+  const stripeColor =
+    ticket.tags?.[0]?.color || ticket.contact?.tags?.[0]?.color || null;
 
   return (
     <React.Fragment key={ticket.id}>
@@ -580,19 +716,36 @@ const TicketListItemCustom = ({ setTabOpen, ticket }) => {
 
           handleSelectTicket(ticket);
         }}
-        selected={ticketId && ticketId === ticket.uuid}
+        selected={isSelected}
         className={clsx(classes.ticket, {
           [classes.pendingTicket]: ticket.status === "pending",
         })}
       >
-        <ListItemAvatar style={{ marginLeft: "-15px" }}>
-          <Avatar
+        {stripeColor && !isSelected && (
+          <span
             style={{
-              width: "50px",
-              height: "50px",
-              borderRadius: "50%",
+              position: "absolute",
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: 3,
+              backgroundColor: stripeColor,
             }}
-            src={`${ticket?.contact?.urlPicture}`}
+          />
+        )}
+        {/* Tenia marginLeft -15px sobre el relleno de 16 del elemento: el circulo
+            quedaba a 1px del borde, encima de la barra de color de 3px. Ahora
+            queda a 12px, y pasa de 50 a 36px —el tamano de la interfaz de
+            referencia—; el hueco hasta el texto se ajusta para no quitarle
+            ancho a la conversacion. */}
+        <ListItemAvatar style={{ marginLeft: -4, minWidth: 46 }}>
+          {/* Sin foto sale un circulo de color con las iniciales, y no el
+              icono generico de persona que pintaba MUI: era el mismo para
+              todos los contactos, asi que no ayudaba a distinguirlos. El
+              color va por contacto y es siempre el mismo. */}
+          <ContactAvatar
+            contact={ticket?.contact}
+            size={36}
             className={classes.clickableAvatar}
             onClick={handleImageClick}
           />
@@ -644,28 +797,57 @@ const TicketListItemCustom = ({ setTabOpen, ticket }) => {
               >
                 {renderLastMessage()}
                 <span className={classes.secondaryContentSecond}>
+                  {/* Cuanto lleva el cliente esperando respuesta.
+
+                      Va aqui, con las demas insignias, y no en el carril
+                      derecho: alli conviven DOS ListItemSecondaryAction que
+                      MUI posiciona en absoluto contra el mismo borde, asi
+                      que cualquier cosa que se anada se monta sobre los
+                      iconos. Aqui es flujo normal y se reordena solo al
+                      estrechar la ventana.
+
+                      Va primero porque es la senal mas urgente de la fila. */}
+                  <TicketWaitTimer
+                    waitingSince={ticket.waitingSince}
+                    queue={ticket.queue}
+                  />
                   {ticket?.whatsapp ? (
                     <Badge
                       className={classes.connectionTag}
-                      style={{
-                        backgroundColor:
+                      style={(() => {
+                        // El fondo lo decide el color guardado de la conexion,
+                        // que se escribe a mano en la ficha. El texto era blanco
+                        // fijo, asi que una conexion de color claro daba
+                        // combinaciones ilegibles: la de esta instalacion,
+                        // #26E697, quedaba en 1.63 de contraste.
+                        //
+                        // onColor elige blanco o tinta oscura segun el fondo, con
+                        // el mismo criterio que aplica MUI en contrastText.
+                        const fondo =
                           ticket.channel === "whatsapp"
                             ? ticket.whatsapp?.color || "#25D366"
                             : ticket.channel === "facebook"
                             ? "#4267B2"
-                            : "#E1306C",
-                      }}
+                            : "#E1306C";
+                        return {
+                          backgroundColor: fondo,
+                          color: theme.palette.tokens.onColor(fondo),
+                        };
+                      })()}
                     >
                       {ticket.whatsapp?.name.toUpperCase()}
                     </Badge>
-                  ) : (
-                    <br></br>
-                  )}
+                  ) : null}
                   {
                     <Badge
-                      style={{
-                        backgroundColor: ticket.queue?.color || "#7c7c7c",
-                      }}
+                      style={(() => {
+                        // Mismo caso: el color de la cola se elige en Colas.
+                        const fondo = ticket.queue?.color || "#7c7c7c";
+                        return {
+                          backgroundColor: fondo,
+                          color: theme.palette.tokens.onColor(fondo),
+                        };
+                      })()}
                       className={classes.connectionTag}
                     >
                       {ticket.queueId
@@ -677,14 +859,22 @@ const TicketListItemCustom = ({ setTabOpen, ticket }) => {
                   }
                   {ticket?.user && (
                     <Badge
-                      style={{ backgroundColor: "#000000" }}
+                      style={{
+                        backgroundColor: theme.palette.tokens.text.primary,
+                        color: theme.palette.tokens.onColor(
+                          theme.palette.tokens.text.primary
+                        ),
+                      }}
                       className={classes.connectionTag}
                     >
                       {ticket.user?.name.toUpperCase()}
                     </Badge>
                   )}
-                </span>
-                <span className={classes.secondaryContentSecond}>
+                  {/* Las etiquetas del contacto y las del ticket iban cada una
+                      en su propio contenedor flex, asi que cada grupo empezaba
+                      linea aunque cupiera al lado: una fila con conexion, cola,
+                      asesor y dos etiquetas gastaba tres lineas. Aqui van todas
+                      en el mismo contenedor y solo bajan cuando no caben. */}
                   {ticket?.contact?.tags?.map((tag) => {
                     return (
                       <ContactTag
@@ -693,13 +883,11 @@ const TicketListItemCustom = ({ setTabOpen, ticket }) => {
                       />
                     );
                   })}
-                </span>
-                <span className={classes.secondaryContentSecond}>
                   {ticket.tags?.map((tag) => {
                     return (
                       <ContactTag
                         tag={tag}
-                        key={`ticket-contact-tag-${ticket.id}-${tag.id}`}
+                        key={`ticket-tag-${ticket.id}-${tag.id}`}
                       />
                     );
                   })}
@@ -734,8 +922,6 @@ const TicketListItemCustom = ({ setTabOpen, ticket }) => {
                   <>{format(parseISO(ticket.updatedAt), "dd/MM/yyyy")}</>
                 )}
               </Typography>
-
-              <br />
             </>
           )}
         </ListItemSecondaryAction>
@@ -1072,6 +1258,9 @@ export default React.memo(TicketListItemCustom, (prevProps, nextProps) => {
     prevProps.ticket?.unreadMessages === nextProps.ticket?.unreadMessages &&
     prevProps.ticket?.lastMessage === nextProps.ticket?.lastMessage &&
     prevProps.ticket?.updatedAt === nextProps.ticket?.updatedAt &&
+    // Sin esto la fila no se repintaria cuando el cliente vuelve a escribir
+    // o el asesor contesta, y el contador de espera se quedaria clavado.
+    prevProps.ticket?.waitingSince === nextProps.ticket?.waitingSince &&
     prevProps.ticket?.userId === nextProps.ticket?.userId &&
     prevProps.ticket?.contact?.name === nextProps.ticket?.contact?.name &&
     prevProps.ticket?.contact?.profilePicUrl === nextProps.ticket?.contact?.profilePicUrl &&

@@ -53,6 +53,18 @@ class User extends Model<User> {
   @Column
   tokenVersion: number;
 
+  /**
+   * Hash del token de recuperacion, nunca el token.
+   *
+   * Asi una lectura de la base no permite cambiarle la contrasena a nadie:
+   * el token real solo existe en el correo del destinatario.
+   */
+  @Column
+  passwordResetTokenHash: string;
+
+  @Column
+  passwordResetExpiresAt: Date;
+
   @Default("admin")
   @Column
   profile: string;
@@ -76,6 +88,12 @@ class User extends Model<User> {
 
   @Column
   online: boolean;
+
+  // Peso na distribuição de leads: 100 é o normal, 50 recebe metade dos
+  // turnos, 0 tira da distribuição sem remover das filas.
+  @Default(100)
+  @Column
+  distributionWeight: number;
 
   @Column
   lastSeen: Date;

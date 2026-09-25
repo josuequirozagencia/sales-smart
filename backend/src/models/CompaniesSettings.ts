@@ -131,6 +131,11 @@ class CompaniesSettings extends Model<CompaniesSettings> {
 
   @Column
   motivosFinalizacao: string; // JSON string com array de motivos padrão
+
+  // Minutos sin actividad tras los que se cierra la sesion (300 = 5 h).
+  @Default(300)
+  @Column
+  sessionInactivityMinutes: number;
 }
 
 export default CompaniesSettings;

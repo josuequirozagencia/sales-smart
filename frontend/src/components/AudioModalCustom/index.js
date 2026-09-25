@@ -1,4 +1,5 @@
 import { Button } from "@material-ui/core";
+import { i18n } from "../../translate/i18n";
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import api from "../../services/api";
 import PropTypes from 'prop-types';
@@ -278,7 +279,7 @@ const AudioModalCustom = ({
                     color: "#fff",
                   }}
                 >
-                  {isTranscribing ? "Transcrevendo..." : "Transcrever"}
+                  {isTranscribing ? i18n.t("chat2.transcribing") : i18n.t("chat2.transcribe")}
                 </Button>
               )
             ) : (

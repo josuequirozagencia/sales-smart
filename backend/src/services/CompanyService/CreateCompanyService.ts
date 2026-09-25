@@ -4,6 +4,7 @@ import Company from "../../models/Company";
 import User from "../../models/User";
 import sequelize from "../../database";
 import CompaniesSettings from "../../models/CompaniesSettings";
+import KanbanPipeline from "../../models/KanbanPipeline";
 import axios from "axios";
 
 interface CompanyData {
@@ -20,6 +21,14 @@ interface CompanyData {
   companyUserName?: string;
   generateInvoice?: boolean;
   currency?: string;
+  /**
+   * Estado de la solicitud con el que nace la empresa.
+   *
+   * Se deja OPCIONAL a proposito: quien no lo pase se queda con el valor
+   * por defecto de la columna, que es approved. Asi ninguno de los sitios
+   * que ya llamaban aqui cambia de comportamiento.
+   */
+  approvalStatus?: string;
 }
 
 const validateCnpjWithReceita = async (cnpj: string): Promise<boolean> => {
@@ -57,7 +66,8 @@ const CreateCompanyService = async (
     paymentMethod,
     companyUserName,
     generateInvoice,
-    currency
+    currency,
+    approvalStatus
   } = companyData;
 
   const companySchema = Yup.object().shape({
@@ -107,7 +117,9 @@ if (document && document.trim() !== "") {
       document: document ? document.replace(/\D/g, '') : "",
       paymentMethod,
       generateInvoice,
-      currency: currency || "BRL"
+      currency: currency || "BRL",
+      // Sin valor explicito manda el defecto de la columna (approved).
+      ...(approvalStatus ? { approvalStatus } : {})
     },
       { transaction: t }
     );
@@ -150,7 +162,17 @@ if (document && document.trim() !== "") {
           closeTicketOnTransfer: false,
           DirectTicketsToWallets: false
     },{ transaction: t })
-    
+
+    // Embudo del Kanban de la empresa. Cada empresa tiene los suyos: uno de
+    // salida para que el tablero exista desde el primer dia y se le puedan
+    // agregar etapas sin crear nada antes.
+    await KanbanPipeline.create({
+      name: "Proceso de venta",
+      companyId: company.id,
+      order: 0,
+      isDefault: true
+    } as any, { transaction: t });
+
     await t.commit();
 
     return company;

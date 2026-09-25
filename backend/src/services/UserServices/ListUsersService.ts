@@ -50,11 +50,15 @@ const ListUsersService = async ({
       "email",
       "companyId",
       "profile",
+      // Hace falta en la lista para poder distinguir al super del resto:
+      // sin esto, un superadministrador se ve igual que cualquier admin.
+      "super",
       "online",
       "startWork",
       "endWork",
       "profileImage",
-      "allowSeeMessagesInPendingTickets"
+      "allowSeeMessagesInPendingTickets",
+      "distributionWeight"
     ],
     limit,
     offset,

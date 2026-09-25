@@ -73,7 +73,20 @@ if (String(process.env.BULL_BOARD).toLocaleLowerCase() === 'true' && process.env
 // }));
 
 app.use(compression()); // Compressão HTTP
-app.use(bodyParser.json({ limit: '5mb' })); // Aumentar o limite de carga para 5 MB
+app.use(
+  bodyParser.json({
+    limit: "5mb", // Aumentar o limite de carga para 5 MB
+    verify: (req: any, _res: any, buf: Buffer) => {
+      // Stripe firma el cuerpo EXACTO del evento: para comprobar la firma hace
+      // falta el original, no el JSON ya interpretado y vuelto a serializar.
+      // Se guarda solo en la ruta del webhook, para no duplicar en memoria el
+      // cuerpo de todas las peticiones de la aplicacion.
+      if (String(req.originalUrl || "").startsWith("/subscription/stripewebhook")) {
+        req.rawBody = buf;
+      }
+    }
+  })
+);
 app.use(bodyParser.urlencoded({ limit: '5mb', extended: true }));
 app.use(
   cors({

@@ -156,6 +156,25 @@ const useStyles = makeStyles((theme) => ({
     "& .MuiInputAdornment-root .MuiSvgIcon-root": { color: ({ mode }) => mode === "dark" ? "#94a3b8" : "#64748b" },
     "& .MuiFormHelperText-root": { marginLeft: 2 },
   },
+  // Aviso de acceso bloqueado. Fijo, no pasajero: el usuario no lo resuelve
+  // reintentando y tiene que poder leerlo con calma. Viene de la linea del
+  // producto; el login de main no lo tenia.
+  avisoBloqueo: {
+    width: "100%",
+    padding: theme.spacing(2),
+    marginBottom: theme.spacing(2),
+    borderRadius: theme.palette.tokens.radius.md,
+    backgroundColor: theme.palette.tokens.semantic.warning.soft,
+    color: theme.palette.tokens.semantic.warning.text,
+    fontSize: "0.875rem",
+    lineHeight: 1.5,
+  },
+  avisoSoporte: {
+    marginTop: theme.spacing(1),
+    paddingTop: theme.spacing(1),
+    borderTop: "1px solid currentColor",
+    opacity: 0.9,
+  },
   submit: {
     minHeight: 50,
     margin: theme.spacing(2.5, 0, 2),
@@ -239,7 +258,16 @@ const Login = () => {
   const { appLogoFavicon, appLogoLight, appLogoDark, appName, mode } = colorMode;
   const classes = useStyles({ mode });
   const { getPublicSetting } = useSettings();
-  const { handleLogin, loading } = useContext(AuthContext);
+  // El motivo del bloqueo llega del CONTEXTO y no de un estado de aqui: esta
+  // pantalla se desmonta mientras dura el intento y volveria montada de cero
+  // con el aviso perdido.
+  const {
+    handleLogin,
+    loading,
+    bloqueoAcceso: bloqueo,
+    limpiarBloqueo
+  } = useContext(AuthContext);
+  const [soporte, setSoporte] = useState({ email: "", phone: "", note: "" });
   const [user, setUser] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
@@ -265,6 +293,19 @@ const Login = () => {
       getPublicSetting("appLogoBackgroundLight", numericCompanyId).then(file => setBackgroundLight(file ? `${getBackendUrl()}/public/${file}` : "")).catch(() => setBackgroundLight("")),
       getPublicSetting("appLogoBackgroundDark", numericCompanyId).then(file => setBackgroundDark(file ? `${getBackendUrl()}/public/${file}` : "")).catch(() => setBackgroundDark("")),
     ]);
+
+    // Datos de soporte para el aviso de prueba vencida. Si fallan, el mensaje
+    // sale igual sin ellos: no puede depender de esto.
+    ["supportEmail", "supportPhone", "supportNote"].forEach((clave) => {
+      getPublicSetting(clave, numericCompanyId)
+        .then((valor) =>
+          setSoporte((s) => ({
+            ...s,
+            [clave.replace("support", "").toLowerCase()]: valor || "",
+          }))
+        )
+        .catch(() => {});
+    });
     // Settings are loaded once for the company encoded in the entry URL.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -296,7 +337,12 @@ const Login = () => {
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.email)) nextErrors.email = i18n.t("login.validation.emailInvalid");
     if (!user.password) nextErrors.password = i18n.t("login.validation.passwordRequired");
     setErrors(nextErrors);
-    if (Object.keys(nextErrors).length === 0) handleLogin(user);
+    if (Object.keys(nextErrors).length === 0) {
+      // El motivo lo guarda handleLogin en el contexto; aqui solo hay que
+      // evitar que el rechazo quede sin recoger y limpiar el aviso anterior.
+      limpiarBloqueo();
+      handleLogin(user).catch(() => {});
+    }
   };
 
   const handleSelect = option => {
@@ -404,6 +450,35 @@ const Login = () => {
                 {loading && <CircularProgress size={18} className={classes.progress} />}
                 {loading ? i18n.t("login.buttons.loading") : i18n.t("login.buttons.submit")}
               </Button>
+              {bloqueo && (
+                <div className={classes.avisoBloqueo}>
+                  {i18n.t(`backendErrors.${bloqueo}`)}
+                  {/* Los datos de contacto solo se muestran cuando sirven de
+                      algo: en el resto de bloqueos no hay nada que gestionar
+                      con soporte. */}
+                  {bloqueo === "ERR_TRIAL_EXPIRED" &&
+                    (soporte.email || soporte.phone || soporte.note) && (
+                      <div className={classes.avisoSoporte}>
+                        {soporte.note && <div>{soporte.note}</div>}
+                        {soporte.email && <div>{soporte.email}</div>}
+                        {soporte.phone && <div>{soporte.phone}</div>}
+                      </div>
+                    )}
+                </div>
+              )}
+
+              {/* Recuperar contrasena: siempre visible. No depende de que el
+                  registro publico este abierto, porque quien ya tiene cuenta
+                  necesita poder recuperarla igualmente. El login de main no
+                  lo traia. */}
+              <Grid container justify="center" className={classes.registerRow}>
+                <Grid item>
+                  <Link component={RouterLink} to="/forgot-password" className={classes.registerLink}>
+                    {i18n.t("login.buttons.forgotPassword")}
+                  </Link>
+                </Grid>
+              </Grid>
+
               {allowSignup && (
                 <Grid container justify="center" className={classes.registerRow}>
                   <Grid item>

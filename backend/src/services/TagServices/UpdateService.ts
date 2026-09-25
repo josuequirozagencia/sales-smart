@@ -13,6 +13,7 @@ interface TagData {
   nextLaneId?: number;
   greetingMessageLane: string;
   rollbackLaneId?: number;
+  pipelineId?: number;
 }
 
 interface Request {
@@ -34,7 +35,8 @@ const UpdateUserService = async ({
     timeLane,
     nextLaneId = null,
     greetingMessageLane,
-    rollbackLaneId = null} = tagData;
+    rollbackLaneId = null,
+    pipelineId} = tagData;
 
   try {
     await schema.validate({ name });
@@ -46,6 +48,11 @@ const UpdateUserService = async ({
     name,
     color,
     kanban,
+    // Sin dato en el formulario se deja como estaba: cambiar de embudo es una
+    // accion aparte, no un efecto de editar el nombre.
+    ...(pipelineId === undefined
+      ? {}
+      : { pipelineId: String(pipelineId) === "" ? null : pipelineId }),
     timeLane,
     nextLaneId: String(nextLaneId) === "" ? null : nextLaneId,
     greetingMessageLane,

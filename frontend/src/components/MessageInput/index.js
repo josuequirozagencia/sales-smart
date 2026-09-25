@@ -28,6 +28,10 @@ import {
   Box,
 } from "@material-ui/core";
 import { blue, green, pink, grey } from "@material-ui/core/colors";
+// Iconos en trazo (outline) del set propio del proyecto — ver
+// components/Icons. Reemplazan a los de @material-ui/icons, que eran
+// rellenos, sin cambiar nada de donde se usan (mismos nombres locales).
+// WhatsApp es la excepcion: es un icono de marca, se deja tal cual.
 import {
   AttachFile,
   CheckCircleOutline,
@@ -45,30 +49,27 @@ import {
   Reply,
   Duo,
   Timer,
-  WhatsApp,
   Info,
-  AccountTree
-} from "@material-ui/icons";
-
-import {
-  FormatBold as FormatBoldIcon,
-  FormatItalic as FormatItalicIcon,
-  FormatStrikethrough as FormatStrikethroughIcon,
-  Code as CodeIcon,
-  FormatListNumbered as FormatListNumberedIcon,
-  FormatListBulleted as FormatListBulletedIcon,
-  FormatQuote as FormatQuoteIcon,
-  FormatClear as FormatClearIcon,
-} from "@material-ui/icons";
-
-import AddIcon from "@material-ui/icons/Add";
-import { CameraAlt } from "@material-ui/icons";
+  AccountTree,
+  Add as AddIcon,
+  CameraAlt,
+  FormatBoldIcon,
+  FormatItalicIcon,
+  FormatStrikethroughIcon,
+  CodeIcon,
+  FormatListNumberedIcon,
+  FormatListBulletedIcon,
+  FormatQuoteIcon,
+  FormatClearIcon,
+} from "../Icons";
+import { WhatsApp } from "@material-ui/icons";
 import MicRecorder from "mic-recorder-to-mp3";
 import clsx from "clsx";
 import { ReplyMessageContext } from "../../context/ReplyingMessage/ReplyingMessageContext";
 import { AuthContext } from "../../context/Auth/AuthContext";
 import { i18n } from "../../translate/i18n";
 import toastError from "../../errors/toastError";
+import { toast } from "react-toastify";
 import api, { openApi } from "../../services/api";
 import RecordingTimer from "./RecordingTimer";
 
@@ -139,16 +140,57 @@ const useStyles = makeStyles((theme) => ({
     display: "flex",
     padding: "7px",
     alignItems: "center",
+
+    // Los botones de la barra se llevaban el sitio de escribir. Con la ficha
+    // del contacto abierta la columna del chat baja de 500px; siete botones
+    // con el relleno de serie del MUI (12px por lado, 48px cada uno) dejaban
+    // menos de 200px para el texto, y el marcador de posicion no cabia.
+    //
+    // No se quita ninguno: se recorta el relleno, que es lo que sobra. Cada
+    // boton queda en 36px, comodo para el dedo, y la caja de escribir gana
+    // unos 84px.
+    "& .MuiIconButton-root": {
+      padding: 8,
+    },
+    "& .MuiIconButton-root .MuiSvgIcon-root": {
+      fontSize: 20,
+    },
+
+    [theme.breakpoints.down("xs")]: {
+      padding: "4px",
+      "& .MuiIconButton-root": {
+        padding: 6,
+      },
+    },
   },
   messageInputWrapper: {
-    padding: 6,
+    padding: "4px 6px",
     marginRight: 7,
     background: theme.palette.background.paper,
     display: "flex",
+    alignItems: "center",
     borderRadius: 20,
     flex: 1,
-    position: "relative", // ✅ Essencial para o position absolute funcionar
-    zIndex: 1, // ✅ Z-index base
+    position: "relative",
+    zIndex: 1,
+
+    // El campo no tenia ningun borde ni indicacion de foco: al escribir no
+    // habia forma de saber que estaba activo, y con el teclado era imposible
+    // localizar donde estaba el cursor.
+    border: `1px solid ${theme.palette.divider}`,
+    transition: "border-color 180ms ease, box-shadow 180ms ease",
+
+    "&:hover": {
+      borderColor: theme.palette.tokens.border.strong,
+    },
+
+    // focus-within porque quien recibe el foco es el textarea de dentro, no
+    // este contenedor. Halo tenue del color de marca en lugar del contorno
+    // grueso del navegador.
+    "&:focus-within": {
+      borderColor: theme.palette.primary.main,
+      boxShadow: `0 0 0 3px ${theme.palette.primary.main}22`,
+    },
   },
 
   messageInputWrapperPrivate: {
@@ -192,12 +234,31 @@ const useStyles = makeStyles((theme) => ({
     fontWeight: 500,
   },
   sendMessageIcons: {
-    color: grey[700],
+    // Era grey[700] fijo: sobre el fondo oscuro apenas se distinguia de la
+    // superficie. El token de texto atenuado se adapta a los dos modos.
+    color: theme.palette.tokens.text.muted,
+    transition: "color 180ms ease",
+    "&:hover": {
+      color: theme.palette.tokens.text.primary,
+    },
   },
   ForwardMessageIcons: {
     color: grey[700],
     transform: "scaleX(-1)",
   },
+  // Icono de cada opcion del menu del movil: al ras del texto, sin el boton
+  // redondo de la barra de escritorio, que dentro de un menu solo anade ruido.
+  iconoMenuMovil: {
+    marginRight: 12,
+    color: theme.palette.tokens.text.secondary,
+  },
+  etiquetaMenuMovil: {
+    display: "flex",
+    alignItems: "center",
+    width: "100%",
+    cursor: "pointer",
+  },
+
   uploadInput: {
     display: "none",
   },
@@ -214,8 +275,19 @@ const useStyles = makeStyles((theme) => ({
   emojiBox: {
     position: "absolute",
     bottom: 63,
-    width: 40,
-    borderTop: "1px solid #e8e8e8",
+    zIndex: 10,
+    borderTop: `1px solid ${theme.palette.tokens.border.border}`,
+    // En el movil ocupa el ancho de la pantalla menos un margen, con el
+    // teclado de emojis ajustado a esa caja.
+    [theme.breakpoints.down("xs")]: {
+      left: 8,
+      right: 8,
+      bottom: 56,
+      "& .emoji-mart": {
+        width: "100% !important",
+        maxWidth: "100%",
+      },
+    },
   },
   circleLoading: {
     color: green[500],
@@ -482,6 +554,36 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
+// Plantillas de GHL: la lista real de Meta tiene otra forma que las de
+// WhatsApp Oficial guardadas como respuestas rapidas. Se adapta a lo que
+// espera TemplateModal (shortcode, botones en JSON).
+const plantillaGhlParaModal = (p) => ({
+  ...p,
+  id: `${p.name}|${p.language}`,
+  shortcode: p.name,
+  components: (p.components || []).map((c) =>
+    c.buttons && typeof c.buttons !== "string" ? { ...c, buttons: JSON.stringify(c.buttons) } : c
+  ),
+});
+
+/**
+ * Valores del modal (por componente y posicion) -> "header.1", "body.2"...,
+ * que es como el backend sabe en que campo de GHL va cada variable.
+ */
+const valoresPlantillaGhl = (plantilla, variableValues) => {
+  const valores = {};
+  (plantilla.components || []).forEach((c) => {
+    const tipo = String(c.type || "").toLowerCase();
+    if (!["header", "body"].includes(tipo)) return;
+    const numeros = [...String(c.text || "").matchAll(/{{(\d+)}}/g)].map((m) => m[1]);
+    numeros.forEach((n, i) => {
+      const valor = variableValues?.[tipo]?.[i]?.value;
+      if (valor !== undefined) valores[`${tipo}.${n}`] = valor;
+    });
+  });
+  return valores;
+};
+
 const MessageInput = ({
   ticketId,
   ticketStatus,
@@ -499,6 +601,8 @@ const MessageInput = ({
   const [showEmoji, setShowEmoji] = useState(false);
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
   const [templates, setTemplates] = useState([]);
+  // Plantillas enviables en tickets de GHL (van por un Workflow de GHL).
+  const [plantillasGhl, setPlantillasGhl] = useState([]);
   const [loading, setLoading] = useState(false);
   const [recording, setRecording] = useState(false);
   const [quickAnswers, setQuickAnswer] = useState([]);
@@ -913,6 +1017,16 @@ const MessageInput = ({
   };
 
   const handleSendTemplate = async () => {
+    if (ticketChannel === "ghl") {
+      // Se piden al abrir: son las reales de Meta, con su Workflow asignado.
+      try {
+        const { data } = await api.get("/ghl/sendable-templates");
+        setPlantillasGhl((data || []).map(plantillaGhlParaModal));
+      } catch (err) {
+        toastError(err);
+        return;
+      }
+    }
     setTemplateModalOpen(true);
   };
 
@@ -1248,6 +1362,25 @@ const MessageInput = ({
   const handleSendMessageTemplate = async (e) => {
     if (e.id === "") return;
     setLoading(true);
+
+    if (ticketChannel === "ghl") {
+      // GHL: la envia un Workflow; el backend rellena los campos del contacto
+      // con las variables y lo inscribe.
+      try {
+        await api.post(`/ghl/tickets/${ticketId}/template`, {
+          name: e.name,
+          language: e.language,
+          values: valoresPlantillaGhl(e, e.variables),
+        });
+        toast.success(i18n.t("messageInput.ghlTemplate.sent"));
+      } catch (err) {
+        toastError(err);
+      }
+      setLoading(false);
+      setTemplateModalOpen(false);
+      handleMenuItemClick();
+      return;
+    }
 
     const message = {
       templateId: e.id,
@@ -1758,7 +1891,7 @@ const MessageInput = ({
       <Box className={classes.pendingAlert}>
         <Info style={{ fontSize: 20 }} />
         <span>
-          <strong>Ticket Aguardando:</strong> Apenas mensagens internas são permitidas neste momento.
+          <strong>{i18n.t("chat2.waitingTicket")}</strong> {i18n.t("chat2.waitingTicketHelp")}
         </span>
       </Box>
     );
@@ -1792,7 +1925,7 @@ const MessageInput = ({
             open={templateModalOpen}
             handleClose={() => setTemplateModalOpen(false)}
             onSelectTemplate={(e) => handleSendMessageTemplate(e)}
-            templates={templates}
+            templates={ticketChannel === "ghl" ? plantillasGhl : templates}
           />
         )}
         {modalCameraOpen && (
@@ -1835,6 +1968,36 @@ const MessageInput = ({
 
           {(replyingMessage && renderReplyingMessage(replyingMessage)) ||
             (editingMessage && renderReplyingMessage(editingMessage))}
+          {/* Selector de emojis.
+
+              Estaba DENTRO de la rama de escritorio, asi que en el movil la
+              opcion del menu cambiaba el estado y no se pintaba nada. Ahora es
+              uno solo, fuera de las dos ramas, y se adapta al ancho.
+
+              Al pulsar fuera se cierra; antes hacia setShowEmoji(true), que lo
+              dejaba abierto pasara lo que pasara. Los botones que lo abren se
+              excluyen: si no, el clic los cerraria y su propio onClick lo
+              volveria a abrir. */}
+          {showEmoji && (
+            <ClickAwayListener
+              onClickAway={(e) => {
+                if (e.target?.closest?.('[aria-label="emojiPicker"]')) return;
+                setShowEmoji(false);
+              }}
+            >
+              <div className={classes.emojiBox}>
+                <Picker
+                  perLine={isMobile ? 8 : 16}
+                  theme={"dark"}
+                  i18n={i18n}
+                  showPreview={!isMobile}
+                  showSkinTones={false}
+                  onSelect={handleAddEmoji}
+                />
+              </div>
+            </ClickAwayListener>
+          )}
+
           <div className={classes.newMessageBox}>
             {!isTicketPending() && (
               <Hidden only={["sm", "xs"]}>
@@ -1846,21 +2009,6 @@ const MessageInput = ({
                 >
                   <Mood className={classes.sendMessageIcons} />
                 </IconButton>
-                {showEmoji ? (
-                  <div className={classes.emojiBox}>
-                    <ClickAwayListener onClickAway={(e) => setShowEmoji(true)}>
-                      <Picker
-                        perLine={16}
-                        theme={"dark"}
-                        i18n={i18n}
-                        showPreview={true}
-                        showSkinTones={false}
-                        onSelect={handleAddEmoji}
-                      />
-                    </ClickAwayListener>
-                  </div>
-                ) : null}
-
                 <Fab
                   disabled={disableOption()}
                   aria-label="uploadMedias"
@@ -1934,8 +2082,8 @@ const MessageInput = ({
                     </Fab>
                     {i18n.t("messageInput.type.meet")}
                   </MenuItem>
-                  {useWhatsappOfficial &&
-                    ticketChannel === "whatsapp_oficial" && (
+                  {((useWhatsappOfficial && ticketChannel === "whatsapp_oficial") ||
+                    ticketChannel === "ghl") && (
                       <MenuItem onClick={handleSendTemplate}>
                         <Fab className={classes.invertedFabMenuMeet}>
                           <WhatsApp />
@@ -2043,6 +2191,22 @@ const MessageInput = ({
               </Hidden>
             )}
 
+            {/* Menu del movil.
+
+                En el movil no hay barra de iconos: todo cuelga de este boton.
+                Tenia solo emoji y adjuntar, los dos SIN texto, mas la firma y
+                el comentario privado sueltos —iconos que ni siquiera eran
+                opciones del menu— y "Disparar Fluxo" escrito a mano en
+                portugues. Se veia como un menu vacio, y desde el movil no se
+                podia mandar una foto de la camara, un documento, un contacto,
+                un enlace de videollamada ni una plantilla: esas opciones solo
+                existian en la barra de escritorio.
+
+                Ahora ofrece las mismas acciones que el escritorio, cada una
+                con su nombre. Los identificadores de los campos de archivo
+                llevan sufijo porque la barra de escritorio sigue en el DOM
+                (Hidden la oculta con CSS) y un id repetido dejaria sin efecto
+                a la etiqueta que lo acompana. */}
             {!isTicketPending() && (
               <Hidden only={["md", "lg", "xl"]}>
                 <IconButton
@@ -2058,100 +2222,111 @@ const MessageInput = ({
                   open={Boolean(anchorEl)}
                   onClose={handleMenuItemClick}
                 >
-                  <MenuItem onClick={handleMenuItemClick}>
-                    <IconButton
-                      aria-label="emojiPicker"
-                      component="span"
-                      disabled={disableOption()}
-                      onClick={(e) => setShowEmoji((prevState) => !prevState)}
-                    >
-                      <Mood className={classes.sendMessageIcons} />
-                    </IconButton>
+                  <MenuItem
+                    disabled={disableOption()}
+                    onClick={() => {
+                      handleMenuItemClick();
+                      setShowEmoji((prevState) => !prevState);
+                    }}
+                  >
+                    <Mood className={classes.iconoMenuMovil} />
+                    {i18n.t("messageInput.type.emoji")}
                   </MenuItem>
-                  <MenuItem onClick={handleMenuItemClick}>
+
+                  <MenuItem onClick={handleMenuItemClick} disabled={disableOption()}>
                     <input
                       multiple
                       type="file"
-                      id="upload-button"
+                      id="upload-img-button-movil"
+                      accept="image/*, video/*, audio/* "
                       disabled={disableOption()}
                       className={classes.uploadInput}
                       onChange={handleChangeMedias}
                     />
-                    <label htmlFor="upload-button">
-                      <IconButton
-                        aria-label="upload"
-                        component="span"
-                        disabled={disableOption()}
-                      >
-                        <AttachFile className={classes.sendMessageIcons} />
-                      </IconButton>
+                    <label htmlFor="upload-img-button-movil" className={classes.etiquetaMenuMovil}>
+                      <PermMedia className={classes.iconoMenuMovil} />
+                      {i18n.t("messageInput.type.imageVideo")}
                     </label>
                   </MenuItem>
-                  {signMessagePar && (
-                    <Tooltip title="Habilitar/Desabilitar Assinatura">
-                      <IconButton
-                        aria-label="send-upload"
-                        component="span"
-                        onClick={handleChangeSign}
-                      >
-                        {signMessage === true ? (
-                          <Create
-                            style={{
-                              color:
-                                theme.mode === "light"
-                                  ? theme.palette.primary.main
-                                  : "#EEE",
-                            }}
-                          />
-                        ) : (
-                          <Create style={{ color: "grey" }} />
-                        )}
-                      </IconButton>
-                    </Tooltip>
-                  )}
 
-                  {/* NOVO ITEM DE MENU MOBILE PARA TRIGGER FLOW */}
-                  {ticketStatus === "open" && (
-                    <MenuItem onClick={() => {
-                      handleMenuItemClick();
-                      handleTriggerFlowClick();
-                    }}>
-                      <IconButton
-                        aria-label="trigger-flow"
-                        component="span"
-                      >
-                        <AccountTree
-                          style={{
-                            color: theme.mode === "light"
-                              ? theme.palette.secondary.main
-                              : "#EEE"
-                          }}
-                        />
-                      </IconButton>
-                      Disparar Fluxo
+                  <MenuItem onClick={handleCameraModalOpen} disabled={disableOption()}>
+                    <CameraAlt className={classes.iconoMenuMovil} />
+                    {i18n.t("messageInput.type.cam")}
+                  </MenuItem>
+
+                  <MenuItem onClick={handleMenuItemClick} disabled={disableOption()}>
+                    <input
+                      multiple
+                      type="file"
+                      id="upload-doc-button-movil"
+                      accept="application/*, text/*, .odt, .ods, .odp, .odg, .xml, .ofx, .zip, .rar, .7z, .tar, .gz, .bz2, .msg, .key, .numbers, .pages"
+                      disabled={disableOption()}
+                      className={classes.uploadInput}
+                      onChange={handleChangeMedias}
+                    />
+                    <label htmlFor="upload-doc-button-movil" className={classes.etiquetaMenuMovil}>
+                      <Description className={classes.iconoMenuMovil} />
+                      {i18n.t("messageInput.type.document")}
+                    </label>
+                  </MenuItem>
+
+                  <MenuItem onClick={handleSendContactModalOpen} disabled={disableOption()}>
+                    <Person className={classes.iconoMenuMovil} />
+                    {i18n.t("messageInput.type.contact")}
+                  </MenuItem>
+
+                  <MenuItem onClick={handleSendLinkVideo} disabled={disableOption()}>
+                    <Duo className={classes.iconoMenuMovil} />
+                    {i18n.t("messageInput.type.meet")}
+                  </MenuItem>
+
+                  {((useWhatsappOfficial && ticketChannel === "whatsapp_oficial") ||
+                    ticketChannel === "ghl") && (
+                      <MenuItem onClick={handleSendTemplate} disabled={disableOption()}>
+                        <WhatsApp className={classes.iconoMenuMovil} />
+                        {i18n.t("messageInput.type.template")}
+                      </MenuItem>
+                    )}
+
+                  {signMessagePar && (
+                    <MenuItem
+                      onClick={() => {
+                        handleMenuItemClick();
+                        handleChangeSign();
+                      }}
+                    >
+                      <Create
+                        className={classes.iconoMenuMovil}
+                        color={signMessage ? "primary" : "inherit"}
+                      />
+                      {i18n.t("messageInput.tooltip.signature")}
                     </MenuItem>
                   )}
 
-                  <Tooltip title="Habilitar/Desabilitar Comentários">
-                    <IconButton
-                      aria-label="send-upload"
-                      component="span"
-                      onClick={handlePrivateMessage}
+                  <MenuItem
+                    onClick={() => {
+                      handleMenuItemClick();
+                      handlePrivateMessage();
+                    }}
+                  >
+                    <Comment
+                      className={classes.iconoMenuMovil}
+                      color={privateMessage ? "primary" : "inherit"}
+                    />
+                    {i18n.t("messageInput.tooltip.privateMessage")}
+                  </MenuItem>
+
+                  {ticketStatus === "open" && (
+                    <MenuItem
+                      onClick={() => {
+                        handleMenuItemClick();
+                        handleTriggerFlowClick();
+                      }}
                     >
-                      {privateMessage === true ? (
-                        <Comment
-                          style={{
-                            color:
-                              theme.mode === "light"
-                                ? theme.palette.primary.main
-                                : "#EEE",
-                          }}
-                        />
-                      ) : (
-                        <Comment style={{ color: "grey" }} />
-                      )}
-                    </IconButton>
-                  </Tooltip>
+                      <AccountTree className={classes.iconoMenuMovil} />
+                      {i18n.t("messageInput.type.triggerFlow")}
+                    </MenuItem>
+                  )}
                 </Menu>
               </Hidden>
             )}
@@ -2168,7 +2343,7 @@ const MessageInput = ({
                       className={isTicketPending() ? classes.messageInputPending : classes.messageInputPrivate}
                       placeholder={
                         isTicketPending()
-                          ? "Mensagem interna (ticket aguardando aceite)..."
+                          ? i18n.t("chat2.internalPlaceholder")
                           : ticketStatus === "open" || ticketStatus === "group"
                             ? i18n.t("messagesInput.placeholderPrivateMessage")
                             : i18n.t("messagesInput.placeholderClosed")

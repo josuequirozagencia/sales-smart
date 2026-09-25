@@ -1,0 +1,177 @@
+# Agentes IA
+
+Agentes de IA reutilizables por empresa (`AiAgent`), asignados a una conexión
+(`AiAgentChannel`, como máximo un agente por conexión) y usados igual en
+WhatsApp (Baileys), WhatsApp Oficial, Facebook e Instagram. GHL queda fuera.
+
+Estado: fase 1 completa en la rama `feat/agentes-ia`: modelo, API de
+administración, motor, atención por canal, estado de la IA por conversación,
+transferencia, seguimientos, página de administración, chat de prueba y
+selector de agente en los nodos del Flow Builder.
+
+## Administración
+
+Menú **Supervisión y crecimiento → Agentes IA** (`/ai-agents`), con las mismas
+condiciones que Prompts IA: plan con IA y perfil de administrador.
+
+- Lista con nombre, proveedor y modelo, conexiones asignadas y estado.
+- Formulario por pestañas: General (proveedor, modelo, clave, instrucciones,
+  fila de transferencia), Respuestas (temperatura, límites, bloques, audio,
+  imágenes, voz), Conocimiento (pegar texto o subir PDF, Word o texto),
+  Horario, Seguimientos (hasta 5 pasos) y Canales.
+- La clave de API nunca vuelve del servidor: el campo se deja vacío y solo se
+  muestran sus 4 últimos caracteres. Enviarlo vacío conserva la guardada.
+- El modelo es un desplegable que se llena preguntando al proveedor
+  (`POST /ai-agents/models`): OpenAI y Gemini con la clave del agente,
+  OpenRouter con su catálogo público. Acepta texto libre, para no depender de
+  una lista escrita a mano, y el resultado se cachea media hora.
+- Los fallos de validación se muestran dentro del formulario, no solo como
+  aviso de esquina, y los códigos `ERR_AI_AGENT_*` están traducidos.
+- Los canales se guardan en su propia llamada: una conexión que ya use otro
+  agente sale bloqueada en la lista y el servidor la rechaza si se fuerza.
+
+## Dos estados independientes
+
+| Estado | Dónde vive | Quién lo cambia |
+|---|---|---|
+| **Asignación** | `Tickets.userId`, `status`, `queueId` (sin cambios) | asesores, enrutador, cartera, transferencia |
+| **IA activa / pausada** | `AiAgentTicketStates` (una fila por ticket) | asesor, mensaje humano, transferencia |
+
+Activar o pausar la IA **nunca** cambia la asignación, el status ni la fila, y
+no cierra ni abre conversaciones. La IA responde si su estado es activo, aunque
+el ticket esté abierto con un asesor.
+
+No se reutilizó ningún campo existente:
+- `Tickets.isBot` se pone a `false` con cada mensaje entrante (`FindOrCreateTicketService`);
+- `Tickets.useIntegration` dispara Typebot y flujos;
+- `Contacts.disableBot` («Desactivar chatbot») es por contacto y apaga todos los bots. Sigue igual y la IA lo respeta.
+
+### Reglas del estado (`services/AiAgentServices/EstadoIaTicket.ts`)
+
+- Vale por **atención** (`TicketTraking`). Al cerrarse el ticket, la siguiente atención empieza con la IA activa.
+- Sin fila para la atención actual: activa, salvo que el ticket esté **abierto con un asesor** que ya haya escrito en ella (regla del enrutador: `fromMe`, no privado y sin U+200E). Se limita a tickets abiertos y asignados porque muchos mensajes automáticos (textos de flujos, aviso de fuera de horario) no llevan la marca y, en un ticket pendiente, parecerían de una persona.
+- `version` sube con cada cambio.
+- Motivos (`reason`): `transfer`, `human_message`, `manual`.
+- Cada cambio se emite por socket: `company-{id}-aiAgentTicketState`.
+
+### Prioridad humana
+
+- **Mensaje desde Sales Smart** (`MessageController.store`, `forwardMessage`, `storeTemplate`, salvo notas internas):
+  1. toma el bloqueo del ticket;
+  2. pausa la IA;
+  3. **después** envía.
+- **Respuesta de la IA:** antes de cada bloque toma el mismo bloqueo, relee el estado y, si cambió la `version` o está pausada, descarta lo que falta. Ninguna respuesta de IA sale detrás del mensaje humano.
+- **Mensajes escritos en el celular (Baileys) o en la bandeja de Meta (FB/IG):** pausan al llegar su eco. Se detectan cuando ya salieron, así que un bloque de IA en envío puede cruzarse por milisegundos.
+- **Mensajes del propio agente:** los textos llevan U+200E. Los audios, que no tienen texto, se registran por `wid` para que su eco no pause.
+- Los envíos por la API externa o programados sin la marca también cuentan como humanos, igual que para el enrutador.
+- El bloqueo vive en memoria: producción corre `node dist/server.js`, un solo proceso, porque las sesiones de Baileys viven en memoria. `server-cluster.ts` no se usa. Si algún día hubiera varias réplicas, el bloqueo tendría que pasar a Redis.
+- Si falla la lectura del estado, el mensaje humano se envía igual y la IA no responde.
+
+### Transferencia a humano
+
+La IA envía su último mensaje, pausa (`reason: transfer`) y asigna con la cadena que ya usa el CRM:
+
+1. el ticket ya tiene asesor → se queda con él;
+2. el contacto tiene cartera → su dueño (si es de la empresa);
+3. el agente tiene fila de transferencia → esa fila, y el enrutador elige asesor;
+4. nada de lo anterior → pendiente sin asesor.
+
+Detección: tool calling `transferir_a_humano` y, si el modelo no admite herramientas, el texto literal «Ação: Transferir para o setor de atendimento».
+
+### Activar desde la conversación
+
+`PUT /ai-agents/tickets/:ticketId/state {enabled}` (cualquier usuario de la empresa, como enviar mensajes):
+- Si el último mensaje es del cliente, la IA le responde con todo el historial: cliente, IA y asesor. Los mensajes del asesor le llegan marcados como tales.
+- Si el último es del asesor, espera al siguiente mensaje del cliente.
+- Con la conversación cerrada: `409 ERR_AI_AGENT_TICKET_CLOSED`.
+
+`GET /ai-agents/tickets/:ticketId/state` devuelve `available`, `enabled`, `reason`, `agentName`, `disableBot` y `withinSchedule`.
+
+Frontend: `components/AiAgentTicketControl`, una franja bajo la cabecera de la conversación («🤖 Agente IA: ACTIVO [Pausar Agente IA]» / «PAUSADO [Activar Agente IA]»). Solo aparece si la conexión tiene agente.
+
+## Cuándo atiende el agente
+
+Enganches, justo después de guardar el mensaje entrante:
+- Baileys: antes del horario de la empresa, colas, flujos e integraciones;
+- WhatsApp Oficial: antes de `verifyQueueOficial`;
+- Facebook/Instagram: antes de flujos y colas.
+
+Responde si se cumple todo lo siguiente:
+- la conexión tiene un agente activo;
+- el estado de la IA es activo;
+- el agente está en su horario (hora del negocio, `BUSINESS_TIMEZONE`);
+- el contacto no tiene «Desactivar chatbot»;
+- no es grupo, ni importado, ni está en `closed`/`lgpd`/`nps`;
+- no hay Typebot, flujo ni input de flujo en marcha.
+
+Si responde, el listener termina ahí. Si no, todo sigue como antes.
+
+La respuesta se genera en segundo plano, una por ticket. Si llegan varios mensajes seguidos, se contesta al último con todo el contexto.
+
+El horario del **asesor** no afecta a la IA; el del **agente**, sí.
+
+## Seguimientos
+
+- Cada respuesta del agente programa el paso 1 (`AiAgentFollowUpJobs`). `when` es el tiempo sin respuesta del cliente.
+- Un worker (cada minuto, `SeguimientosWorker`) vuelve a validar todo antes de enviar:
+  - **se cancela** si la IA está pausada, el cliente respondió, el ticket está cerrado, el contacto tiene `disableBot` o el agente ya no está en la conexión;
+  - **espera** si está fuera del horario del agente.
+- Pausar la IA cancela los pendientes.
+- Límite de Meta: WhatsApp Oficial e Instagram rechazan texto libre pasadas 24 h desde el último mensaje del cliente. Esos pasos quedan como `failed` con el motivo.
+
+## Chat de prueba (pestaña «Probar»)
+
+- `POST /ai-agents/test-message` (multipart: `sessionId`, `config` en JSON,
+  `agentId` opcional, `text`, `image`, `audio`) responde con la configuración
+  que hay en pantalla, aunque no esté guardada, y con el mismo motor que en
+  producción. **No crea contactos, tickets, mensajes ni seguimientos.**
+- Sin clave escrita usa la del agente guardado, solo si es de la empresa.
+- Historial en Redis por empresa, usuario y sesión, con caducidad de 2 h.
+  `DELETE /ai-agents/test-message/:sessionId` lo borra; el formulario lo hace
+  al cerrarse.
+- `POST /ai-agents/capabilities`: si el modelo acepta imágenes, audio y
+  herramientas, con avisos (clave inválida, modelo inexistente).
+- El micrófono graba en `webm`; para Gemini se convierte a mp3.
+
+## Nodos del Flow Builder con agente
+
+- En los nodos OpenAI y Gemini, «Configuración del nodo» permite elegir un
+  agente disponible para flujos (`disponibleEnFlujos`) o seguir con la
+  configuración manual de siempre.
+- Con agente, **el nodo guarda solo `agentId`**: proveedor, modelo, clave,
+  instrucciones y horario se leen del agente al responder. En el ticket
+  (`dataWebhook.settings`) tampoco queda ninguna clave.
+- Responde con el motor, el envío por canal, el estado de la IA y la prioridad
+  humana de los agentes, en WhatsApp (Baileys) y en WhatsApp Oficial, donde
+  antes los nodos IA no respondían. Facebook/Instagram no tienen nodos IA en
+  sus flujos.
+- El modo temporal se conserva (palabras clave, máximo de interacciones,
+  tiempo límite, objetivo cumplido); sus controles se comparten con los nodos
+  manuales (`controlarModoTemporal`). El aviso de vuelta al flujo sale con la
+  marca de automático para que no pause la IA del siguiente nodo.
+- Al transferir, sale del modo IA del flujo y aplica la cadena de asignación,
+  con la fila elegida en el nodo por delante de la del agente.
+- Los seguimientos son del agente de conexión; en un flujo manda el flujo.
+- El control «Agente IA» de la conversación también aparece mientras un nodo
+  con agente atiende el ticket.
+
+## Pruebas
+
+- `src/__tests__/services/AiAgents.spec.ts`: validación, cifrado, motor contra un proveedor falso y aislamiento por empresa.
+- `src/__tests__/services/AiAgentTicketState.spec.ts`:
+  - independencia de la asignación;
+  - reinicio por atención;
+  - prioridad humana durante la generación y entre bloques;
+  - las tres ramas de la transferencia;
+  - activación por el asesor;
+  - seguimientos;
+  - nodos del Flow Builder con agente.
+- `src/__tests__/services/AiAgentSandbox.spec.ts`: chat de prueba sin escribir en la base.
+
+## Migraciones
+
+`20260916120000` a `20260916120300`, todas aditivas (tablas nuevas). En Railway las aplica `deploy/predeploy.js`. En local:
+
+```bash
+cd backend && npx sequelize db:migrate
+```

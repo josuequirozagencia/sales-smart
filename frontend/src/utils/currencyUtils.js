@@ -185,6 +185,29 @@ export const setCurrentCurrency = (currencyCode) => {
   window.dispatchEvent(new CustomEvent('currencyChanged', { detail: currencyCode }));
 };
 
+/**
+ * Aplica la moneda que tiene configurada la INSTALACION.
+ *
+ * La eleccion se guarda en el servidor (ajuste `currency`) y esta copia
+ * en localStorage es solo una cache para que las pantallas no tengan que
+ * esperar a una peticion antes de pintar una cifra.
+ *
+ * Manda el servidor: se aplica en cada arranque. Si no fuera asi, quien
+ * hubiera tocado la moneda alguna vez en su navegador seguiria viendo la
+ * suya para siempre, y dos personas de la misma empresa verian precios
+ * distintos.
+ *
+ * @returns true si la moneda cambio respecto a lo que habia
+ */
+export const applyInstallationCurrency = (currencyCode) => {
+  // Un codigo que no conocemos se ignora en vez de dejar la aplicacion
+  // sin moneda: mejor seguir con la anterior que romper cada precio.
+  if (!currencyCode || !CURRENCIES.some(c => c.code === currencyCode)) return false;
+  if (localStorage.getItem('selectedCurrency') === currencyCode) return false;
+  setCurrentCurrency(currencyCode);
+  return true;
+};
+
 // Formatar valor com a moeda selecionada
 export const formatCurrency = (value, currencyCode = null) => {
   const currency = currencyCode 
@@ -242,6 +265,7 @@ export const useCurrency = () => {
     formatCurrency,
     getCurrencySymbol,
     setCurrentCurrency,
+    applyInstallationCurrency,
     currencies: CURRENCIES
   };
 };

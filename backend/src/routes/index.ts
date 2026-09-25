@@ -17,6 +17,10 @@ import helpRoutes from "./helpRoutes";
 import dashboardRoutes from "./dashboardRoutes";
 import scheduleRoutes from "./scheduleRoutes";
 import tagRoutes from "./tagRoutes";
+import queueProductRoutes from "./queueProductRoutes";
+import saleRoutes from "./saleRoutes";
+import appointmentRoutes from "./appointmentRoutes";
+import googleCalendarRoutes from "./googleCalendarRoutes";
 import contactListRoutes from "./contactListRoutes";
 import contactListItemRoutes from "./contactListItemRoutes";
 import campaignRoutes from "./campaignRoutes";
@@ -47,6 +51,12 @@ import flowDefaultRoutes from "./flowDefaultRoutes";
 import webHook from "./webHookRoutes";
 import flowBuilder from "./flowBuilderRoutes";
 import flowCampaignRoutes from "./flowCampaignRoutes";
+import ghlRoutes from "./ghlRoutes";
+import configSnapshotRoutes from "./configSnapshotRoutes";
+import metaRoutes from "./metaRoutes";
+import aiAgentRoutes from "./aiAgentRoutes";
+import sessionSettingsRoutes from "./sessionSettingsRoutes";
+import kanbanPipelineRoutes from "./kanbanPipelineRoutes";
 
 import ChatController from "../controllers/ChatController";
 
@@ -54,6 +64,19 @@ const routes = Router();
 
 routes.use(userRoutes);
 routes.use("/auth", authRoutes);
+
+// GoHighLevel va ARRIBA a proposito.
+//
+// ticketFinalizationReasonRoutes hace .use(isAuth) SIN ruta y esta
+// montado en la raiz, asi que todo lo que se registre despues de el pasa
+// primero por isAuth. Es lo que hace que este servidor responda 401 a
+// rutas que no existen. El webhook de GHL es publico —GHL no puede
+// presentar el JWT— y desde abajo devolvia 401 sin llegar a ejecutarse.
+routes.use(ghlRoutes);
+routes.use(metaRoutes);
+routes.use(aiAgentRoutes);
+routes.use(sessionSettingsRoutes);
+routes.use(kanbanPipelineRoutes);
 routes.use("/api/messages", apiRoutes);
 routes.use(settingRoutes);
 routes.use(contactRoutes);
@@ -64,6 +87,7 @@ routes.use(messageRoutes);
 routes.use(whatsappSessionRoutes);
 routes.use(queueRoutes);
 routes.use(companyRoutes);
+routes.use(configSnapshotRoutes);
 routes.use(planRoutes);
 routes.use(ticketNoteRoutes);
 routes.use(quickMessageRoutes);
@@ -72,6 +96,10 @@ routes.use(dashboardRoutes);
 routes.use(birthdayRoutes);
 routes.use(scheduleRoutes);
 routes.use(tagRoutes);
+routes.use(queueProductRoutes);
+routes.use(saleRoutes);
+routes.use(appointmentRoutes);
+routes.use(googleCalendarRoutes);
 routes.use(contactListRoutes);
 routes.use(contactListItemRoutes);
 routes.use(campaignRoutes);

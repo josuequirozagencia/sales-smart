@@ -1,23 +1,31 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState, useContext, useRef } from "react";
+import clsx from "clsx";
 
 import { makeStyles } from "@material-ui/core/styles";
 import Typography from "@material-ui/core/Typography";
 import IconButton from "@material-ui/core/IconButton";
-import CloseIcon from "@material-ui/icons/Close";
 import Drawer from "@material-ui/core/Drawer";
 import Link from "@material-ui/core/Link";
 import InputLabel from "@material-ui/core/InputLabel";
 import Button from "@material-ui/core/Button";
 import Paper from "@material-ui/core/Paper";
-import GroupIcon from "@material-ui/icons/Group";
-import PermIdentityIcon from '@material-ui/icons/PermIdentity';
-import PersonIcon from "@material-ui/icons/Person";
-import CreateIcon from '@material-ui/icons/Create';
-import SearchIcon from '@material-ui/icons/Search';
-import ClearIcon from '@material-ui/icons/Clear';
-import BlockIcon from '@material-ui/icons/Block';
-import LockOpenIcon from '@material-ui/icons/LockOpen';
-import Avatar from '@material-ui/core/Avatar';
+// Iconos en trazo del set propio del proyecto — ver components/Icons.
+import {
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
+  CloseIcon,
+  GroupIcon,
+  PermIdentityIcon,
+  PersonIcon,
+  CreateIcon,
+  MonetizationOnOutlinedIcon,
+  EventAvailableOutlinedIcon,
+  SearchIcon,
+  ClearIcon,
+  BlockIcon,
+  LockOpenIcon,
+  AccountTree,
+} from "../Icons";
 import formatSerializedId from '../../utils/formatSerializedId';
 import { i18n } from "../../translate/i18n";
 import ModalImageCors from "../ModalImageCors";
@@ -25,9 +33,9 @@ import ContactDrawerSkeleton from "../ContactDrawerSkeleton";
 import MarkdownWrapper from "../MarkdownWrapper";
 import { 
 	Badge,
+	ButtonBase,
 	CardHeader, 
 	Switch, 
-	Tooltip, 
 	Tabs, 
 	Tab, 
 	Box,
@@ -45,18 +53,24 @@ import {
 	InputAdornment,
 	Collapse,
 	Dialog,
-	DialogContent
+	DialogContent,
+	Tooltip
 } from "@material-ui/core";
 import { ContactForm } from "../ContactForm";
 import ContactModal from "../ContactModal";
+import ContactAvatar from "../ContactAvatar";
+import SaleModal from "../SaleModal";
+import AppointmentModal from "../AppointmentModal";
 import { ContactNotes } from "../ContactNotes";
-import ImageIcon from '@material-ui/icons/Image';
-import VideocamIcon from '@material-ui/icons/Videocam';
-import AudiotrackIcon from '@material-ui/icons/Audiotrack';
-import InsertDriveFileIcon from '@material-ui/icons/InsertDriveFile';
-import LinkIcon from '@material-ui/icons/Link';
-import InfoIcon from '@material-ui/icons/Info';
-import MessageIcon from '@material-ui/icons/Message';
+import {
+  ImageIcon,
+  VideocamIcon,
+  AudiotrackIcon,
+  InsertDriveFileIcon,
+  LinkIcon,
+  InfoIcon,
+  MessageIcon,
+} from "../Icons";
 
 import { AuthContext } from "../../context/Auth/AuthContext";
 import useCompanySettings from "../../hooks/useSettings/companySettings";
@@ -64,13 +78,42 @@ import toastError from "../../errors/toastError";
 import api from "../../services/api";
 import { toast } from "react-toastify";
 import { TagsKanbanContainer } from "../TagsKanbanContainer";
+import { TagsContainer } from "../TagsContainer";
+import GhlWorkflowModal from "../GhlWorkflowModal";
+// El mismo modal que usan la lista y las acciones del ticket: cambiar de
+// responsable ya existe, aqui solo se le da otra puerta de entrada.
+import TransferTicketModalCustom from "../TransferTicketModalCustom";
+import { format, parseISO } from "date-fns";
 
 const drawerWidth = 320;
+// Ancho de la ficha plegada en escritorio. Deja sitio al boton de expandir y a
+// un avatar de 36px con su margen, como los iconos del menu lateral.
+const railWidth = 56;
 
 const useStyles = makeStyles(theme => ({
 	drawer: {
 		width: drawerWidth,
 		flexShrink: 0,
+		transition: theme.transitions.create("width", {
+			easing: theme.transitions.easing.sharp,
+			duration: theme.transitions.duration.enteringScreen,
+		}),
+		// 320px fijos ocupan el 85% de un telefono de 375 y no caben en uno
+		// de 320. Se limita al ancho disponible dejando un margen para que se
+		// vea que hay contenido detras y quede sitio para cerrarlo.
+		[theme.breakpoints.down("xs")]: {
+			width: "min(320px, calc(100vw - 48px))",
+		},
+	},
+	// Medido en el navegador: en la variante temporal el panel salia pegado
+	// al borde IZQUIERDO. MUI da left:auto a los cajones anclados a la
+	// derecha, pero aqui algo lo pisa y left acaba en 0, que con un ancho
+	// fijo gana a right. Se fija a mano, y solo en superpuesto: en la
+	// variante acoplada el panel va en el flujo y estas dos propiedades
+	// sobran.
+	drawerPaperSuperpuesto: {
+		left: "auto",
+		right: 0,
 	},
 	tabChip: {
 		minHeight: 16,
@@ -82,15 +125,44 @@ const useStyles = makeStyles(theme => ({
 	},
 	drawerPaper: {
 		width: drawerWidth,
+		[theme.breakpoints.down("xs")]: {
+			width: "min(320px, calc(100vw - 48px))",
+		},
 		display: "flex",
 		flexDirection: "column",
-		borderTop: "1px solid rgba(0, 0, 0, 0.12)",
-		borderRight: "1px solid rgba(0, 0, 0, 0.12)",
-		borderBottom: "1px solid rgba(0, 0, 0, 0.12)",
-		borderTopRightRadius: 4,
-		borderBottomRightRadius: 4,
+		// Los bordes eran negro al 12% escrito a mano, que sobre fondo oscuro
+		// se ve como una linea sucia. El divisor del tema ya se adapta.
+		borderTop: `1px solid ${theme.palette.divider}`,
+		borderRight: `1px solid ${theme.palette.divider}`,
+		borderBottom: `1px solid ${theme.palette.divider}`,
+		// 4px es casi un angulo recto; 12 es el paso de tarjetas del sistema.
+		borderTopRightRadius: theme.palette.tokens.radius.lg,
+		borderBottomRightRadius: theme.palette.tokens.radius.lg,
 		height: "100%",
 		overflow: "hidden", // Importante para evitar overflow no drawer principal
+		transition: theme.transitions.create("width", {
+			easing: theme.transitions.easing.sharp,
+			duration: theme.transitions.duration.enteringScreen,
+		}),
+	},
+	// Ficha plegada en escritorio: la columna se queda como un riel en vez de
+	// desaparecer, y el hilo de la conversacion ocupa el resto. Solo en la
+	// variante acoplada; superpuesta (menos de 960px) sigue abriendo y cerrando.
+	drawerPlegado: {
+		width: railWidth,
+	},
+	drawerPaperPlegado: {
+		width: railWidth,
+	},
+	riel: {
+		display: "flex",
+		flexDirection: "column",
+		alignItems: "center",
+		gap: theme.spacing(1),
+		paddingTop: theme.spacing(1),
+	},
+	rielAvatar: {
+		cursor: "pointer",
 	},
 	header: {
 		display: "flex",
@@ -150,31 +222,53 @@ const useStyles = makeStyles(theme => ({
 		color: theme.palette.text.secondary,
 		fontSize: "0.85rem",
 	},
+	// Barra de pestanas segmentada: una pastilla gris que contiene todas las
+	// pestanas y en la que la activa se levanta sobre superficie propia. Antes
+	// era la barra de serie, con subrayado y separada del contenido por una
+	// linea negra al 12% que en modo oscuro se veia sucia.
 	tabsContainer: {
-		borderBottom: "1px solid rgba(0, 0, 0, 0.12)",
 		backgroundColor: theme.palette.background.paper,
 		flexShrink: 0,
+		// La ficha se desplaza entera (ver contentWrapper): las pestanas se quedan
+		// arriba al bajar, para cambiar de pestana sin volver al principio.
+		position: "sticky",
+		top: 0,
+		zIndex: 2,
+		padding: theme.palette.tokens.space.xs,
+		borderBottom: `1px solid ${theme.palette.divider}`,
+		"& .MuiTabs-scroller": {
+			backgroundColor: theme.palette.tokens.surface.surfaceSecondary,
+			borderRadius: theme.palette.tokens.radius.md,
+			padding: 3,
+		},
+		"& .MuiTabs-flexContainer": {
+			gap: 2,
+		},
+		// El subrayado sobra: la pestana activa ya se distingue por su pastilla.
+		"& .MuiTabs-indicator": {
+			display: "none",
+		},
 	},
+	// Antes el cuerpo no se desplazaba (overflow hidden) y el perfil, que no
+	// encoge, dejaba al panel de la pestana solo el hueco sobrante: en una
+	// pantalla de 900px de alto eran unos 100px con su propio scroll, y los
+	// datos y las observaciones no se llegaban a ver. Ahora se desplaza la ficha
+	// entera y cada panel ocupa lo que mide su contenido.
 	contentWrapper: {
 		display: "flex",
 		flexDirection: "column",
 		height: "calc(100% - 50px)",
-		overflow: "hidden",
+		overflowY: "auto",
+		overflowX: "hidden",
+		...theme.scrollbarStyles,
 	},
 	scrollableContent: {
-		flex: 1,
-		overflow: "hidden",
+		flex: "1 0 auto",
 		display: "flex",
 		flexDirection: "column",
 	},
 	tabPanel: {
-		flex: 1,
-		overflow: "auto",
 		padding: theme.spacing(1),
-		...theme.scrollbarStyles,
-		// Garantir que cada tab panel tenha rolagem independente
-		height: "100%",
-		maxHeight: "100%",
 	},
 	// Avatar redondo e menor
 	contactAvatar: {
@@ -259,12 +353,145 @@ const useStyles = makeStyles(theme => ({
 		marginBottom: theme.spacing(0.5),
 	},
 	// Novos estilos para os ícones de ação
+	// Cuadricula de acciones.
+	//
+	// Antes era una fila de iconos sueltos sin texto: habia que pasar el
+	// raton por encima y esperar al tooltip para saber que hacia cada uno,
+	// y en una pantalla tactil no hay hover, asi que el tooltip no llega
+	// nunca. Con la etiqueta debajo se lee de una vez.
+	//
+	// auto-fit con minmax reparte las cinco tarjetas en las columnas que
+	// quepan: tres en el ancho normal del panel, dos si se estrecha.
 	contactActions: {
+		display: "grid",
+		gridTemplateColumns: "repeat(auto-fit, minmax(72px, 1fr))",
+		gap: theme.palette.tokens.space.sm,
+		marginTop: theme.palette.tokens.space.md,
+		width: "100%",
+	},
+	actionCard: {
 		display: "flex",
-		flexDirection: "row",
-		gap: theme.spacing(1),
-		marginTop: theme.spacing(1),
+		flexDirection: "column",
+		alignItems: "center",
 		justifyContent: "center",
+		gap: 4,
+		padding: theme.palette.tokens.space.sm,
+		minHeight: 64,
+		borderRadius: theme.palette.tokens.radius.md,
+		backgroundColor: theme.palette.tokens.surface.surfaceSecondary,
+		border: "1px solid transparent",
+		cursor: "pointer",
+		transition: "background-color 160ms ease, border-color 160ms ease",
+		"&:hover": {
+			backgroundColor:
+				theme.mode === "light"
+					? `${theme.palette.primary.main}14`
+					: `${theme.palette.primary.main}26`,
+			borderColor: `${theme.palette.primary.main}40`,
+		},
+		// Sin esto, una tarjeta deshabilitada seguiria pareciendo pulsable.
+		"&:disabled": {
+			opacity: 0.5,
+			cursor: "default",
+		},
+	},
+	actionCardLabel: {
+		// 11px es el minimo del sistema. La etiqueta es corta a proposito:
+		// dos palabras como mucho, para que no se parta en dos lineas.
+		fontSize: "0.6875rem",
+		fontWeight: 600,
+		lineHeight: 1.2,
+		textAlign: "center",
+		color: theme.palette.tokens.text.secondary,
+		textTransform: "none",
+	},
+	// Canal y estado, debajo del nombre. Cada uno es un punto de color con su
+	// texto al lado: el punto solo no le dice nada a quien no distingue los
+	// colores, y el texto solo se pierde entre el resto de datos.
+	statusRow: {
+		display: "flex",
+		flexWrap: "wrap",
+		justifyContent: "center",
+		gap: theme.palette.tokens.space.xs,
+		marginTop: theme.palette.tokens.space.xs,
+	},
+	statusPill: {
+		display: "inline-flex",
+		alignItems: "center",
+		gap: 6,
+		padding: "3px 10px",
+		borderRadius: theme.palette.tokens.radius.full,
+		backgroundColor: theme.palette.tokens.surface.surfaceSecondary,
+		fontSize: "0.6875rem",
+		fontWeight: 600,
+		lineHeight: 1.4,
+		color: theme.palette.tokens.text.secondary,
+		whiteSpace: "nowrap",
+	},
+	// El punto acompana al texto, no lo sustituye, asi que no carga el
+	// significado por si solo y no se le exige el contraste de 3:1.
+	statusDot: {
+		width: 8,
+		height: 8,
+		borderRadius: "50%",
+		flexShrink: 0,
+		backgroundColor: theme.palette.tokens.text.muted,
+	},
+	// Definidos despues de statusDot a proposito: con la misma especificidad,
+	// JSS aplica la ultima regla escrita.
+	dotWhatsapp: { backgroundColor: "#25D366" },
+	dotInstagram: { backgroundColor: "#e1306c" },
+	dotFacebook: { backgroundColor: "#3b5998" },
+	dotOpen: { backgroundColor: theme.palette.tokens.semantic.success.fill },
+	dotPending: { backgroundColor: theme.palette.tokens.semantic.warning.fill },
+	dotClosed: { backgroundColor: theme.palette.tokens.text.muted },
+	// Datos del ticket como pares etiqueta/valor alineados en dos columnas.
+	infoBlock: {
+		marginTop: theme.palette.tokens.space.sm,
+		padding: theme.palette.tokens.space.md,
+		display: "flex",
+		flexDirection: "column",
+	},
+	infoTitle: {
+		fontSize: "0.6875rem",
+		fontWeight: 700,
+		letterSpacing: "0.06em",
+		textTransform: "uppercase",
+		color: theme.palette.tokens.text.muted,
+		marginBottom: theme.palette.tokens.space.sm,
+	},
+	infoRow: {
+		display: "grid",
+		// Columna de etiqueta de ancho fijo: con dos fracciones, las etiquetas
+		// cortas dejaban su valor descolgado a media fila.
+		gridTemplateColumns: "84px 1fr",
+		alignItems: "baseline",
+		gap: theme.palette.tokens.space.sm,
+		padding: "3px 0",
+	},
+	infoLabel: {
+		fontSize: "0.6875rem",
+		color: theme.palette.tokens.text.muted,
+	},
+	infoValue: {
+		fontSize: "0.8125rem",
+		color: theme.palette.tokens.text.primary,
+		wordBreak: "break-word",
+	},
+	infoValueRow: {
+		display: "flex",
+		alignItems: "baseline",
+		justifyContent: "space-between",
+		gap: theme.palette.tokens.space.sm,
+	},
+	infoAction: {
+		fontSize: "0.6875rem",
+		fontWeight: 600,
+		color: theme.palette.primary.main,
+		textTransform: "none",
+		padding: "0 4px",
+		minWidth: 0,
+		flexShrink: 0,
 	},
 	actionIcon: {
 		backgroundColor: theme.palette.background.paper,
@@ -283,9 +510,26 @@ const useStyles = makeStyles(theme => ({
 		color: theme.palette.success.main,
 	},
 	tabIcon: {
-		minHeight: 48,
-		minWidth: 'auto',
+		// 48 de alto sobraban para un icono de 24: la barra ocupaba mas que
+		// varias filas de datos del panel.
+		minHeight: 40,
+		minWidth: 44,
+		// Reparten el ancho sobrante entre todas: si no, la pastilla gris
+		// se quedaba con un hueco vacio a la derecha. Cuando no cabe, cada
+		// una vuelve a sus 44 y la barra se desplaza, como ya hacia.
+		flexGrow: 1,
 		padding: theme.spacing(0.5, 1),
+		borderRadius: theme.palette.tokens.radius.sm,
+		color: theme.palette.tokens.text.muted,
+		// MUI atenua las pestanas inactivas al 70%; el color del token ya
+		// establece la jerarquia y con la opacidad encima se quedaba corto.
+		opacity: 1,
+		transition: "background-color 160ms ease, color 160ms ease",
+		"&.Mui-selected": {
+			backgroundColor: theme.palette.tokens.surface.surface,
+			color: theme.palette.primary.main,
+			boxShadow: theme.palette.tokens.shadow.sm,
+		},
 	},
 	// Garantir que o CardHeader não cause overflow
 	contactCardHeader: {
@@ -348,7 +592,14 @@ const useStyles = makeStyles(theme => ({
 		height: "auto",
 		maxWidth: "500px",
 		borderRadius: theme.spacing(1),
-	}
+	},
+	// El contenido de la ficha se oculta, no se desmonta: al volver a
+	// expandirla sigue en la misma pestana y con lo que ya habia cargado, igual
+	// que cuando el cajon persistente estaba cerrado. Va la ultima porque JSS
+	// aplica las reglas en orden y header y contentWrapper declaran display.
+	ocultoPlegado: {
+		display: "none",
+	},
 }));
 
 function TabPanel(props) {
@@ -360,16 +611,14 @@ function TabPanel(props) {
 			hidden={value !== index}
 			id={`contact-tabpanel-${index}`}
 			aria-labelledby={`contact-tab-${index}`}
-			style={{ 
-				height: "100%", 
-				display: value === index ? "flex" : "none", 
+			style={{
+				display: value === index ? "flex" : "none",
 				flexDirection: "column",
-				overflow: "hidden"
 			}}
 			{...other}
 		>
 			{value === index && (
-				<div className={props.classes?.tabPanel} style={{ flex: 1, overflow: "auto" }}>
+				<div className={props.classes?.tabPanel}>
 					{children}
 				</div>
 			)}
@@ -377,13 +626,22 @@ function TabPanel(props) {
 	);
 }
 
-const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) => {
+const ContactDrawer = ({ open, handleDrawerClose, handleDrawerOpen, contact, ticket, loading, superpuesto = false }) => {
 	const classes = useStyles();
+	const plegado = !superpuesto && !open;
 
 	const [modalOpen, setModalOpen] = useState(false);
+	const [saleModalOpen, setSaleModalOpen] = useState(false);
+	const [appointmentModalOpen, setAppointmentModalOpen] = useState(false);
+	const [transferModalOpen, setTransferModalOpen] = useState(false);
+	const [flujoModalOpen, setFlujoModalOpen] = useState(false);
 	const [blockingContact, setBlockingContact] = useState(contact.active);
 	const [openForm, setOpenForm] = useState(false);
 	const [tabValue, setTabValue] = useState(0);
+	// Referencia a la seccion de notas, que vive DENTRO de la primera
+	// pestana. No hay una pestana de notas propia: el boton de la
+	// cuadricula lleva a la que ya existe, no crea nada nuevo.
+	const notasRef = useRef(null);
 	const [mediaData, setMediaData] = useState({ images: [], videos: [], audios: [], documents: [], links: [] });
 	const [loadingMedia, setLoadingMedia] = useState(false);
 	const { get } = useCompanySettings();
@@ -617,13 +875,18 @@ const fetchGroupParticipants = async () => {
 									) : null
 								}
 							>
-								<Avatar 
-									src={participant.profilePicUrl} 
-									alt={participant.name}
+								{/* El participante trae la foto en profilePicUrl, no en
+								    urlPicture, asi que se adapta al nombre que espera
+								    ContactAvatar. */}
+								<ContactAvatar
+									contact={{
+										id: participant.id,
+										name: participant.name,
+										urlPicture: participant.profilePicUrl,
+									}}
+									size={45}
 									className={classes.participantAvatar}
-								>
-									{participant.name?.charAt(0)?.toUpperCase()}
-								</Avatar>
+								/>
 							</Badge>
 						</ListItemAvatar>
 						<ListItemText
@@ -690,6 +953,61 @@ const fetchGroupParticipants = async () => {
 		}
 		setBlockingContact(false);
 	};
+
+	// Lleva a la seccion de notas: primero cambia a la pestana que la
+	// contiene y despues desplaza hasta ella. El desplazamiento va en un
+	// tiempo de espera porque la pestana aun no esta montada en el momento
+	// del clic, y sin eso la referencia seria nula.
+	const irANotas = () => {
+		setTabValue(0);
+		setTimeout(() => {
+			if (notasRef.current) {
+				notasRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+			}
+		}, 120);
+	};
+
+	// Canal y estado. Los datos vienen tal cual del ticket; lo unico que se
+	// anade es como nombrarlos y de que color pintar su punto. Un canal o un
+	// estado que no este en la tabla simplemente no pinta insignia, en vez de
+	// mostrar el identificador interno.
+	const CANALES = {
+		whatsapp: { etiqueta: "WhatsApp", punto: classes.dotWhatsapp },
+		whatsappapi: { etiqueta: "WhatsApp API", punto: classes.dotWhatsapp },
+		instagram: { etiqueta: "Instagram", punto: classes.dotInstagram },
+		facebook: { etiqueta: "Facebook", punto: classes.dotFacebook },
+	};
+	const PUNTOS_ESTADO = {
+		open: classes.dotOpen,
+		pending: classes.dotPending,
+		closed: classes.dotClosed,
+		group: classes.dotClosed,
+	};
+
+	const canal = ticket?.channel ? CANALES[ticket.channel] : null;
+	const estado = ticket?.status && PUNTOS_ESTADO[ticket.status]
+		? {
+			etiqueta: i18n.t(`contactDrawer.status.${ticket.status}`),
+			punto: PUNTOS_ESTADO[ticket.status],
+		}
+		: null;
+
+	// La lista de conversaciones ya usa updatedAt como hora del ultimo
+	// mensaje; aqui se lee el mismo campo para que no digan cosas distintas.
+	const fechaUltimoMensaje = (() => {
+		if (!ticket?.updatedAt) return null;
+		try {
+			return format(parseISO(ticket.updatedAt), "dd/MM/yyyy HH:mm");
+		} catch (e) {
+			return null;
+		}
+	})();
+
+	const telefonoVisible = contact?.number
+		? (hideNum && user.profile === "user"
+			? formatSerializedId(contact.number).slice(0, -6) + "**-**" + contact.number.slice(-2)
+			: formatSerializedId(contact.number))
+		: null;
 
 	const handleTabChange = (event, newValue) => {
 		setTabValue(newValue);
@@ -908,31 +1226,84 @@ const fetchGroupParticipants = async () => {
 
 	return (
 		<>
+			{/* Persistente en escritorio, donde es una columna mas; temporal en
+			    pantallas estrechas, donde se superpone al chat y se cierra al
+			    tocar fuera. El contenedor del modal ya apunta al area del
+			    ticket, asi que el velo no tapa la aplicacion entera. */}
 			<Drawer
-				className={classes.drawer}
-				variant="persistent"
+				// Los 320px de classes.drawer solo tienen sentido en la variante
+				// acoplada, donde reservan sitio en el flujo. En la temporal esa
+				// clase cae sobre la RAIZ del modal y la encoge a 320: el velo
+				// tapaba solo la anchura del panel y el panel se posicionaba
+				// contra esa caja, no contra el area del ticket.
+				className={
+					superpuesto
+						? undefined
+						: clsx(classes.drawer, { [classes.drawerPlegado]: plegado })
+				}
+				variant={superpuesto ? "temporary" : "persistent"}
 				anchor="right"
-				open={open}
+				// Acoplada, la columna no se cierra nunca: plegada se queda como riel.
+				open={superpuesto ? open : true}
+				onClose={handleDrawerClose}
 				PaperProps={{ style: { position: "absolute" } }}
 				BackdropProps={{ style: { position: "absolute" } }}
 				ModalProps={{
 					container: document.getElementById("drawer-container"),
-					style: { position: "absolute" },
+					// Con position absolute y los desplazamientos en auto, la raiz
+					// del modal se queda del ancho de su contenido —los 320 del
+					// panel— y pegada al borde izquierdo. El panel se posiciona
+					// contra ELLA, no contra el area del ticket, y acababa saliendo
+					// a la izquierda. Con los cuatro lados a 0 ocupa el area entera
+					// y el panel cae donde debe.
+					style: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0 },
 				}}
 				classes={{
-					paper: classes.drawerPaper,
+					paper: clsx(classes.drawerPaper, {
+						[classes.drawerPaperSuperpuesto]: superpuesto,
+						[classes.drawerPaperPlegado]: plegado,
+					}),
 				}}
 			>
-				<div className={classes.header}>
-					<IconButton onClick={handleDrawerClose}>
-						<CloseIcon />
+				{plegado && (
+					<div className={classes.riel}>
+						<Tooltip title={i18n.t("ticketOptionsMenu.contactInfo.show")} placement="left">
+							<IconButton
+								onClick={handleDrawerOpen}
+								aria-label={i18n.t("ticketOptionsMenu.contactInfo.show")}
+							>
+								<ChevronLeftIcon />
+							</IconButton>
+						</Tooltip>
+						{/* ContactAvatar es un componente de funcion sin forwardRef: el
+						    Tooltip necesita un elemento que admita ref, asi que va en un span. */}
+						<Tooltip title={contact.name || ""} placement="left">
+							<span style={{ display: "inline-flex" }}>
+								<ContactAvatar
+									contact={contact}
+									size={36}
+									className={classes.rielAvatar}
+									onClick={handleDrawerOpen}
+								/>
+							</span>
+						</Tooltip>
+					</div>
+				)}
+
+				<div className={clsx(classes.header, { [classes.ocultoPlegado]: plegado })}>
+					{/* Acoplada, la ficha se pliega a su riel: flecha en vez de X. */}
+					<IconButton
+						onClick={handleDrawerClose}
+						aria-label={i18n.t("ticketOptionsMenu.contactInfo.hide")}
+					>
+						{superpuesto ? <CloseIcon /> : <ChevronRightIcon />}
 					</IconButton>
 					<Typography style={{ justifySelf: "center" }}>
 						{i18n.t("contactDrawer.header")}
 					</Typography>
 				</div>
-				
-				<div className={classes.contentWrapper}>
+
+				<div className={clsx(classes.contentWrapper, { [classes.ocultoPlegado]: plegado })}>
 					{/* Seção de Switch */}
 					<Box className={classes.switchContainer}>
 						<Typography
@@ -954,14 +1325,20 @@ const fetchGroupParticipants = async () => {
 					<div className={classes.profileSection}>
 						<Paper square variant="outlined" className={classes.contactHeader}>
 							{/* Avatar redondo e menor - CLICÁVEL */}
-							<Avatar 
-								src={contact?.urlPicture} 
-								alt={contact.name}
+							{/* Mismo tratamiento que en la lista de conversaciones: sin
+							    foto, circulo de color con las iniciales, y el color es
+							    siempre el mismo para el mismo contacto. Antes era una
+							    sola letra sobre el gris de serie de MUI.
+
+							    El tamano va explicito —80, el que ya tenia la clase—
+							    porque el estilo en linea del componente gana a la
+							    clase y si no lo encogeria. */}
+							<ContactAvatar
+								contact={contact}
+								size={80}
 								className={classes.contactAvatar}
 								onClick={handleImageClick}
-							>
-								{contact.name?.charAt(0)?.toUpperCase()}
-							</Avatar>
+							/>
 							
 							<CardHeader
 								className={classes.contactCardHeader}
@@ -986,33 +1363,94 @@ const fetchGroupParticipants = async () => {
 								}
 							/>
 							
-							{/* Ícones de ação com tooltips */}
+							{/* Canal y estado del ticket: dos datos que ya existian y que
+							    solo se veian en la lista de conversaciones. */}
+							{(canal || estado) && (
+								<div className={classes.statusRow}>
+									{canal && (
+										<span className={classes.statusPill}>
+											<span className={`${classes.statusDot} ${canal.punto}`} />
+											{canal.etiqueta}
+										</span>
+									)}
+									{estado && (
+										<span className={classes.statusPill}>
+											<span className={`${classes.statusDot} ${estado.punto}`} />
+											{estado.etiqueta}
+										</span>
+									)}
+								</div>
+							)}
+
+							{/* Acciones sobre el contacto.
+							
+							    Cada una lleva su etiqueta debajo del icono: antes eran iconos
+							    sueltos y habia que esperar al tooltip para saber que hacian, que
+							    en una pantalla tactil no aparece nunca. */}
 							<div className={classes.contactActions}>
-								<Tooltip title={i18n.t("contactDrawer.buttons.edit")} arrow>
-									<IconButton
-										className={`${classes.actionIcon} ${classes.editIcon}`}
-										onClick={() => setModalOpen(!openForm)}
-										size="small"
-									>
-										<CreateIcon />
-									</IconButton>
-								</Tooltip>
-								
-								<Tooltip 
-									title={!contact.active ? "Desbloquear contato" : "Bloquear contato"} 
-									arrow
+								<ButtonBase
+									className={classes.actionCard}
+									onClick={() => setSaleModalOpen(true)}
 								>
-									<IconButton
-										className={`${classes.actionIcon} ${!contact.active ? classes.unblockIcon : classes.blockIcon}`}
-										onClick={() => contact.active
-											? handleBlockContact(contact.id)
-											: handleUnBlockContact(contact.id)}
-										disabled={loading}
-										size="small"
+									<MonetizationOnOutlinedIcon fontSize="small" />
+									<span className={classes.actionCardLabel}>
+										{i18n.t("contactDrawer.actions.sale")}
+									</span>
+								</ButtonBase>
+								<ButtonBase
+									className={classes.actionCard}
+									onClick={() => setAppointmentModalOpen(true)}
+								>
+									<EventAvailableOutlinedIcon fontSize="small" />
+									<span className={classes.actionCardLabel}>
+										{i18n.t("contactDrawer.actions.appointment")}
+									</span>
+								</ButtonBase>
+								<ButtonBase
+									className={classes.actionCard}
+									onClick={() => setModalOpen(!openForm)}
+								>
+									<CreateIcon fontSize="small" />
+									<span className={classes.actionCardLabel}>
+										{i18n.t("contactDrawer.actions.edit")}
+									</span>
+								</ButtonBase>
+								<ButtonBase
+									className={classes.actionCard}
+									onClick={irANotas}
+								>
+									<MessageIcon fontSize="small" />
+									<span className={classes.actionCardLabel}>
+										{i18n.t("contactDrawer.actions.note")}
+									</span>
+								</ButtonBase>
+								{ticket?.channel === "ghl" && (
+									<ButtonBase
+										className={classes.actionCard}
+										onClick={() => setFlujoModalOpen(true)}
 									>
-										{!contact.active ? <LockOpenIcon /> : <BlockIcon />}
-									</IconButton>
-								</Tooltip>
+										<AccountTree fontSize="small" />
+										<span className={classes.actionCardLabel}>
+											{i18n.t("contactDrawer.actions.workflow")}
+										</span>
+									</ButtonBase>
+								)}
+								<ButtonBase
+									className={classes.actionCard}
+									disabled={loading}
+									onClick={() => contact.active
+										? handleBlockContact(contact.id)
+										: handleUnBlockContact(contact.id)}
+								>
+									{!contact.active
+										? <LockOpenIcon fontSize="small" />
+										: <BlockIcon fontSize="small" />}
+									<span className={classes.actionCardLabel}>
+										{i18n.t(contact.active
+											? "contactDrawer.actions.block"
+											: "contactDrawer.actions.unblock")}
+									</span>
+								</ButtonBase>
 							</div>
 							
 							{(contact.id && openForm) && <ContactForm initialContact={contact} onCancel={() => setOpenForm(false)} />}
@@ -1157,8 +1595,90 @@ const fetchGroupParticipants = async () => {
 							<>
 								<TabPanel value={tabValue} index={0} classes={classes}>
 									<TagsKanbanContainer ticket={ticket} className={classes.contactTags} />
+
+									{/* Etiquetas del contacto.
+									    Solo estaban en la franja de encima de los mensajes, que en
+									    el movil va plegada; aqui, en la ficha, es donde se buscan
+									    los datos del contacto. Es el mismo control, asi que se
+									    pueden ver, anadir y quitar desde los dos sitios. */}
+									<Paper square variant="outlined" className={classes.infoBlock}>
+										<div className={classes.infoTitle}>
+											{i18n.t("tags.title")}
+										</div>
+										<TagsContainer contact={contact} />
+									</Paper>
+
+									{/* Datos del ticket como pares etiqueta/valor alineados.
+									    Todos salen de campos que el ticket ya devuelve; el
+									    responsable enlaza con el modal de transferencia que ya
+									    usan la lista y la barra de acciones. */}
+									<Paper square variant="outlined" className={classes.infoBlock}>
+										<div className={classes.infoTitle}>
+											{i18n.t("contactDrawer.info.title")}
+										</div>
+										{telefonoVisible && (
+											<div className={classes.infoRow}>
+												<span className={classes.infoLabel}>
+													{i18n.t("contactDrawer.info.phone")}
+												</span>
+												<span className={classes.infoValue}>{telefonoVisible}</span>
+											</div>
+										)}
+										{canal && (
+											<div className={classes.infoRow}>
+												<span className={classes.infoLabel}>
+													{i18n.t("contactDrawer.info.channel")}
+												</span>
+												<span className={classes.infoValue}>{canal.etiqueta}</span>
+											</div>
+										)}
+										<div className={classes.infoRow}>
+											<span className={classes.infoLabel}>
+												{i18n.t("contactDrawer.info.owner")}
+											</span>
+											<span className={`${classes.infoValue} ${classes.infoValueRow}`}>
+												{ticket?.user?.name || i18n.t("contactDrawer.info.unassigned")}
+												<Button
+													size="small"
+													className={classes.infoAction}
+													onClick={() => setTransferModalOpen(true)}
+												>
+													{i18n.t("contactDrawer.info.change")}
+												</Button>
+											</span>
+										</div>
+										{estado && (
+											<div className={classes.infoRow}>
+												<span className={classes.infoLabel}>
+													{i18n.t("contactDrawer.info.status")}
+												</span>
+												<span className={classes.infoValue}>{estado.etiqueta}</span>
+											</div>
+										)}
+										{ticket?.queue?.name && (
+											<div className={classes.infoRow}>
+												<span className={classes.infoLabel}>
+													{i18n.t("contactDrawer.info.queue")}
+												</span>
+												<span className={classes.infoValue}>{ticket.queue.name}</span>
+											</div>
+										)}
+										{fechaUltimoMensaje && (
+											<div className={classes.infoRow}>
+												<span className={classes.infoLabel}>
+													{i18n.t("contactDrawer.info.lastMessage")}
+												</span>
+												<span className={classes.infoValue}>{fechaUltimoMensaje}</span>
+											</div>
+										)}
+									</Paper>
 									
-									<Paper square variant="outlined" className={classes.contactDetails}>
+									<Paper
+										square
+										variant="outlined"
+										className={classes.contactDetails}
+										ref={notasRef}
+									>
 										<Typography variant="subtitle1" style={{ marginBottom: 10 }}>
 											{i18n.t("ticketOptionsMenu.appointmentsModal.title")}
 										</Typography>
@@ -1171,6 +1691,29 @@ const fetchGroupParticipants = async () => {
 											onClose={() => setModalOpen(false)}
 											contactId={contact.id}
 										></ContactModal>
+										<SaleModal
+											open={saleModalOpen}
+											onClose={() => setSaleModalOpen(false)}
+											contact={contact}
+											ticket={ticket}
+										/>
+										<AppointmentModal
+											open={appointmentModalOpen}
+											onClose={() => setAppointmentModalOpen(false)}
+											contact={contact}
+											ticket={ticket}
+										/>
+										<GhlWorkflowModal
+											open={flujoModalOpen}
+											onClose={() => setFlujoModalOpen(false)}
+											ticket={ticket}
+										/>
+										<TransferTicketModalCustom
+											modalOpen={transferModalOpen}
+											onClose={() => setTransferModalOpen(false)}
+											ticketid={ticket?.id}
+											ticket={ticket}
+										/>
 										<Typography variant="subtitle1">
 											{i18n.t("contactDrawer.extraInfo")}
 										</Typography>

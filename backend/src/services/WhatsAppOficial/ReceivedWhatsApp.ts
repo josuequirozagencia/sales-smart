@@ -11,7 +11,11 @@ import { getIO } from "../../libs/socket";
 import Message from "../../models/Message";
 import verifyMessageOficial from "./VerifyMessageOficial";
 import verifyQueueOficial from "./VerifyQueue";
+import { atenderMensajeEntrante } from "../AiAgentServices/AtenderConAgente";
+import { atenderNodoAgente } from "../IntegrationsServices/OpenAiService";
 import ShowWhatsAppService from "../WhatsappService/ShowWhatsAppService";
+import { guardarAtribucion, ReferralMeta } from "../ConversionServices/ContactAttributionService";
+import { registrarLeadEntrante } from "../ConversionServices/ConversionService";
 
 const mimeToExtension: { [key: string]: string } = {
     'audio/aac': 'aac',
@@ -92,6 +96,12 @@ export interface IMessageReceived {
     file?: string;
     mimeType?: string;
     quoteMessageId?: string;
+    /**
+     * Anuncio Click-to-WhatsApp del que viene el mensaje, si viene de uno.
+     * Lo reenvia api_oficial desde el webhook de Meta; se guarda para
+     * atribuir conversiones (ver ContactAttributionService).
+     */
+    referral?: ReferralMeta;
 }
 
 export async function generateVCard(contact: any): Promise<string> {
@@ -137,8 +147,27 @@ export class ReceibedWhatsAppService {
 
 
 
+            let contactoNuevo = false;
             if (!contact) {
                 contact = await Contact.create({ name: nameContact, number: fromNumber, companyId, whatsappId: whatsapp.id });
+                contactoNuevo = true;
+            }
+
+            // Meta Conversions API. Primero la atribucion, si el mensaje viene de
+            // un anuncio, y despues el lead, para que el evento la encuentre.
+            // Ninguna de las dos lanza: el mensaje se procesa igual.
+            await guardarAtribucion({
+                companyId,
+                contactId: contact.id,
+                whatsapp: conexao,
+                referral: message?.referral,
+                recibidoEn: message?.timestamp
+            });
+            if (contactoNuevo) {
+                // Todo mensaje de este canal es entrante: lo manda el contacto.
+                registrarLeadEntrante(contact, {
+                    mensajeEn: message?.timestamp ? Number(message.timestamp) * 1000 : null
+                });
             }
 
             let fileName;
@@ -191,6 +220,18 @@ export class ReceibedWhatsAppService {
             await ticket.update({ lastMessage: message.type === "contacts" ? "Contato" : !!message?.text ? message?.text : '', unreadMessages: ticket.unreadMessages + 1 })
 
             await verifyMessageOficial(message, ticket, contact, companyId, fileName, fromNumber, data, quoteMessageId);
+
+            // Nodo IA del Flow Builder con agente: aqui no hay el camino de Baileys,
+            // asi que se atiende directamente.
+            if (await atenderNodoAgente({ ticket, contact, wid: message.idMessage, texto: message.text || "" })) {
+                return;
+            }
+
+            // Agentes IA: si la conversacion tiene la IA activa y el agente esta en
+            // su horario, responde el agente y no se pasa por las colas.
+            if (await atenderMensajeEntrante({ ticket, contact, wid: message.idMessage })) {
+                return;
+            }
 
             if (
                 !ticket.imported &&

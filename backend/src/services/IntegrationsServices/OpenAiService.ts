@@ -47,6 +47,9 @@ interface IOpenAi {
   completionTimeout?: number;
   objective?: string;
   autoCompleteOnObjective?: boolean;
+
+  /** Nodo con Agente IA: la configuracion se lee del agente (docs/AGENTES_IA.md). */
+  agentId?: number;
 }
 
 interface SessionOpenAi extends OpenAI {
@@ -109,17 +112,24 @@ const detectFlowContinuation = (message: string, continueKeywords: string[]): bo
 };
 
 // Função para detectar se o objetivo foi completado (usando IA)
+// Funciona com qualquer provedor configurado: usa a sessão que estiver ativa
+// e o mesmo modelo definido em aiSettings, sem fixar nenhum modelo.
 const checkObjectiveCompletion = async (
   objective: string,
   conversation: Message[],
-  openai: SessionOpenAi
+  aiSettings: IOpenAi,
+  openai: SessionOpenAi | null,
+  gemini: SessionGemini | null
 ): Promise<boolean> => {
-  if (!objective || !openai) return false;
+  if (!objective || (!openai && !gemini)) return false;
 
   try {
-    // Preparar histórico da conversa para análise
-    const conversationText = conversation
-      .slice(-5) // Últimas 5 mensagens
+    // Preparar histórico da conversa para análise.
+    // Ordena por data antes de cortar: quem chama busca as mensagens em DESC,
+    // então um .slice(-5) direto pegaria as MAIS ANTIGAS e ainda invertidas.
+    const conversationText = [...conversation]
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+      .slice(-5) // 5 mensagens mais recentes, em ordem cronológica
       .map(msg => `${msg.fromMe ? 'Bot' : 'User'}: ${msg.body}`)
       .join('\n');
 
@@ -132,16 +142,29 @@ ${conversationText}
 Pergunta: O objetivo foi completado com sucesso? Responda apenas "SIM" ou "NÃO".
 `;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [{ role: "user", content: analysisPrompt }],
-      max_tokens: 10,
-      temperature: 0
-    });
+    let result = "";
 
-    const result = response.choices[0]?.message?.content?.trim().toUpperCase();
-    return result === "SIM";
-    
+    if (openai) {
+      const response = await openai.chat.completions.create({
+        model: aiSettings.model,
+        messages: [{ role: "user", content: analysisPrompt }],
+        max_tokens: 10,
+        temperature: 0
+      });
+      result = response.choices[0]?.message?.content || "";
+    } else if (gemini) {
+      const model = gemini.getGenerativeModel({
+        model: aiSettings.model,
+        generationConfig: { maxOutputTokens: 10, temperature: 0 }
+      });
+      const response = await model.generateContent(analysisPrompt);
+      result = response.response.text() || "";
+    }
+
+    // Tolerante a pontuação e texto extra ("Sim.", "SIM, o objetivo..."),
+    // já que nem todo provedor respeita a instrução de responder só uma palavra.
+    return /^\s*SIM\b/i.test(result);
+
   } catch (error) {
     logger.error("[AI SERVICE] Erro ao verificar completude do objetivo:", error);
     return false;
@@ -149,7 +172,11 @@ Pergunta: O objetivo foi completado com sucesso? Responda apenas "SIM" ou "NÃO"
 };
 
 // Função para retornar ao fluxo
-const returnToFlow = async (ticket: Ticket, reason: string): Promise<void> => {
+const returnToFlow = async (
+  ticket: Ticket,
+  reason: string,
+  { deAgente = false }: { deAgente?: boolean } = {}
+): Promise<void> => {
   try {
     const flowContinuation = (ticket.dataWebhook && typeof ticket.dataWebhook === "object" && "flowContinuation" in ticket.dataWebhook)
       ? (ticket.dataWebhook as any).flowContinuation
@@ -178,11 +205,19 @@ const returnToFlow = async (ticket: Ticket, reason: string): Promise<void> => {
     const transitionMessage = transitionMessages[reason] || "Continuando...";
     
     // Enviar mensagem de transição
-    const wbot = getWbot(ticket.whatsappId);
-    const sentMessage = await wbot.sendMessage(getJidOf(ticket.contact), {
-      text: transitionMessage
-    });
-    await verifyMessage(sentMessage!, ticket, ticket.contact);
+    if (deAgente) {
+      // Nodo con agente: por el canal del ticket y con la marca de automatico,
+      // para que su eco no cuente como mensaje humano y pause la IA.
+      const { enviadorCanal, ticketCompleto } = await import("../AiAgentServices/EnvioCanal");
+      const completo = await ticketCompleto(ticket.id, ticket.companyId);
+      await enviadorCanal().texto(completo, completo.contact, transitionMessage);
+    } else {
+      const wbot = getWbot(ticket.whatsappId);
+      const sentMessage = await wbot.sendMessage(getJidOf(ticket.contact), {
+        text: transitionMessage
+      });
+      await verifyMessage(sentMessage!, ticket, ticket.contact);
+    }
 
     // Restaurar estado do fluxo
     await ticket.update({
@@ -235,6 +270,61 @@ const returnToFlow = async (ticket: Ticket, reason: string): Promise<void> => {
       dataWebhook: null
     });
   }
+};
+
+/**
+ * Modo temporal del nodo IA: vuelve al flujo por palabra clave, por maximo de
+ * interacciones o por tiempo, y si no cuenta una interaccion mas. Devuelve
+ * true si ha vuelto al flujo. Lo usan los nodos manuales y los de agente.
+ */
+const controlarModoTemporal = async (
+  aiSettings: IOpenAi,
+  ticket: Ticket,
+  bodyMessage: string,
+  opciones: { deAgente?: boolean } = {}
+): Promise<boolean> => {
+  const isTemporaryMode = aiSettings.flowMode === "temporary";
+  const flowContinuation = (ticket.dataWebhook && typeof ticket.dataWebhook === "object" && "flowContinuation" in ticket.dataWebhook)
+    ? (ticket.dataWebhook as any).flowContinuation
+    : undefined;
+  if (!isTemporaryMode || !flowContinuation) return false;
+
+  // 1. Verificar palavras-chave de continuação
+  if (detectFlowContinuation(bodyMessage, aiSettings.continueKeywords || [])) {
+    logger.info(`[AI SERVICE] Usuário solicitou continuação do fluxo - ticket ${ticket.id}`);
+    await returnToFlow(ticket, "user_requested", opciones);
+    return true;
+  }
+
+  // 2. Verificar limite de interações
+  if (aiSettings.maxInteractions && flowContinuation.interactionCount >= aiSettings.maxInteractions) {
+    logger.info(`[AI SERVICE] Limite de interações atingido - ticket ${ticket.id}`);
+    await returnToFlow(ticket, "max_interactions", opciones);
+    return true;
+  }
+
+  // 3. Verificar timeout
+  if (aiSettings.completionTimeout) {
+    const startTime = new Date(flowContinuation.startTime);
+    const minutesElapsed = (new Date().getTime() - startTime.getTime()) / (1000 * 60);
+    if (minutesElapsed >= aiSettings.completionTimeout) {
+      logger.info(`[AI SERVICE] Timeout atingido - ticket ${ticket.id}`);
+      await returnToFlow(ticket, "timeout", opciones);
+      return true;
+    }
+  }
+
+  // Incrementar contador de interações
+  await ticket.update({
+    dataWebhook: {
+      ...ticket.dataWebhook,
+      flowContinuation: {
+        ...flowContinuation,
+        interactionCount: flowContinuation.interactionCount + 1
+      }
+    }
+  });
+  return false;
 };
 
 // Prepara as mensagens de IA a partir das mensagens passadas
@@ -431,56 +521,21 @@ export const handleOpenAiFlow = async (
       return;
     }
 
+    // Nodo con Agente IA: su propio camino, igual en todos los canales.
+    if (aiSettings.agentId) {
+      await procesarNodoAgente(aiSettings, ticket, contact, msg?.key?.id, getBodyMessage(msg) || "");
+      return;
+    }
+
     if (contact.disableBot) {
       logger.info("[AI SERVICE] Bot desabilitado para este contato");
       return;
     }
 
-    // Verificar modo temporário e continuação de fluxo
     const isTemporaryMode = aiSettings.flowMode === "temporary";
-    const flowContinuation = (ticket.dataWebhook && typeof ticket.dataWebhook === "object" && "flowContinuation" in ticket.dataWebhook)
-      ? (ticket.dataWebhook as any).flowContinuation
-      : undefined;
 
     // Verificações para voltar ao fluxo (apenas no modo temporário)
-    if (isTemporaryMode && flowContinuation) {
-      const bodyMessage = getBodyMessage(msg) || "";
-      
-      // 1. Verificar palavras-chave de continuação
-      if (detectFlowContinuation(bodyMessage, aiSettings.continueKeywords || [])) {
-        logger.info(`[AI SERVICE] Usuário solicitou continuação do fluxo - ticket ${ticket.id}`);
-        return await returnToFlow(ticket, "user_requested");
-      }
-
-      // 2. Verificar limite de interações
-      if (aiSettings.maxInteractions && flowContinuation.interactionCount >= aiSettings.maxInteractions) {
-        logger.info(`[AI SERVICE] Limite de interações atingido - ticket ${ticket.id}`);
-        return await returnToFlow(ticket, "max_interactions");
-      }
-
-      // 3. Verificar timeout
-      if (aiSettings.completionTimeout) {
-        const startTime = new Date(flowContinuation.startTime);
-        const now = new Date();
-        const minutesElapsed = (now.getTime() - startTime.getTime()) / (1000 * 60);
-        
-if (minutesElapsed >= aiSettings.completionTimeout) {
-          logger.info(`[AI SERVICE] Timeout atingido - ticket ${ticket.id}`);
-          return await returnToFlow(ticket, "timeout");
-        }
-      }
-
-      // Incrementar contador de interações
-      await ticket.update({
-        dataWebhook: {
-          ...ticket.dataWebhook,
-          flowContinuation: {
-            ...flowContinuation,
-            interactionCount: flowContinuation.interactionCount + 1
-          }
-        }
-      });
-    }
+    if (await controlarModoTemporal(aiSettings, ticket, getBodyMessage(msg) || "")) return;
 
     // Validação da estrutura da mensagem
     let bodyMessage = "";
@@ -615,7 +670,7 @@ if (minutesElapsed >= aiSettings.completionTimeout) {
         logger.info(`[AI SERVICE] Resposta processada com sucesso para ticket ${ticket.id}`);
 
         // APÓS RESPOSTA: Verificar se deve continuar fluxo por objetivo completado
-        if (isTemporaryMode && aiSettings.autoCompleteOnObjective && aiSettings.objective && openai) {
+        if (isTemporaryMode && aiSettings.autoCompleteOnObjective && aiSettings.objective && (openai || gemini)) {
           const recentMessages = await Message.findAll({
             where: { ticketId: ticket.id },
             order: [["createdAt", "DESC"]],
@@ -625,7 +680,9 @@ if (minutesElapsed >= aiSettings.completionTimeout) {
           const objectiveCompleted = await checkObjectiveCompletion(
             aiSettings.objective,
             recentMessages,
-            openai
+            aiSettings,
+            openai,
+            gemini
           );
 
           if (objectiveCompleted) {
@@ -736,3 +793,108 @@ if (minutesElapsed >= aiSettings.completionTimeout) {
 };
 
 export default handleOpenAiFlow;
+// ---------------------------------------------------------------------------
+// Nodos IA con Agente IA (docs/AGENTES_IA.md)
+
+/** Cliente del proveedor del agente, para comprobar el objetivo del nodo. */
+const clienteDelAgente = async (
+  agentId: number,
+  companyId: number
+): Promise<{ openai: SessionOpenAi | null; gemini: SessionGemini | null; model: string } | null> => {
+  const { default: AiAgent } = await import("../../models/AiAgent");
+  const { credencialesDe } = await import("../AiAgentServices/AiAgentService");
+  const { OPENROUTER_BASE } = await import("../AiAgentServices/Proveedores");
+  const agente = await AiAgent.findOne({ where: { id: agentId, companyId, isActive: true } });
+  if (!agente) return null;
+  const { apiKey } = credencialesDe(agente);
+  if (agente.provider === "gemini") {
+    return { openai: null, gemini: new GoogleGenerativeAI(apiKey) as SessionGemini, model: agente.model };
+  }
+  const openai = new OpenAI({
+    apiKey,
+    baseURL: agente.provider === "openrouter" ? OPENROUTER_BASE : undefined
+  }) as SessionOpenAi;
+  return { openai, gemini: null, model: agente.model };
+};
+
+/**
+ * Nodo IA que usa un Agente IA. Mantiene los controles del modo temporal de
+ * siempre y responde con el motor, el envio por canal, el estado de la IA y la
+ * prioridad humana de los agentes.
+ */
+export const procesarNodoAgente = async (
+  aiSettings: IOpenAi,
+  ticket: Ticket,
+  contact: Contact,
+  wid: string | null | undefined,
+  bodyMessage: string
+): Promise<void> => {
+  if (contact?.disableBot) return;
+  if (await controlarModoTemporal(aiSettings, ticket, bodyMessage, { deAgente: true })) return;
+
+  const { responderEnFlujo } = await import("../AiAgentServices/AtenderConAgente");
+  const resultado = await responderEnFlujo({
+    ticket,
+    contact,
+    agentId: Number(aiSettings.agentId),
+    wid,
+    filaTransferencia: Number(aiSettings.queueId) || null
+  });
+  logger.info(`[AI NODE] Ticket ${ticket.id}: agente ${aiSettings.agentId} -> ${resultado}`);
+
+  if (
+    resultado === "respondido" &&
+    aiSettings.flowMode === "temporary" &&
+    aiSettings.autoCompleteOnObjective &&
+    aiSettings.objective
+  ) {
+    const cliente = await clienteDelAgente(Number(aiSettings.agentId), ticket.companyId);
+    if (!cliente) return;
+    const recientes = await Message.findAll({
+      where: { ticketId: ticket.id },
+      order: [["createdAt", "DESC"]],
+      limit: 10
+    });
+    const cumplido = await checkObjectiveCompletion(
+      aiSettings.objective,
+      recientes,
+      { ...aiSettings, model: cliente.model },
+      cliente.openai,
+      cliente.gemini
+    );
+    if (cumplido) {
+      await ticket.reload();
+      await returnToFlow(ticket, "objective_completed", { deAgente: true });
+    }
+  }
+};
+
+/**
+ * Enganche para canales sin el camino de Baileys (WhatsApp Oficial): si el
+ * ticket esta en un nodo IA con agente, lo atiende y devuelve true.
+ */
+export const atenderNodoAgente = async ({
+  ticket,
+  contact,
+  wid,
+  texto
+}: {
+  ticket: Ticket;
+  contact: Contact;
+  wid: string | null | undefined;
+  texto: string;
+}): Promise<boolean> => {
+  const dataWebhook = ticket?.dataWebhook as any;
+  const esNodoIa = ticket?.useIntegration && ["openai", "gemini"].includes(dataWebhook?.type);
+  const agentId = Number(dataWebhook?.settings?.agentId);
+  if (!esNodoIa || !agentId) return false;
+  try {
+    if (dataWebhook.awaitingUserResponse) {
+      await ticket.update({ dataWebhook: { ...dataWebhook, awaitingUserResponse: false } });
+    }
+    await procesarNodoAgente({ ...dataWebhook.settings, agentId }, ticket, contact, wid, texto || "");
+  } catch (err) {
+    logger.error(`[AI NODE] Error atendiendo el nodo con agente del ticket ${ticket.id}: ${(err as Error).message}`);
+  }
+  return true;
+};
