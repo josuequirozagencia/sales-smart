@@ -68,6 +68,15 @@ import GoogleCalendarIntegration from "./models/GoogleCalendarIntegration";
 import { pullFromGoogle } from "./services/GoogleCalendarServices/PullService";
 import { procesarConversion } from "./services/ConversionServices/ProcessConversionJob";
 import { iniciarSeguimientosAgentes } from "./services/AiAgentServices/SeguimientosWorker";
+import {
+  crearAvisoEspaciado,
+  decidirFacturacion,
+  importeDePlan,
+  mismaFecha,
+  sentenciaActualizarVencimiento,
+  sentenciaCrearFactura,
+  sentenciaFacturasAbiertas
+} from "./helpers/FacturacionEmpresa";
 
 const connection = process.env.REDIS_URI || "";
 const limiterMax = process.env.REDIS_OPT_LIMITER_MAX || 1;
@@ -2046,6 +2055,12 @@ async function handleCloseTicketsAutomatic() {
   job.start();
 }
 
+// Vive fuera del cron a proposito: si se creara dentro, cada vuelta
+// empezaria con el mapa vacio y no espaciaria nada. Una hora entre avisos
+// iguales deja el problema visible sin llenar el log, con un cron que pasa
+// 2.880 veces al dia.
+const avisoFacturacion = crearAvisoEspaciado(60 * 60 * 1000);
+
 async function handleInvoiceCreate() {
   logger.info("GERANDO RECEITA...");
   const job = new CronJob("*/30 * * * * *", async () => {
@@ -2059,18 +2074,29 @@ async function handleInvoiceCreate() {
       for (const c of companies) {
         try {
           const { status, dueDate, id: companyId, planId } = c;
-          const date = moment(dueDate).format();
+
+          // Sin una fecha de vencimiento que se pueda leer no hay nada que
+          // decidir: ni si la empresa esta vencida ni que fecha lleva su
+          // factura. Antes se seguia adelante con moment(null), que da la
+          // cadena "Invalid date", y esa cadena acababa guardada.
+          const decision = decidirFacturacion(dueDate);
+
+          if (decision.accion === "omitir") {
+            if (avisoFacturacion(`vencimiento:${companyId}`)) {
+              logger.warn(
+                `[FACTURACION] Empresa ${companyId} no se factura: ${decision.motivo}`
+              );
+            }
+            continue;
+          }
+
+          const date = decision.fecha.format();
           const timestamp = moment().format();
-          const hoje = moment().format("DD/MM/yyyy");
-          const vencimento = moment(dueDate).format("DD/MM/yyyy");
-          const diff = moment(vencimento, "DD/MM/yyyy").diff(
-            moment(hoje, "DD/MM/yyyy")
-          );
-          const dias = moment.duration(diff).asDays();
+          const dias = decision.dias;
 
           if (status === true) {
             // Verifico se a empresa está a mais de 3 dias sem pagamento
-            if (dias <= -3) {
+            if (decision.accion === "desactivar") {
               logger.info(
                 `EMPRESA: ${companyId} está VENCIDA A MAIS DE 3 DIAS... INATIVANDO... ${dias}`
               );
@@ -2125,96 +2151,68 @@ async function handleInvoiceCreate() {
               }
 
               // Verificar faturas em aberto
-              const sql = `SELECT * FROM "Invoices" WHERE "companyId" = ${companyId} AND "status" = 'open';`;
-              const openInvoices = (await sequelize.query(sql, {
+              const abiertas = sentenciaFacturasAbiertas(companyId);
+              const openInvoices = (await sequelize.query(abiertas.sql, {
+                replacements: abiertas.replacements,
                 type: QueryTypes.SELECT
-              })) as { id: number; dueDate: Date }[];
+              })) as { id: number; dueDate: string }[];
 
-              const existingInvoice = openInvoices.find(invoice => {
-                const parsedDueDate = moment(invoice.dueDate, "DD/MM/YYYY", true);
-                return (
-                  parsedDueDate.isValid() &&
-                  parsedDueDate.format("DD/MM/YYYY") === vencimento
-                );
-              });
+              const existingInvoice = openInvoices.find(invoice =>
+                mismaFecha(invoice.dueDate, decision.fecha)
+              );
 
               if (existingInvoice) {
                 // Fatura já existe, não fazer nada
                 // logger.info(`Fatura existente para empresa ${companyId}`);
               } else if (openInvoices.length > 0) {
                 // Atualizar data de vencimento da fatura existente
-                const updateSql = `UPDATE "Invoices" SET "dueDate" = '${date}' WHERE "id" = ${openInvoices[0].id};`;
-                await sequelize.query(updateSql, { type: QueryTypes.UPDATE });
+                const actualizar = sentenciaActualizarVencimiento(
+                  openInvoices[0].id,
+                  date
+                );
+                await sequelize.query(actualizar.sql, {
+                  replacements: actualizar.replacements,
+                  type: QueryTypes.UPDATE
+                });
                 logger.info(
                   `Fatura ${openInvoices[0].id} atualizada para empresa ${companyId}`
                 );
               } else {
-                // Criar nova fatura - VALIDAÇÃO ADEQUADA DO VALOR
-                let valuePlan: string | number = 0;
+                // Criar nova fatura.
+                //
+                // Un plan sin importe legible no se convierte en una factura
+                // de 0.00: no se emite nada. Una factura a cero que nadie
+                // pidio se cobra igual de mal que una factura equivocada, y
+                // ademas tapa el problema de configuracion que la causo.
+                const importe = importeDePlan(plan.amount);
 
-                // Validação robusta para o valor do plano
-                if (plan.amount && typeof plan.amount === 'string') {
-                  if (typeof plan.amount === 'string') {
-                    valuePlan = plan.amount.replace(",", ".");
-                  } else {
+                if (importe.estado === "error") {
+                  if (avisoFacturacion(`importe:${companyId}`)) {
                     logger.error(
-                      `EMPRESA: ${companyId} - Valor do plano inválido: ${plan.amount}`
+                      `[FACTURACION] Empresa ${companyId} no se factura: ${importe.motivo} (plan ${planId})`
                     );
                   }
-                  // Definir um valor padrão ou pular esta empresa
-                  valuePlan = "0.00";
+                  continue;
                 }
 
-                // Validação adicional para garantir que é um número válido
-                const numericValue = parseFloat(valuePlan.toString());
-                if (isNaN(numericValue)) {
-                  logger.error(
-                    `EMPRESA: ${companyId} - Não foi possível converter valor do plano para número: ${valuePlan}`
-                  );
-                  valuePlan = "0.00";
-                } else {
-                  valuePlan = numericValue.toFixed(2);
-                }
+                const crear = sentenciaCrearFactura({
+                  companyId,
+                  dueDate: date,
+                  detail: plan.name || "Plano não definido",
+                  value: Number(importe.valor),
+                  users: plan.users || 0,
+                  connections: plan.connections || 0,
+                  queues: plan.queues || 0,
+                  timestamp
+                });
 
-                // Validação dos outros campos do plano
-                const planName = plan.name || 'Plano não definido';
-                const planUsers = plan.users || 0;
-                const planConnections = plan.connections || 0;
-                const planQueues = plan.queues || 0;
-//
-                const insertSql = `
-                  INSERT INTO "Invoices" (
-                    "companyId", 
-                    "dueDate", 
-                    detail, 
-                    status, 
-                    value, 
-                    users, 
-                    connections, 
-                    queues, 
-                    "updatedAt", 
-                    "createdAt"
-                  )
-                  VALUES (
-                    ${companyId}, 
-                    '${date}', 
-                    '${planName}', 
-                    'open', 
-                    ${valuePlan}, 
-                    ${planUsers}, 
-                    ${planConnections}, 
-                    ${planQueues}, 
-                    '${timestamp}', 
-                    '${timestamp}'
-                  );
-                `;
-                
-                await sequelize.query(insertSql, {
+                await sequelize.query(crear.sql, {
+                  replacements: crear.replacements,
                   type: QueryTypes.INSERT
                 });
-                
+
                 logger.info(
-                  `Nova fatura criada para empresa ${companyId} - Valor: ${valuePlan}`
+                  `Nova fatura criada para empresa ${companyId} - Valor: ${importe.valor}`
                 );
               }
             }
