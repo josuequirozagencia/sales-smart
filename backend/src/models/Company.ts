@@ -80,6 +80,37 @@ class Company extends Model<Company> {
   @Column
   recurrence: string;
 
+  // Prueba gratuita y suscripcion, separadas de dueDate.
+  //
+  // dueDate queda SOLO como fecha de cobro. El fin de prueba vive en
+  // trialEndsAt, y el momento de contratar en subscribedAt: darse de alta
+  // no es contratar, y antes ambas cosas compartian columna.
+  //
+  // Las cinco son nulas en las empresas anteriores a este cambio, y ese
+  // NULL significa "regimen anterior", nunca "prueba vencida".
+
+  @Column
+  trialStartAt: Date;
+
+  @Column
+  trialEndsAt: Date;
+
+  @Column
+  subscribedAt: Date;
+
+  /** trial | pending_payment | active | expired, o nulo. */
+  @Column
+  subscriptionStatus: string;
+
+  /**
+   * El dia de cobro PRETENDIDO, que no siempre es el de la ultima factura.
+   *
+   * Una suscripcion del 31 cobra el 28 en febrero; sin guardar el 31 se
+   * quedaria en 28 para siempre en vez de volver a su dia en marzo.
+   */
+  @Column
+  billingDayOfMonth: number;
+
   @Column({
     type: DataType.JSONB
   })

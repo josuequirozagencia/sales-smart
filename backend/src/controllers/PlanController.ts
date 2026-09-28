@@ -104,10 +104,30 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
 
 };
 
+/**
+ * Catalogo PUBLICO, sin sesion: registro y selector de planes.
+ *
+ * Sin parametros a proposito: el filtro de planes publicos no es
+ * negociable desde fuera. Ver la nota de FindAllPlanService.
+ */
 export const list = async (req: Request, res: Response): Promise<Response> => {
-  const {listPublic} = req.query as IndexQuery;
+  const plans: Plan[] = await FindAllPlanService();
 
-  const plans: Plan[] = await FindAllPlanService(listPublic);
+  return res.status(200).json(plans);
+};
+
+/**
+ * Catalogo COMPLETO, con sesion: la pantalla de administracion de planes,
+ * que necesita ver y editar tambien los privados.
+ *
+ * Antes las dos rutas compartian el mismo manejador, y por eso el filtro
+ * de publicos tenia que ser opcional, que era justamente el agujero.
+ */
+export const listAll = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const plans: Plan[] = await Plan.findAll({ order: [["name", "ASC"]] });
 
   return res.status(200).json(plans);
 };

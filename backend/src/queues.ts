@@ -77,6 +77,10 @@ import {
   sentenciaCrearFactura,
   sentenciaFacturasAbiertas
 } from "./helpers/FacturacionEmpresa";
+import {
+  facturacionEnEspera,
+  pruebaAgotada
+} from "./helpers/SuscripcionEmpresa";
 
 const connection = process.env.REDIS_URI || "";
 const limiterMax = process.env.REDIS_OPT_LIMITER_MAX || 1;
@@ -2074,6 +2078,26 @@ async function handleInvoiceCreate() {
       for (const c of companies) {
         try {
           const { status, dueDate, id: companyId, planId } = c;
+
+          // Durante la prueba gratuita la facturacion no toca nada: no
+          // emite factura, no actualiza ninguna, no considera la empresa
+          // vencida, no la desactiva y no le desconecta los WhatsApp. Lo
+          // mismo si la prueba se agoto sin contratar: no llego a haber
+          // nada contratado que cobrar.
+          //
+          // Las empresas anteriores a este cambio tienen subscriptionStatus
+          // en NULL y no entran aqui: siguen su camino de siempre.
+          if (facturacionEnEspera(c.subscriptionStatus)) {
+            // Se deja constancia del fin de la prueba una sola vez: al
+            // pasar a expired esta condicion ya no vuelve a cumplirse.
+            if (pruebaAgotada(c.subscriptionStatus, c.trialEndsAt)) {
+              await c.update({ subscriptionStatus: "expired" });
+              logger.info(
+                `[SUSCRIPCION] Empresa ${companyId}: prueba gratuita terminada`
+              );
+            }
+            continue;
+          }
 
           // Sin una fecha de vencimiento que se pueda leer no hay nada que
           // decidir: ni si la empresa esta vencida ni que fecha lleva su

@@ -29,6 +29,17 @@ interface CompanyData {
    * que ya llamaban aqui cambia de comportamiento.
    */
   approvalStatus?: string;
+  /**
+   * Prueba gratuita y suscripcion.
+   *
+   * Opcionales: quien no los pase deja las columnas en NULL, que es el
+   * regimen anterior. Asi ningun sitio que ya llamaba aqui cambia.
+   */
+  trialStartAt?: Date | null;
+  trialEndsAt?: Date | null;
+  subscribedAt?: Date | null;
+  subscriptionStatus?: string | null;
+  billingDayOfMonth?: number | null;
 }
 
 const validateCnpjWithReceita = async (cnpj: string): Promise<boolean> => {
@@ -67,7 +78,12 @@ const CreateCompanyService = async (
     companyUserName,
     generateInvoice,
     currency,
-    approvalStatus
+    approvalStatus,
+    trialStartAt,
+    trialEndsAt,
+    subscribedAt,
+    subscriptionStatus,
+    billingDayOfMonth
   } = companyData;
 
   const companySchema = Yup.object().shape({
@@ -119,7 +135,14 @@ if (document && document.trim() !== "") {
       generateInvoice,
       currency: currency || "BRL",
       // Sin valor explicito manda el defecto de la columna (approved).
-      ...(approvalStatus ? { approvalStatus } : {})
+      ...(approvalStatus ? { approvalStatus } : {}),
+      // Prueba y suscripcion. Lo que no llegue se queda en NULL, que es el
+      // regimen anterior: quien ya llamaba aqui no cambia de comportamiento.
+      trialStartAt,
+      trialEndsAt,
+      subscribedAt,
+      subscriptionStatus,
+      billingDayOfMonth
     },
       { transaction: t }
     );
