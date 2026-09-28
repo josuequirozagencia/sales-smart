@@ -1,5 +1,6 @@
 import { Op } from "sequelize";
 import Whatsapp from "../../models/Whatsapp";
+import GhlConfig from "../../models/GhlConfig";
 import DeleteWhatsAppService from "./DeleteWhatsAppService";
 import DeleteBaileysService from "../BaileysServices/DeleteBaileysService";
 import { removeWbot } from "../../libs/wbot";
@@ -73,10 +74,50 @@ export const eliminarConexion = async (
     return hermanas.map(h => h.id);
   }
 
-  // GoHighLevel y cualquier canal que no abra sesion: no hay nada que
-  // desmontar fuera, basta con borrar la conexion. Las tablas que apuntan a
-  // ella (tickets, contactos, campanas) la sueltan solas: sus claves ajenas
-  // son SET NULL o CASCADE.
+  if (whatsapp.channel === "ghl") {
+    // GoHighLevel guarda su configuracion aparte, por empresa y no por
+    // conexion: el token cifrado, el locationId, el secreto del webhook, los
+    // flujos anotados a mano y el mapeo de plantillas a Workflows viven todos
+    // en una sola fila de GhlConfig.
+    //
+    // Si solo se borrara la fila de Whatsapp, eliminar la conexion no seria
+    // una desconexion: el token seguiria cifrado en la base y el canal
+    // volveria a funcionar en cuanto alguien reactivara la conexion, sin que
+    // nadie hubiera tenido que volver a pegarlo. Por eso se va tambien la
+    // configuracion.
+    //
+    // Ahora bien, el limite de conexiones es por canal y por plan, asi que
+    // una empresa puede tener varias de GoHighLevel. La configuracion solo se
+    // borra cuando se va la ultima: mientras quede otra, esa fila no es un
+    // resto olvidado, esta en uso.
+    const otrasDeGhl = await Whatsapp.count({
+      where: {
+        companyId: whatsapp.companyId,
+        channel: "ghl",
+        id: { [Op.ne]: whatsapp.id }
+      }
+    });
+
+    if (otrasDeGhl === 0) {
+      // Con la configuracion se va el webhookSecret, y con el muere la URL
+      // que la empresa tenga pegada en la accion "Webhook" de su Workflow de
+      // GHL: al reconectar se genera otro secreto y hay que volver a pegar la
+      // URL nueva alli a mano. Lo mismo con el mapeo de plantillas y con las
+      // credenciales de Meta para leerlas. No es un descuido: esto no es
+      // editar la configuracion —donde el secreto se conserva a proposito—,
+      // es desconectar del todo, y reconectar empieza de cero.
+      await GhlConfig.destroy({
+        where: { companyId: whatsapp.companyId }
+      });
+    }
+
+    await DeleteWhatsAppService(id);
+    return [whatsapp.id];
+  }
+
+  // Cualquier canal que no abra sesion ni guarde nada fuera: basta con borrar
+  // la conexion. Las tablas que apuntan a ella (tickets, contactos,
+  // campanas) la sueltan solas: sus claves ajenas son SET NULL o CASCADE.
   await DeleteWhatsAppService(id);
   return [whatsapp.id];
 };

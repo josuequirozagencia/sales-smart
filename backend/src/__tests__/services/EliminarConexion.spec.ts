@@ -1,5 +1,8 @@
 import Company from "../../models/Company";
 import Whatsapp from "../../models/Whatsapp";
+import GhlConfig from "../../models/GhlConfig";
+import Contact from "../../models/Contact";
+import Ticket from "../../models/Ticket";
 import { closeConnection, uniqueSuffix } from "../helpers/db";
 
 // Borrado de una conexion, por canal.
@@ -27,6 +30,17 @@ jest.mock("../../libs/whatsAppOficial/whatsAppOficial.service", () => ({
 import { eliminarConexion } from "../../services/WhatsappService/EliminarConexionService";
 
 let empresa: Company;
+let otraEmpresa: Company;
+
+const crearConfigGhl = async (companyId: number) =>
+  GhlConfig.create({
+    companyId,
+    token: `cifrado-${uniqueSuffix()}`,
+    locationId: `loc-${uniqueSuffix()}`,
+    webhookSecret: `secreto-${uniqueSuffix()}`,
+    workflows: "[]",
+    isActive: true
+  } as any);
 
 const crearConexion = async (channel: string, extra: any = {}) =>
   Whatsapp.create({
@@ -43,11 +57,22 @@ beforeAll(async () => {
     planId: 1,
     status: true
   } as any);
+
+  otraEmpresa = await Company.create({
+    name: `conexiones-ajena-${uniqueSuffix()}`,
+    planId: 1,
+    status: true
+  } as any);
 });
 
 afterAll(async () => {
-  await Whatsapp.destroy({ where: { companyId: empresa.id } });
-  await Company.destroy({ where: { id: empresa.id } });
+  const empresas = [empresa.id, otraEmpresa.id];
+
+  await Ticket.destroy({ where: { companyId: empresas } });
+  await Contact.destroy({ where: { companyId: empresas } });
+  await GhlConfig.destroy({ where: { companyId: empresas } });
+  await Whatsapp.destroy({ where: { companyId: empresas } });
+  await Company.destroy({ where: { id: empresas } });
   await closeConnection();
 });
 
@@ -108,5 +133,103 @@ describe("eliminarConexion", () => {
 
     expect(removeWbot).toHaveBeenCalledWith(conexion.id);
     expect(await Whatsapp.findByPk(conexion.id)).toBeNull();
+  });
+});
+
+// Borrar una conexion de GoHighLevel tiene que ser una desconexion de verdad.
+// Antes solo se iba la fila de Whatsapp y el Private Integration Token seguia
+// cifrado en GhlConfig: bastaba con reactivar la conexion para que el canal
+// volviera a funcionar sin que nadie hubiera vuelto a pegar el token.
+describe("eliminarConexion con GoHighLevel", () => {
+  // Cada prueba parte de cero: la configuracion es una fila por empresa y el
+  // recuento de conexiones hermanas decide si se borra, asi que un resto de
+  // la prueba anterior cambiaria el resultado de la siguiente.
+  beforeEach(async () => {
+    const empresas = [empresa.id, otraEmpresa.id];
+
+    await GhlConfig.destroy({ where: { companyId: empresas } });
+    await Whatsapp.destroy({ where: { companyId: empresas, channel: "ghl" } });
+  });
+
+  it("se lleva el token guardado, no solo la conexion", async () => {
+    await crearConfigGhl(empresa.id);
+    const conexion = await crearConexion("ghl");
+
+    await eliminarConexion(conexion);
+
+    expect(await Whatsapp.findByPk(conexion.id)).toBeNull();
+    expect(
+      await GhlConfig.findOne({ where: { companyId: empresa.id } })
+    ).toBeNull();
+  });
+
+  it("conserva la configuracion mientras quede otra conexion de GoHighLevel", async () => {
+    // El limite de conexiones es por canal y por plan, asi que una empresa
+    // puede tener varias de GHL compartiendo la misma configuracion. Borrar
+    // una no puede dejar sin token a las que siguen.
+    await crearConfigGhl(empresa.id);
+    const primera = await crearConexion("ghl");
+    const segunda = await crearConexion("ghl");
+
+    await eliminarConexion(primera);
+
+    expect(await Whatsapp.findByPk(segunda.id)).not.toBeNull();
+    expect(
+      await GhlConfig.findOne({ where: { companyId: empresa.id } })
+    ).not.toBeNull();
+
+    // Y al irse la ultima, ahora si.
+    await eliminarConexion(segunda);
+
+    expect(
+      await GhlConfig.findOne({ where: { companyId: empresa.id } })
+    ).toBeNull();
+  });
+
+  it("no toca la configuracion de otra empresa", async () => {
+    await crearConfigGhl(empresa.id);
+    await crearConfigGhl(otraEmpresa.id);
+    const conexion = await crearConexion("ghl");
+
+    await eliminarConexion(conexion);
+
+    expect(
+      await GhlConfig.findOne({ where: { companyId: otraEmpresa.id } })
+    ).not.toBeNull();
+  });
+
+  it("no borra la configuracion al eliminar una conexion de otro canal", async () => {
+    await crearConfigGhl(empresa.id);
+    const conexion = await crearConexion("whatsapp");
+
+    await eliminarConexion(conexion);
+
+    expect(
+      await GhlConfig.findOne({ where: { companyId: empresa.id } })
+    ).not.toBeNull();
+  });
+
+  it("deja intacto el historial de conversacion", async () => {
+    // El token es configuracion y se va; los tickets y contactos son lo que
+    // de verdad hablaron los clientes, y se quedan.
+    await crearConfigGhl(empresa.id);
+    const conexion = await crearConexion("ghl");
+    const contacto = await Contact.create({
+      name: `ghl-${uniqueSuffix()}`,
+      number: `593${uniqueSuffix()}`.slice(0, 12),
+      companyId: empresa.id
+    } as any);
+    const ticket = await Ticket.create({
+      status: "closed",
+      companyId: empresa.id,
+      contactId: contacto.id,
+      whatsappId: conexion.id,
+      isGroup: false
+    } as any);
+
+    await eliminarConexion(conexion);
+
+    expect(await Contact.findByPk(contacto.id)).not.toBeNull();
+    expect(await Ticket.findByPk(ticket.id)).not.toBeNull();
   });
 });
