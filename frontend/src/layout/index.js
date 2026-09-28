@@ -53,6 +53,7 @@ import useSocketListener from "../hooks/useSocketListener";
 import { FaGlobe } from "react-icons/fa";
 import LanguageSelector from "../components/LanguageSelector";
 import AvisoInactividad from "../components/AvisoInactividad";
+import BannerPrueba from "../components/BannerPrueba";
 import logo from "../assets/logo.png";
 import logoBlack from "../assets/logo-black.png";
 
@@ -1035,6 +1036,10 @@ useEffect(() => {
       </AppBar>
       <main className={clsx(classes.content, esBandeja && classes.contentBandeja)}>
         <div className={classes.appBarSpacer} />
+        {/* Aviso de prueba gratuita. Va dentro del contenido, no en la
+            barra superior, para no alterar el alto del cromo ni el calculo
+            de la bandeja. Se pinta solo si la empresa esta en prueba. */}
+        <BannerPrueba />
         {children ? children : null}
       </main>
 

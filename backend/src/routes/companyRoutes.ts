@@ -10,6 +10,10 @@ companyRoutes.get("/companies", isAuth, CompanyController.index);
 companyRoutes.get("/companies/:id", isAuth, CompanyController.show);
 companyRoutes.post("/companies", isAuth, CompanyController.store);
 
+// Contratacion del plan desde el banner de prueba. Sin :id a proposito: la
+// empresa sale del token, para que nadie pueda contratarle un plan a otra.
+companyRoutes.post("/companies/subscription", isAuth, CompanyController.activarSuscripcion);
+
 // Clonado de configuracion entre empresas. Solo superadministrador: el
 // controlador lo comprueba con el mismo guard que el resto de esta gestion.
 companyRoutes.post("/companies/clone-config", isAuth, CompanyController.cloneConfig);

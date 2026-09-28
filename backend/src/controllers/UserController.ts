@@ -31,6 +31,7 @@ import Chat from "../models/Chat";
 import ChatUser from "../models/ChatUser";
 import Plan from "../models/Plan";
 import axios from "axios";
+import { iniciarPrueba } from "../helpers/SuscripcionEmpresa";
 
 type IndexQuery = {
   searchParam: string;
@@ -174,18 +175,18 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
   }
 
   if (!companyUser) {
-    let date = "";
-    if (plan.trial === true) {
-      const dataNowMoreTwoDays = new Date();
-      dataNowMoreTwoDays.setDate(dataNowMoreTwoDays.getDate() + Number(plan?.trialDays || 3));
+    // Toda empresa nueva entra con 7 dias de prueba gratuita.
+    //
+    // La duracion ya NO sale de plan.trialDays: el plan elegido decide los
+    // limites y las funciones, no cuanto dura la prueba. Antes dependia del
+    // plan, y ademas el camino del else escribia dueDate = hoy + 3 incluso
+    // con un plan de pago, de modo que la empresa nacia con una fecha de
+    // cobro que nadie habia contratado.
+    const prueba = iniciarPrueba();
 
-      date = dataNowMoreTwoDays.toISOString().split("T")[0];
-    } else {
-      const dataNowMoreTwoDays = new Date();
-      dataNowMoreTwoDays.setDate(dataNowMoreTwoDays.getDate() + 3);
-
-      date = dataNowMoreTwoDays.toISOString().split("T")[0];
-    }
+    // Lo que se anuncia en el correo y en el WhatsApp de bienvenida. Antes
+    // era la fecha de los tres dias, que encima se llamaba dueDate.
+    const finDePrueba = prueba.trialEndsAt.toISOString().split("T")[0];
 
     const companyData = {
       name: companyName,
@@ -194,8 +195,14 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
       planId: planId,
       status: true,
       approvalStatus: naceAprobada ? "approved" : "pending",
-      dueDate: date,
-      recurrence: "",
+      // Sin fecha de cobro: durante la prueba no hay nada que cobrar.
+      dueDate: prueba.dueDate,
+      recurrence: prueba.recurrence,
+      trialStartAt: prueba.trialStartAt,
+      trialEndsAt: prueba.trialEndsAt,
+      subscribedAt: prueba.subscribedAt,
+      subscriptionStatus: prueba.subscriptionStatus,
+      billingDayOfMonth: prueba.billingDayOfMonth,
       // Moneda heredada de la instalacion.
       //
       // Antes quedaba fija en real brasileno, asi que una empresa dada de
@@ -254,7 +261,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
         text: naceAprobada
           ? `Hola ${name}, tu empresa ${companyName} ya esta registrada.<br><br>` +
             `Nombre: ${companyName}<br>Correo de acceso: ${email}<br>` +
-            `Fin del periodo de prueba: ${dateToClient(date)}<br><br>` +
+            `Fin del periodo de prueba: ${dateToClient(finDePrueba)}<br><br>` +
             `Entra con ese correo y la contrasena que elegiste.`
           : `Hola ${name}, recibimos la solicitud de registro de ${companyName}.` +
             `<br><br>Esta pendiente de revision. Te avisaremos por este mismo` +
@@ -284,7 +291,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
 
 Correo de acceso: ${email}` +
             `
-Fin del periodo de prueba: ${dateToClient(date)}` +
+Fin del periodo de prueba: ${dateToClient(finDePrueba)}` +
             `
 
 Entra con ese correo y la contrasena que elegiste.`

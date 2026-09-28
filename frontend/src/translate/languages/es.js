@@ -1,6 +1,39 @@
 const messages = {
   es: {
     translations: {
+      banner: {
+        prueba: {
+          quedan: "Tu prueba gratuita termina en {{dias}} días",
+          unDia: "Tu prueba gratuita termina en 1 día",
+          hoy: "Tu prueba termina hoy",
+          terminada: "Tu período de prueba terminó",
+          subtitulo:
+            "Elige un plan para continuar usando Sales Smart sin interrupciones.",
+          subtituloTerminada:
+            "Elige un plan para continuar usando Sales Smart.",
+          cta: "Elegir plan",
+        },
+      },
+      planes: {
+        titulo: "Elige el plan que mejor se adapta a tu negocio",
+        subtitulo:
+          "Todos los planes se cobran mensualmente. Puedes cambiar de plan cuando quieras.",
+        porMes: "por mes",
+        elegir: "Elegir {{plan}}",
+        contratando: "Activando…",
+        sinPlanes: "Ahora mismo no hay planes disponibles.",
+        usuarios: "{{cantidad}} usuarios",
+        conexiones: "{{cantidad}} conexiones",
+        colas: "{{cantidad}} colas",
+        whatsapp: "WhatsApp",
+        whatsappOficial: "API oficial de WhatsApp",
+        campanas: "Campañas",
+        agendamientos: "Agendamientos",
+        kanban: "Embudos Kanban",
+        ia: "Agentes de IA",
+        integraciones: "Integraciones",
+        api: "API externa",
+      },
       metaConversions: {
         "tab": "Integraciones",
         "title": "Meta · Conversions API",

@@ -1,6 +1,38 @@
 const messages = {
   en: {
     translations: {
+      banner: {
+        prueba: {
+          quedan: "Your free trial ends in {{dias}} days",
+          unDia: "Your free trial ends in 1 day",
+          hoy: "Your trial ends today",
+          terminada: "Your trial period has ended",
+          subtitulo:
+            "Choose a plan to keep using Sales Smart without interruptions.",
+          subtituloTerminada: "Choose a plan to keep using Sales Smart.",
+          cta: "Choose a plan",
+        },
+      },
+      planes: {
+        titulo: "Choose the plan that fits your business",
+        subtitulo:
+          "Every plan is billed monthly. You can change plans at any time.",
+        porMes: "per month",
+        elegir: "Choose {{plan}}",
+        contratando: "Activating…",
+        sinPlanes: "There are no plans available right now.",
+        usuarios: "{{cantidad}} users",
+        conexiones: "{{cantidad}} connections",
+        colas: "{{cantidad}} queues",
+        whatsapp: "WhatsApp",
+        whatsappOficial: "Official WhatsApp API",
+        campanas: "Campaigns",
+        agendamientos: "Scheduling",
+        kanban: "Kanban pipelines",
+        ia: "AI agents",
+        integraciones: "Integrations",
+        api: "External API",
+      },
       metaConversions: {
         "tab": "Integrations",
         "title": "Meta · Conversions API",

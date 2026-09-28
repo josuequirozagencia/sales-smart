@@ -23,6 +23,7 @@ import User from "../models/User";
 import ListCompaniesPlanService from "../services/CompanyService/ListCompaniesPlanService";
 import CloneCompanyConfigService from "../services/CompanyService/CloneCompanyConfigService";
 import DuplicateCompanyService from "../services/CompanyService/DuplicateCompanyService";
+import ActivarSuscripcionService from "../services/CompanyService/ActivarSuscripcionService";
 
 interface TokenPayload {
   id: string;
@@ -547,4 +548,31 @@ export const audit = async (
   });
 
   return res.status(200).json(registros);
+};
+
+/**
+ * Contrata un plan para la empresa de quien pide.
+ *
+ * La empresa sale del token, NUNCA del cuerpo ni de la URL: si viniera de
+ * fuera, cualquiera podria contratar —o cambiarle el plan— a otra empresa.
+ * Del cuerpo se lee unicamente planId; precio, limites, fechas y estado los
+ * decide el servicio contra la base.
+ */
+export const activarSuscripcion = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { companyId } = req.user;
+  const { planId } = req.body;
+
+  if (planId === undefined || planId === null || Number.isNaN(Number(planId))) {
+    throw new AppError("ERR_INVALID_PLAN", 400);
+  }
+
+  const company = await ActivarSuscripcionService({
+    companyId: Number(companyId),
+    planId: Number(planId)
+  });
+
+  return res.status(200).json(company);
 };
