@@ -46,17 +46,23 @@ export const ESCALATION_TAG_NAME = "Sin respuesta";
 export const ESCALATION_TAG_COLOR = "#b91c1c";
 
 /**
- * Zona horaria con la que se interpretan los horarios laborales.
+ * Zona horaria del negocio: la que decide a que hora pasan las cosas.
  *
- * El resto del backend tiene "America/Sao_Paulo" escrito a mano en 30
- * sitios, herencia de que el producto es brasileno. Para un negocio en
- * Ecuador eso desplaza la jornada 120 minutos: una asesora con turno
- * 09:00-18:00 dejaria de recibir leads a las 16:00 hora local, dos horas
- * antes de terminar.
+ * Nacio para los horarios laborales, porque el backend tenia
+ * "America/Sao_Paulo" escrito a mano —herencia de que el producto es
+ * brasileno— y para un negocio en Ecuador eso desplaza la jornada 120
+ * minutos: una asesora con turno 09:00-18:00 dejaria de recibir leads a las
+ * 16:00 hora local, dos horas antes de terminar.
  *
- * Se lee de la variable de entorno para no tener que decidir por todo el
- * mundo, y se mantiene Sao Paulo como respaldo para no cambiarle el
- * comportamiento a una instalacion que ya funcionaba.
+ * Ahora la usan tambien los cumpleanos —tanto la hora de envio como que dia
+ * se considera hoy— y la marca de tiempo del log. Lo unico que sigue con el
+ * huso escrito a mano es config/database.ts, y se deja aparte a proposito:
+ * ahi el huso no decide cuando ocurre algo, sino como se interpretan las
+ * fechas que ya estan guardadas, y tocarlo es otra conversacion.
+ *
+ * Se lee de la variable de entorno para no decidir por todo el mundo, y se
+ * mantiene Sao Paulo como respaldo para no cambiarle el comportamiento a una
+ * instalacion que ya funcionaba.
  *
  * Es una solucion por instalacion, no por empresa. Sirve mientras cada
  * despliegue atienda un solo pais; el dia que una misma instancia tenga

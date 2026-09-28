@@ -19,6 +19,8 @@ jest.mock("../../services/BirthdayService/BirthdayService", () => ({
 import moment from "moment-timezone";
 // eslint-disable-next-line import/first
 import { horaDeEnvioAhora } from "../../jobs/BirthdayJob";
+// eslint-disable-next-line import/first
+import { businessTimezone } from "../../helpers/RotationPolicy";
 
 // El job de cumpleanos llevaba fallando cada 15 minutos, y nadie lo vio
 // porque el mensaje del error se perdia por el camino: pino no imprime el
@@ -74,24 +76,40 @@ describe("la consulta que hace el job de cumpleanos", () => {
 // definida, asi que era UTC mientras el cron declaraba Sao Paulo. Nadie lo
 // habia notado porque la consulta reventaba antes de llegar a comparar.
 describe("horaDeEnvioAhora", () => {
-  it("mide la hora en el huso del cron, no en el del contenedor", () => {
-    // Las 12:00 UTC son las 09:00 en Sao Paulo. getHours() habria dicho 12,
-    // y un envio configurado a las 09:00 no habria salido nunca a su hora.
-    expect(horaDeEnvioAhora(moment.utc("2026-09-28T12:00:00Z"))).toBe(
+  const mediodiaUtc = () => moment.utc("2026-09-28T12:00:00Z");
+
+  it("mide la hora en el huso del negocio, no en el del contenedor", () => {
+    // Las 12:00 UTC son las 07:00 en Ecuador. getHours() habria dicho 12,
+    // porque el contenedor de Railway no tiene TZ definida, y un envio
+    // configurado a las 07:00 no habria salido nunca a su hora.
+    expect(horaDeEnvioAhora(mediodiaUtc(), "America/Guayaquil")).toBe(
+      "07:00:00"
+    );
+  });
+
+  it("sigue al huso que se le diga, no a uno fijo", () => {
+    // El mismo instante, en el huso que traia el producto de origen.
+    expect(horaDeEnvioAhora(mediodiaUtc(), "America/Sao_Paulo")).toBe(
       "09:00:00"
     );
   });
 
+  it("toma el huso del negocio cuando no se le pasa ninguno", () => {
+    const esperado = horaDeEnvioAhora(mediodiaUtc(), businessTimezone());
+
+    expect(horaDeEnvioAhora(mediodiaUtc())).toBe(esperado);
+  });
+
   it("deja los segundos a cero, como se guarda sendBirthdayTime", () => {
-    expect(horaDeEnvioAhora(moment.utc("2026-09-28T12:34:56Z"))).toBe(
-      "09:34:00"
-    );
+    expect(
+      horaDeEnvioAhora(moment.utc("2026-09-28T12:34:56Z"), "America/Guayaquil")
+    ).toBe("07:34:00");
   });
 
   it("no modifica el momento que recibe", () => {
-    const original = moment.utc("2026-09-28T12:00:00Z");
+    const original = mediodiaUtc();
 
-    horaDeEnvioAhora(original);
+    horaDeEnvioAhora(original, "America/Guayaquil");
 
     expect(original.utcOffset()).toBe(0);
   });

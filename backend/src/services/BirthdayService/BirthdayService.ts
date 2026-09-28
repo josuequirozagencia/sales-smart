@@ -11,6 +11,7 @@ import logger from "../../utils/logger";
 import GetDefaultWhatsApp from "../../helpers/GetDefaultWhatsApp";
 import { Op } from "sequelize";
 import moment from "moment-timezone";
+import { businessTimezone } from "../../helpers/RotationPolicy";
 
 interface BirthdayPerson {
   id: number;
@@ -39,7 +40,7 @@ export class BirthdayService {
     const settings = await BirthdaySettings.getCompanySettings(companyId);
     
     // Usar moment com timezone brasileiro
-    const today = moment().tz("America/Sao_Paulo");
+    const today = moment().tz(businessTimezone());
     const month = today.month() + 1; // moment month começa em 0
     const day = today.date();
 
@@ -62,7 +63,7 @@ export class BirthdayService {
       
       // Debug: mostrar todas as datas de nascimento
       allUsers.forEach(user => {
-        const userBirthDate = moment(user.birthDate).tz("America/Sao_Paulo");
+        const userBirthDate = moment(user.birthDate).tz(businessTimezone());
         logger.info(`🎂 [DEBUG] Usuário ${user.name} (ID: ${user.id}) - birthDate: ${user.birthDate} - Formatado: ${userBirthDate.format('DD/MM/YYYY')}`);
       });
 
@@ -71,7 +72,7 @@ export class BirthdayService {
         if (!user.birthDate) return false;
         
         // Usar moment para comparação consistente
-        const birthDate = moment(user.birthDate).tz("America/Sao_Paulo");
+        const birthDate = moment(user.birthDate).tz(businessTimezone());
         const birthMonth = birthDate.month() + 1;
         const birthDay = birthDate.date();
         
@@ -87,7 +88,7 @@ export class BirthdayService {
       logger.info(`🎂 [DEBUG] Usuários aniversariantes hoje: ${todayBirthdays.length}`);
 
       users = todayBirthdays.map(user => {
-        const birthDate = moment(user.birthDate).tz("America/Sao_Paulo");
+        const birthDate = moment(user.birthDate).tz(businessTimezone());
         const age = today.year() - birthDate.year();
         
         return {
@@ -120,7 +121,7 @@ export class BirthdayService {
 
       // Debug: mostrar todas as datas de nascimento
       allContacts.forEach(contact => {
-        const contactBirthDate = moment(contact.birthDate).tz("America/Sao_Paulo");
+        const contactBirthDate = moment(contact.birthDate).tz(businessTimezone());
         logger.info(`🎂 [DEBUG] Contato ${contact.name} (ID: ${contact.id}) - birthDate: ${contact.birthDate} - Formatado: ${contactBirthDate.format('DD/MM/YYYY')}`);
       });
 
@@ -129,7 +130,7 @@ export class BirthdayService {
         if (!contact.birthDate) return false;
         
         // Usar moment para comparação consistente
-        const birthDate = moment(contact.birthDate).tz("America/Sao_Paulo");
+        const birthDate = moment(contact.birthDate).tz(businessTimezone());
         const birthMonth = birthDate.month() + 1;
         const birthDay = birthDate.date();
         
@@ -145,7 +146,7 @@ export class BirthdayService {
       logger.info(`🎂 [DEBUG] Contatos aniversariantes hoje: ${todayBirthdays.length}`);
 
       contacts = todayBirthdays.map(contact => {
-        const birthDate = moment(contact.birthDate).tz("America/Sao_Paulo");
+        const birthDate = moment(contact.birthDate).tz(businessTimezone());
         const age = today.year() - birthDate.year();
         
         return {

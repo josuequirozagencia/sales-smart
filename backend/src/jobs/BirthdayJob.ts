@@ -4,26 +4,26 @@ import logger from "../utils/logger";
 import Company from "../models/Company";
 import BirthdaySettings from "../models/BirthdaySettings";
 import moment, { Moment } from "moment-timezone";
+import { businessTimezone } from "../helpers/RotationPolicy";
 const CronJob = require("cron").CronJob;
 
 /**
- * El huso en el que trabaja todo el backend: es el que declaran los crons y
- * el que imprime el log.
- */
-export const HUSO_HORARIO = "America/Sao_Paulo";
-
-/**
- * La hora de ahora en ese huso, con los segundos a cero, tal y como se
- * guarda sendBirthdayTime.
+ * La hora de ahora en el huso del negocio, con los segundos a cero, tal y
+ * como se guarda sendBirthdayTime.
  *
  * Antes esto se calculaba con new Date().getHours(), que da la hora del
  * contenedor. En Railway no hay TZ definida, asi que era UTC mientras el
  * cron declaraba Sao Paulo: un envio configurado a las 09:00 solo habria
  * coincidido cuando en Sao Paulo eran las 06:00. No se notaba porque la
  * consulta fallaba antes de llegar a comparar.
+ *
+ * El huso se pasa aparte para que los tests no dependan de como este
+ * configurado el entorno donde corren.
  */
-export const horaDeEnvioAhora = (ahora: Moment = moment()): string =>
-  ahora.clone().tz(HUSO_HORARIO).format("HH:mm:00");
+export const horaDeEnvioAhora = (
+  ahora: Moment = moment(),
+  huso: string = businessTimezone()
+): string => ahora.clone().tz(huso).format("HH:mm:00");
 
 /**
  * Job para processar aniversários diariamente
@@ -48,7 +48,7 @@ export const startBirthdayJob = () => {
     },
     null, // onComplete
     true, // start immediately
-    HUSO_HORARIO // timezone
+    businessTimezone() // timezone
   );
 
   logger.info("🎂 Birthday cron job initialized - will run daily at 09:00");
@@ -75,7 +75,7 @@ export const startBirthdayNotificationJob = () => {
     },
     null, // onComplete
     true, // start immediately
-    HUSO_HORARIO // timezone
+    businessTimezone() // timezone
   );
 
   logger.info("🎂 Birthday notification job initialized - will run every 30 minutes during business hours");
@@ -138,7 +138,7 @@ export const startCleanupJob = () => {
     },
     null, // onComplete
     true, // start immediately
-    HUSO_HORARIO // timezone
+    businessTimezone() // timezone
   );
 
   logger.info("🧹 Cleanup cron job initialized - will run daily at midnight");
@@ -197,7 +197,7 @@ export const startDynamicBirthdayJob = () => {
     },
     null, // onComplete
     true, // start immediately
-    HUSO_HORARIO // timezone
+    businessTimezone() // timezone
   );
 
   logger.info("🎂 Dynamic birthday job initialized - will check every 15 minutes for scheduled sends");

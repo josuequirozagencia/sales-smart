@@ -1,9 +1,10 @@
 import pino from 'pino';
 import moment from 'moment-timezone';
+import { businessTimezone } from '../helpers/RotationPolicy';
 
 // Função para obter o timestamp com fuso horário
 const timezoned = () => {
-  return moment().tz('America/Sao_Paulo').format('DD-MM-YYYY HH:mm:ss');
+  return moment().tz(businessTimezone()).format('DD-MM-YYYY HH:mm:ss');
 };
 
 const logger = pino({

@@ -29,6 +29,7 @@ import Chatbot from "./Chatbot";
 import Chat from "./Chat";
 import ChatUser from "./ChatUser";
 import ContactWallet from "./ContactWallet";
+import { businessTimezone } from "../helpers/RotationPolicy";
 
 @Table
 class User extends Model<User> {
@@ -273,8 +274,8 @@ get isBirthdayToday(): boolean {
   if (!this.birthDate) return false;
 
   const moment = require('moment-timezone');
-  const today = moment().tz("America/Sao_Paulo");
-  const birthDate = moment(this.birthDate).tz("America/Sao_Paulo");
+  const today = moment().tz(businessTimezone());
+  const birthDate = moment(this.birthDate).tz(businessTimezone());
 
   return (
     today.month() === birthDate.month() &&
@@ -286,8 +287,8 @@ get currentAge(): number | null {
   if (!this.birthDate) return null;
 
   const moment = require('moment-timezone');
-  const today = moment().tz("America/Sao_Paulo");
-  const birthDate = moment(this.birthDate).tz("America/Sao_Paulo");
+  const today = moment().tz(businessTimezone());
+  const birthDate = moment(this.birthDate).tz(businessTimezone());
   
   let age = today.year() - birthDate.year();
   
@@ -305,7 +306,7 @@ get currentAge(): number | null {
  */
 static async getTodayBirthdays(companyId: number): Promise<User[]> {
   const moment = require('moment-timezone');
-  const today = moment().tz("America/Sao_Paulo");
+  const today = moment().tz(businessTimezone());
   const month = today.month() + 1;
   const day = today.date();
 
@@ -328,7 +329,7 @@ static async getTodayBirthdays(companyId: number): Promise<User[]> {
   const birthdayUsers = users.filter(user => {
     if (!user.birthDate) return false;
     
-    const birthDate = moment(user.birthDate).tz("America/Sao_Paulo");
+    const birthDate = moment(user.birthDate).tz(businessTimezone());
     const birthMonth = birthDate.month() + 1;
     const birthDay = birthDate.date();
     
