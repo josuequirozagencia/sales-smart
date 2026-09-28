@@ -24,6 +24,7 @@ import User from "./User";
 import UserRating from "./UserRating";
 import Whatsapp from "./Whatsapp";
 import CompaniesSettings from "./CompaniesSettings";
+import BirthdaySettings from "./BirthdaySettings";
 import Invoices from "./Invoices";
 
 @Table
@@ -201,6 +202,17 @@ class Company extends Model<Company> {
     hooks: true
   })
   companieSettings: CompaniesSettings;
+
+  // Faltaba, y BirthdaySettings solo declaraba su lado. Las asociaciones de
+  // Sequelize son direccionales, asi que el job de cumpleanos —que pide la
+  // empresa incluyendo sus ajustes— reventaba cada 15 minutos con
+  // "BirthdaySettings is not associated to Company!".
+  @HasMany(() => BirthdaySettings, {
+    onUpdate: "CASCADE",
+    onDelete: "CASCADE",
+    hooks: true
+  })
+  birthdaySettings: BirthdaySettings[];
 
   @HasMany(() => Ticket, {
     onUpdate: "CASCADE",
