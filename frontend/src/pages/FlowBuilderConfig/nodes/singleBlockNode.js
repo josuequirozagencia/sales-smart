@@ -1,3 +1,4 @@
+import { i18n } from "../../../translate/i18n";
 import {
   AccessTime,
   ArrowForwardIos,
@@ -95,7 +96,7 @@ export default memo(({ data, isConnectable, id }) => {
             color: "#EC5858",
           }}
         />
-        <div style={{ color: "#232323", fontSize: "16px" }}>Conteúdo</div>
+        <div style={{ color: "#232323", fontSize: "16px" }}>{i18n.t("flows.content")}</div>
       </div>
       <div style={{ color: "#232323", fontSize: "12px", width: 180 }}>
         {data.seq.map((item) => (          

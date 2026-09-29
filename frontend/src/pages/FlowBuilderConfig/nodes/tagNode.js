@@ -1,3 +1,4 @@
+import { i18n } from "../../../translate/i18n";
 import {
   ArrowForwardIos,
   ContentCopy,
@@ -93,7 +94,7 @@ export default memo(({ data, isConnectable, id }) => {
             color: "#123AF2",
           }}
         />
-        <div style={{ color: "#232323", fontSize: "16px" }}>Tag</div>
+        <div style={{ color: "#232323", fontSize: "16px" }}>{i18n.t("flows.nodeTag")}</div>
       </div>
       <div style={{ color: "#232323", fontSize: "12px", width: 180 }}>
         <div

@@ -1,3 +1,4 @@
+import { i18n } from "../../../translate/i18n";
 import {
   ContentCopy,
   Delete,
@@ -75,7 +76,7 @@ export default memo(({ data, isConnectable, id }) => {
             marginTop: "4px"
           }}
         />
-        <div style={{ color: "#ededed", fontSize: "16px" }}>Video</div>
+        <div style={{ color: "#ededed", fontSize: "16px" }}>{i18n.t("flows.nodeVideo")}</div>
       </div>
       <div style={{ color: "#ededed", fontSize: "12px", width: 180 }}>
         <video controls="controls" width="180px">

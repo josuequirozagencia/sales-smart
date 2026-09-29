@@ -1,3 +1,4 @@
+import { i18n } from "../../../translate/i18n";
 import { ContentCopy, Delete, Message, MicNone } from "@mui/icons-material";
 import React, { memo } from "react";
 
@@ -65,7 +66,7 @@ export default memo(({ data, isConnectable, id }) => {
             marginTop: "4px"
           }}
         />
-        <div style={{ color: "#ededed", fontSize: "16px" }}>Audio</div>
+        <div style={{ color: "#ededed", fontSize: "16px" }}>{i18n.t("flows.nodeAudio")}</div>
       </div>
       <div style={{ color: "#ededed", fontSize: "12px" }}>
         <div style={{ position: "absolute", right: "50px", top: "12px" }}>

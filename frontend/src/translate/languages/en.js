@@ -1197,6 +1197,11 @@ const messages = {
         nodeGeminiDesc: "Gemini integration",
         nodeOpenai: "OpenAI",
         nodeOpenaiDesc: "OpenAI integration",
+        nodeMessage: "Message",
+        nodeAudio: "Audio",
+        nodeVideo: "Video",
+        nodeQueue: "Queue",
+        nodeTag: "Tag",
       },
       responseTime: {
         title: "Response time",

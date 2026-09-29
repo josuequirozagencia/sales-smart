@@ -1,3 +1,4 @@
+import { i18n } from "../../../translate/i18n";
 import {
   AccessTime,
   ArrowForwardIos,
@@ -92,7 +93,7 @@ export default memo(({ data, isConnectable, id }) => {
             color: "#F7953B"
           }}
         />
-        <div style={{ color: "#232323", fontSize: "16px" }}>Intervalo</div>
+        <div style={{ color: "#232323", fontSize: "16px" }}>{i18n.t("flows.nodeInterval")}</div>
       </div>
       <div style={{ color: "#232323", fontSize: "12px" }}>
         {data.sec} segundos
