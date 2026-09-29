@@ -1,3 +1,4 @@
+import { i18n } from "../../../translate/i18n";
 import {
   ArrowForwardIos,
   ContentCopy,
@@ -94,7 +95,7 @@ export default memo(({ data, isConnectable, id }) => {
             color: "#683AC8",
           }}
         />
-        <div style={{ color: "#232323", fontSize: "16px" }}>Menu</div>
+        <div style={{ color: "#232323", fontSize: "16px" }}>{i18n.t("flows.nodeMenu")}</div>
       </div>
       <div>
         <div

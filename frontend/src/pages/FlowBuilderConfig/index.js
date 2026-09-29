@@ -248,9 +248,13 @@ const useStyles = makeStyles(theme => ({
   // Ahora el hueco lo calcula el gap de este contenedor, y si manana cambia
   // el tamano del boton no hay que recalcular nada.
   toolbarDock: {
-    position: "fixed",
-    top: theme.spacing(2.5),
-    right: theme.spacing(2),
+    // Absoluta respecto al lienzo, no fija respecto al viewport: asi el
+    // boton de guardar no se mete debajo de la barra superior.
+    position: "absolute",
+    top: theme.spacing(2),
+    // Deja sitio a la barra de desplazamiento del lienzo, que cae a su
+    // derecha y quedaba practicamente debajo de los botones.
+    right: theme.spacing(3),
     zIndex: 1400,
     display: "flex",
     flexDirection: "column",
@@ -1657,27 +1661,33 @@ export const FlowBuilderConfig = () => {
             color={theme.palette.type === 'dark' ? '#333' : '#aaa'}
           />
         </ReactFlow>
+
+        {/* Desktop: guardar y accesos rapidos, en una sola columna que
+            calcula ella misma su separacion.
+
+            Va DENTRO del lienzo a proposito. Estando fuera se anclaba al
+            viewport, y el boton de guardar acababa metido debajo de la barra
+            superior de la aplicacion. Aqui se mide contra el lienzo, que es
+            donde el usuario espera verlos, y sigue en su sitio aunque cambie
+            la altura de esa barra o el ancho del menu lateral. */}
+        {!isMobile && (
+          <div className={classes.toolbarDock}>
+            <Fab
+              color="primary"
+              onClick={saveFlow}
+              title={i18n.t("flows.saveFlow")}
+            >
+              <SaveIcon />
+            </Fab>
+
+            <QuickActions onActionClick={clickActions} />
+          </div>
+        )}
       </div>
     </div>
 
     {/* Mobile Controls */}
     {isMobile && <MobileControls />}
-
-    {/* Desktop: guardar y accesos rapidos, en una sola columna que calcula
-        ella misma su separacion. */}
-    {!isMobile && (
-      <div className={classes.toolbarDock}>
-        <Fab
-          color="primary"
-          onClick={saveFlow}
-          title={i18n.t("flows.saveFlow")}
-        >
-          <SaveIcon />
-        </Fab>
-
-        <QuickActions onActionClick={clickActions} />
-      </div>
-    )}
 
     {/* Mobile: el guardar se queda abajo, donde llega el pulgar. */}
     {isMobile && (

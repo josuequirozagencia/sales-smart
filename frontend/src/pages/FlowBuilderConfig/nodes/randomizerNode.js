@@ -1,3 +1,4 @@
+import { i18n } from "../../../translate/i18n";
 import {
   ArrowForwardIos,
   CallSplit,
@@ -91,7 +92,7 @@ export default memo(({ data, isConnectable, id }) => {
             color: "#1FBADC"
           }}
         />
-        <div style={{ color: "#232323", fontSize: "16px" }}>Randomizador</div>
+        <div style={{ color: "#232323", fontSize: "16px" }}>{i18n.t("flows.nodeRandom")}</div>
       </div>
       <div
         style={{
