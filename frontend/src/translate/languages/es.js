@@ -1266,6 +1266,7 @@ const messages = {
         notAvailableYet:
           "La compra en línea todavía no está disponible. Registramos tu solicitud: contacta con soporte para completar la recarga.",
         adminTitle: "Crédito de Agentes IA",
+        onlySuper: "Esta pantalla es solo para superadministración.",
         sharedKey: "Clave compartida de OpenAI",
         noKeyYet: "Sin clave configurada",
         keyHelp: "Déjalo vacío para no cambiarla. Solo se guardan los últimos 4 caracteres a la vista.",
@@ -1864,6 +1865,7 @@ const messages = {
           tags: "Tags",
           administration: "Administración",
           companies: "Empresas",
+          aiCredits: "Crédito IA",
           users: "Usuarios",
           settings: "Configuración",
           files: "Lista de archivos",
