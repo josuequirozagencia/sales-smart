@@ -107,6 +107,8 @@ const AiAgentModal = ({ open, onClose, agentId }) => {
   const [seleccionadas, setSeleccionadas] = useState([]);
   const [cargando, setCargando] = useState(false);
   const [guardando, setGuardando] = useState(false);
+  // Si la agencia tiene clave compartida, la propia deja de ser obligatoria.
+  const [hayClaveCompartida, setHayClaveCompartida] = useState(false);
   const [subiendo, setSubiendo] = useState(false);
   const [modelos, setModelos] = useState([]);
   const [cargandoModelos, setCargandoModelos] = useState(false);
@@ -151,6 +153,16 @@ const AiAgentModal = ({ open, onClose, agentId }) => {
 
   useEffect(() => {
     if (!open) return;
+
+    // Se pregunta al abrir, no al montar: la clave compartida puede haberse
+    // configurado entre una apertura y la siguiente.
+    api
+      .get("/ai-credits/balance")
+      .then(({ data }) => setHayClaveCompartida(!!data?.hayClaveCompartida))
+      // Si no se puede saber, se exige la clave propia. Fallar del lado
+      // seguro: mejor pedirla de mas que crear un agente que no responde.
+      .catch(() => setHayClaveCompartida(false));
+
     setPestana("general");
     setVerClave(false);
     setError(null);
@@ -262,7 +274,14 @@ const AiAgentModal = ({ open, onClose, agentId }) => {
     const faltan = [];
     if (!datos.name.trim()) faltan.push(i18n.t("aiAgents.form.name"));
     if (!datos.model.trim()) faltan.push(i18n.t("aiAgents.form.model"));
-    if (!id && !datos.apiKey.trim()) faltan.push(i18n.t("aiAgents.form.apiKey"));
+    // La clave solo es obligatoria cuando la agencia no tiene una compartida
+    // que prestar. Si la tiene, dejarla vacia es una eleccion valida: el
+    // agente correra contra el credito. Sin esta comprobacion el formulario
+    // exigia siempre una clave propia y el credito compartido no se podia
+    // usar desde la aplicacion.
+    if (!id && !datos.apiKey.trim() && !hayClaveCompartida) {
+      faltan.push(i18n.t("aiAgents.form.apiKey"));
+    }
     if (faltan.length) {
       setPestana("general");
       setError(`${i18n.t("aiAgents.errors.required")}: ${faltan.join(", ")}`);
