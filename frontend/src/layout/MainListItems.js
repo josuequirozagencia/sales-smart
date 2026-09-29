@@ -22,7 +22,6 @@ import Typography from "@material-ui/core/Typography";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import SyncAltIcon from "@mui/icons-material/SyncAlt";
-import LinkIcon from "@mui/icons-material/Link";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
 import ContactPhoneOutlinedIcon from "@mui/icons-material/ContactPhoneOutlined";
@@ -30,7 +29,6 @@ import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
 import FlashOnIcon from "@mui/icons-material/FlashOn";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
-import CodeRoundedIcon from "@mui/icons-material/CodeRounded";
 import ViewKanban from "@mui/icons-material/ViewKanban";
 import Schedule from "@mui/icons-material/Schedule";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
@@ -43,6 +41,8 @@ import AnnouncementIcon from "@mui/icons-material/Announcement";
 import ForumIcon from "@mui/icons-material/Forum";
 import LocalAtmIcon from "@mui/icons-material/LocalAtm";
 import BusinessIcon from "@mui/icons-material/Business";
+import UnfoldLessIcon from "@mui/icons-material/UnfoldLess";
+import UnfoldMoreIcon from "@mui/icons-material/UnfoldMore";
 import MemoryIcon from "@mui/icons-material/Memory";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import {
@@ -56,7 +56,6 @@ import {
 } from "@mui/icons-material";
 
 // Iconos de las siete categorias.
-import ForumOutlined from "@mui/icons-material/ForumOutlined";
 import ContactsOutlined from "@mui/icons-material/ContactsOutlined";
 // Categoria Ventas: moneda con el simbolo, no una caja registradora.
 import PaidOutlined from "@mui/icons-material/PaidOutlined";
@@ -82,6 +81,17 @@ import AdminPanelSettingsOutlined from "@mui/icons-material/AdminPanelSettingsOu
 import useCompanySettings from "../hooks/useSettings/companySettings";
 
 const useStyles = makeStyles((theme) => ({
+  // Franja discreta para abrir o cerrar todos los grupos. Tiene que leerse
+  // como un control del menu, no como una opcion mas: de ahi el texto
+  // pequeno y apagado.
+  alternarTodos: {
+    paddingTop: 2,
+    paddingBottom: 2,
+    paddingLeft: theme.spacing(2),
+    paddingRight: theme.spacing(2),
+    opacity: 0.75,
+    "&:hover": { opacity: 1 }
+  },
   // La navegacion vive sobre el bloque oscuro, asi que sus colores salen de
   // los tokens del sidebar y no del modo claro/oscuro general. Antes el texto
   // era "#666" en modo claro: sobre fondo oscuro habria quedado ilegible.
@@ -501,22 +511,28 @@ function GrupoMenu({ titulo, icono, abierto, onToggle, activo, collapsed, childr
 // actual (al cargar y al navegar desde fuera del menu), nunca para cerrarlo.
 // Rutas de cada categoria. Sirven para abrir la que contiene la pagina actual
 // (al cargar y al navegar desde fuera del menu), nunca para cerrarla.
+// Que rutas pertenecen a cada grupo, para abrirlo solo al entrar en una de
+// ellas. El grupo "Conversaciones" desaparecio: tenia dentro la charla con
+// el equipo, las plantillas de respuesta y la configuracion de
+// departamentos, tres cosas de naturaleza distinta que encajan mejor
+// repartidas.
 const RUTAS_POR_GRUPO = {
-  conversaciones: ["/chats", "/quick-messages", "/queues", "/helps"],
-  clientes: ["/contacts", "/tags"],
+  clientes: ["/contacts", "/tags", "/chats", "/quick-messages"],
   ventas: ["/kanban", "/schedules", "/sales"],
   automatizacion: [
     "/flowbuilders", "/phrase-lists", "/ai-agents", "/prompts",
     "/campaigns", "/contact-lists", "/campaigns-config", "/files",
     "/queue-integration",
   ],
-  analitica: ["/", "/reports", "/response-time", "/moments", "/wallets"],
-  conexiones: [
-    "/connections", "/whatsapp-templates", "/gohighlevel", "/allConnections",
-    "/messages-api",
-  ],
+  analitica: ["/", "/reports", "/response-time", "/moments"],
+  // /gohighlevel y /messages-api ya no tienen entrada propia en el menu,
+  // pero siguen siendo paginas alcanzables: se dejan aqui para que, al
+  // entrar en ellas, se abra el grupo al que pertenecen.
+  canales: ["/connections", "/whatsapp-templates", "/gohighlevel"],
   administracion: [
-    "/users", "/financeiro", "/settings", "/announcements", "/companies",
+    "/users", "/queues", "/financeiro", "/settings", "/announcements",
+    "/companies", "/ai-credits/admin", "/allConnections", "/wallets",
+    "/helps", "/messages-api",
   ],
 };
 
@@ -612,6 +628,17 @@ const MainListItems = ({ collapsed, drawerClose }) => {
     setGruposAbiertos((previo) =>
       previo[clave] ? previo : { ...previo, [clave]: true }
     );
+
+  // Abrir o cerrar todos de una vez.
+  //
+  // No convierte el menu en un acordeon: cada grupo sigue abriendose y
+  // cerrandose por su cuenta, y el de la ruta activa se sigue abriendo solo.
+  // Esto es solo un atajo para ver el arbol entero o dejarlo compacto.
+  const todosAbiertos = GRUPOS.every((clave) => gruposAbiertos[clave]);
+  const alternarTodos = () =>
+    setGruposAbiertos(
+      GRUPOS.reduce((acc, clave) => ({ ...acc, [clave]: !todosAbiertos }), {})
+    );
   const [showCampaigns, setShowCampaigns] = useState(false);
   const [showKanban, setShowKanban] = useState(false);
   const [showOpenAi, setShowOpenAi] = useState(false);
@@ -626,7 +653,7 @@ const MainListItems = ({ collapsed, drawerClose }) => {
   const [pageNumber, setPageNumber] = useState(1);
   const [searchParam] = useState("");
   const [chats, dispatch] = useReducer(reducer, []);
-  const version = "4.7.9";
+  const version = "v5.0";
   const [campaignHover, setCampaignHover] = useState(false);
   const { list } = useHelps(); // INSERIR
   const [hasHelps, setHasHelps] = useState(false);
@@ -900,7 +927,8 @@ useEffect(() => {
 
   return (
     <div onClick={drawerClose}>
-      {/* La bandeja va fija arriba, fuera de los grupos: es lo que mas se usa. */}
+      {/* La bandeja va fija arriba, fuera de los grupos: es lo que mas se usa.
+          No lleva ningun control al lado, a proposito. */}
       <ListItemLink
         to="/tickets"
         primary={i18n.t("mainDrawer.listItems.tickets")}
@@ -908,64 +936,43 @@ useEffect(() => {
         tooltip={collapsed}
       />
 
-      {/* CONVERSACIONES */}
-      <GrupoMenu
-        titulo={i18n.t("mainDrawer.groups.conversations")}
-        icono={<ForumOutlined />}
-        {...grupo("conversaciones")}
-      >
-        {showInternalChat && (
-          <ListItemLink
-            to="/chats"
-            primary={i18n.t("mainDrawer.listItems.chats")}
-            icon={
-              <Badge color="secondary" variant="dot" invisible={invisible}>
-                <ForumIcon />
-              </Badge>
+      {/* Abrir o cerrar todos los grupos de un clic. Con el menu estrecho no
+          se pinta: ahi los grupos no muestran su contenido. */}
+      {!collapsed && (
+        <ListItem
+          button
+          dense
+          onClick={(e) => {
+            e.stopPropagation();
+            alternarTodos();
+          }}
+          className={classes.alternarTodos}
+        >
+          <ListItemText
+            disableTypography
+            primary={
+              <Typography variant="caption" color="textSecondary">
+                {todosAbiertos
+                  ? i18n.t("mainDrawer.collapseAll")
+                  : i18n.t("mainDrawer.expandAll")}
+              </Typography>
             }
-            tooltip={collapsed}
           />
-        )}
-
-        <ListItemLink
-          to="/quick-messages"
-          primary={i18n.t("mainDrawer.listItems.quickMessages")}
-          icon={<FlashOnIcon />}
-          tooltip={collapsed}
-        />
-
-        {/* Departamentos (antes "Colas y Chatbot") venia de Administracion:
-            cambia de grupo y de nombre, con los mismos dos <Can> de siempre. */}
-        <Can
-          role={rolAdministracion}
-          perform="dashboard:view"
-          yes={() => (
-            <Can
-              role={user.profile}
-              perform="dashboard:view"
-              yes={() => (
-                <ListItemLink
-                  to="/queues"
-                  primary={i18n.t("mainDrawer.listItems.queues")}
-                  icon={<AccountTreeOutlinedIcon />}
-                  tooltip={collapsed}
-                />
-              )}
-            />
+          {todosAbiertos ? (
+            <UnfoldLessIcon fontSize="small" color="disabled" />
+          ) : (
+            <UnfoldMoreIcon fontSize="small" color="disabled" />
           )}
-        />
+        </ListItem>
+      )}
 
-        {hasHelps && (
-          <ListItemLink
-            to="/helps"
-            primary={i18n.t("mainDrawer.listItems.helps")}
-            icon={<HelpOutlineIcon />}
-            tooltip={collapsed}
-          />
-        )}
-      </GrupoMenu>
-
-      {/* CLIENTES */}
+      {/* CLIENTES
+          Recoge ademas el Chat Interno y las Respuestas Rapidas, que antes
+          vivian en un grupo "Conversaciones" aparte. Ese grupo desaparece:
+          tenia dentro cosas de tres naturalezas distintas —la conversacion
+          con el equipo, las plantillas de respuesta, y la configuracion de
+          departamentos— y cada una encaja mejor en otro sitio. Ruta,
+          permisos y condiciones de cada item quedan tal cual. */}
       <GrupoMenu
         titulo={i18n.t("mainDrawer.groups.clients")}
         icono={<ContactsOutlined />}
@@ -984,6 +991,26 @@ useEffect(() => {
           to="/tags"
           primary={i18n.t("mainDrawer.listItems.tags")}
           icon={<LocalOfferIcon />}
+          tooltip={collapsed}
+        />
+
+        {showInternalChat && (
+          <ListItemLink
+            to="/chats"
+            primary={i18n.t("mainDrawer.listItems.chats")}
+            icon={
+              <Badge color="secondary" variant="dot" invisible={invisible}>
+                <ForumIcon />
+              </Badge>
+            }
+            tooltip={collapsed}
+          />
+        )}
+
+        <ListItemLink
+          to="/quick-messages"
+          primary={i18n.t("mainDrawer.listItems.quickMessages")}
+          icon={<FlashOnIcon />}
           tooltip={collapsed}
         />
       </GrupoMenu>
@@ -1309,14 +1336,9 @@ useEffect(() => {
                     />
                   )}
                 />
-                {user.profile === "admin" && showWallets && (
-                  <ListItemLink
-                    to="/wallets"
-                    primary={i18n.t("mainDrawer.listItems.wallets")}
-                    icon={<AccountBalanceWalletIcon />}
-                    tooltip={collapsed}
-                  />
-                )}
+                {/* La Cartera de Clientes se fue a Administracion: no es un
+                    informe, es la asignacion permanente de un contacto a un
+                    asesor, que decide a quien le entran los tickets nuevos. */}
               </>
             )}
           />
@@ -1328,7 +1350,7 @@ useEffect(() => {
         <GrupoMenu
           titulo={i18n.t("mainDrawer.groups.connections")}
           icono={<HubOutlined />}
-          {...grupo("conexiones")}
+          {...grupo("canales")}
         >
           <Can
             role={rolAdministracion}
@@ -1355,41 +1377,18 @@ useEffect(() => {
                         icon={<WhatsAppIcon />}
                         tooltip={collapsed}
                       />
-                      {/* Tenia el mismo SyncAltIcon que Conexiones y no se
-                          distinguian: GoHighLevel es una integracion externa. */}
-                      <ListItemLink
-                        to="/gohighlevel"
-                        primary={i18n.t("mainDrawer.listItems.goHighLevel")}
-                        icon={<LinkIcon />}
-                        tooltip={collapsed}
-                      />
+                      {/* GoHighLevel ya no tiene entrada propia: es un tipo
+                          de conexion mas, y se da de alta desde "Nueva
+                          Conexion" como WhatsApp o Facebook. Su pagina de
+                          configuracion sigue existiendo en /gohighlevel, sin
+                          tocar. */}
                     </>
                   )}
                 />
 
-                {user.super && (
-                  <ListItemLink
-                    to="/allConnections"
-                    primary={i18n.t("mainDrawer.listItems.allConnections")}
-                    icon={<PhonelinkSetup />}
-                    tooltip={collapsed}
-                  />
-                )}
-
-                {showExternalApi && (
-                  <Can
-                    role={user.profile}
-                    perform="dashboard:view"
-                    yes={() => (
-                      <ListItemLink
-                        to="/messages-api"
-                        primary={i18n.t("mainDrawer.listItems.messagesAPI")}
-                        icon={<CodeRoundedIcon />}
-                        tooltip={collapsed}
-                      />
-                    )}
-                  />
-                )}
+                {/* Admin conexiones se fue a Administracion, que es donde
+                    vive el resto de lo que solo ve un superadministrador. Y
+                    la API paso a ser una pestana de Configuracion. */}
               </>
             )}
           />
@@ -1417,6 +1416,17 @@ useEffect(() => {
                         to="/users"
                         primary={i18n.t("mainDrawer.listItems.users")}
                         icon={<PeopleAltOutlinedIcon />}
+                        tooltip={collapsed}
+                      />
+                      {/* Departamentos venia del grupo "Conversaciones".
+                          Configurar colas y chatbot es administrar la
+                          empresa, no conversar; y sus dos <Can> son los
+                          mismos que ya usaban Usuarios y Configuracion, asi
+                          que el movimiento no amplia el permiso de nadie. */}
+                      <ListItemLink
+                        to="/queues"
+                        primary={i18n.t("mainDrawer.listItems.queues")}
+                        icon={<AccountTreeOutlinedIcon />}
                         tooltip={collapsed}
                       />
                       <ListItemLink
@@ -1458,6 +1468,44 @@ useEffect(() => {
                     to="/ai-credits/admin"
                     primary={i18n.t("mainDrawer.listItems.aiCredits")}
                     icon={<MemoryIcon />}
+                    tooltip={collapsed}
+                  />
+                )}
+
+                {/* Venia del grupo Conexiones. Es una vista de toda la
+                    plataforma, solo para superadministracion: su sitio esta
+                    aqui, con el resto de lo que solo ve un super. */}
+                {user.super && (
+                  <ListItemLink
+                    to="/allConnections"
+                    primary={i18n.t("mainDrawer.listItems.allConnections")}
+                    icon={<PhonelinkSetup />}
+                    tooltip={collapsed}
+                  />
+                )}
+
+                {/* Venia de Analitica, donde parecia un informe. No lo es:
+                    asigna un contacto a un asesor de forma permanente y
+                    decide a quien le entran sus tickets nuevos cuando la
+                    empresa tiene DirectTicketsToWallets activo. Misma ruta
+                    (/wallets) y mismo permiso que antes. */}
+                {user.profile === "admin" && showWallets && (
+                  <ListItemLink
+                    to="/wallets"
+                    primary={i18n.t("mainDrawer.listItems.wallets")}
+                    icon={<AccountBalanceWalletIcon />}
+                    tooltip={collapsed}
+                  />
+                )}
+
+                {/* Ayuda tambien venia de "Conversaciones". No encaja en
+                    ninguna categoria del producto, asi que se queda aqui
+                    hasta que tenga un sitio mejor. */}
+                {hasHelps && (
+                  <ListItemLink
+                    to="/helps"
+                    primary={i18n.t("mainDrawer.listItems.helps")}
+                    icon={<HelpOutlineIcon />}
                     tooltip={collapsed}
                   />
                 )}

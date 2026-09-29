@@ -10,6 +10,10 @@ import SchedulesForm from "../../components/SchedulesForm";
 import CompaniesManager from "../../components/CompaniesManager";
 import ConfigSnapshotsManager from "../../components/ConfigSnapshotsManager";
 import MetaConversionsSettings from "../../components/MetaConversionsSettings";
+import MessagesAPI from "../MessagesAPI";
+import FacturacionResumen from "../../components/FacturacionResumen";
+import usePlans from "../../hooks/usePlans";
+import { resolvePlanFeatures } from "../../helpers/planFeatures";
 import PlansManager from "../../components/PlansManager";
 import HelpsManager from "../../components/HelpsManager";
 import Options from "../../components/Settings/Options";
@@ -73,6 +77,10 @@ const SettingsCustom = () => {
   const [settings, setSettings] = useState({});
   const [oldSettings, setOldSettings] = useState({});
   const [schedulesEnabled, setSchedulesEnabled] = useState(false);
+  // Misma condicion que tenia el item de menu de la API: la pestana solo
+  // existe si el plan de la empresa la incluye.
+  const [showExternalApi, setShowExternalApi] = useState(false);
+  const { getPlanCompany } = usePlans();
 
   const { find, updateSchedules } = useCompanies();
 
@@ -104,6 +112,17 @@ const SettingsCustom = () => {
 
         setSchedulesEnabled(settingList?.scheduleType === "company");
         setCurrentUser(user);
+
+        // La pestana de API solo existe si el plan la incluye, igual que el
+        // item de menu que la servia antes. Va en su propio try: que falle
+        // leer el plan no puede dejar sin cargar el resto de ajustes.
+        try {
+          const planConfigs = await getPlanCompany(undefined, companyId);
+          const { features } = resolvePlanFeatures(planConfigs, "Settings");
+          setShowExternalApi(!!features.useExternalApi);
+        } catch (err) {
+          setShowExternalApi(false);
+        }
       } catch (e) {
         toast.error(e);
       }
@@ -192,6 +211,14 @@ const SettingsCustom = () => {
               {user.profile === "admin" ? (
                 <Tab label={i18n.t("metaConversions.tab")} value={"integrations"} />
               ) : null}
+              {/* La API vivia como su propia entrada del menu lateral. Es
+                  configuracion, no una seccion del producto, asi que pasa a
+                  ser una pestana mas. Misma condicion que tenia el item:
+                  showExternalApi y permiso de dashboard. */}
+              {showExternalApi && user.profile === "admin" ? (
+                <Tab label={i18n.t("settings.tabs.api")} value={"api"} />
+              ) : null}
+              <Tab label={i18n.t("settings.tabs.billing")} value={"billing"} />
               {isSuper() ? (
                 <Tab label={i18n.t("settings.tabs.helps")} value={"helps"} />
               ) : null}
@@ -243,6 +270,19 @@ const SettingsCustom = () => {
                   <MetaConversionsSettings />
                 </TabPanel>
               )}
+
+              {/* La API, reutilizando el mismo componente que servia la
+                  pagina /messages-api. Esa ruta sigue viva: solo cambia por
+                  donde se llega normalmente. */}
+              {showExternalApi && currentUser.profile === "admin" && (
+                <TabPanel className={classes.container} value={tab} name={"api"}>
+                  <MessagesAPI />
+                </TabPanel>
+              )}
+
+              <TabPanel className={classes.container} value={tab} name={"billing"}>
+                <FacturacionResumen />
+              </TabPanel>
               
               <OnlyForSuperUser
                 user={currentUser}
