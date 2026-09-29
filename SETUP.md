@@ -331,3 +331,4 @@ cd frontend && npm install --legacy-peer-deps
   excluían). Baileys está pineado a un commit de GitHub y el árbol requiere
   `--legacy-peer-deps`: sin lockfile no hay build reproducible.
 - `main` conserva el código original intacto. El trabajo va en `dev-4.7.9`.
+
