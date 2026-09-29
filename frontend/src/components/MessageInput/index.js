@@ -1195,6 +1195,12 @@ const MessageInput = ({
     const selectedMedias = Array.from(e.target.files);
     setMediasUpload(selectedMedias);
     setShowModalMedias(true);
+    // El navegador solo dispara change cuando la lista de archivos cambia. Si
+    // no se limpia el valor, elegir OTRA VEZ el mismo archivo -tras cancelar,
+    // o tras un envio fallido- no dispara nada, y parece que el clic no
+    // hubiera hecho efecto. Las medias ya estan en el estado, asi que vaciar
+    // el input no pierde nada.
+    e.target.value = "";
   };
 
   const handleChangeSign = (e) => {
@@ -1570,6 +1576,15 @@ const MessageInput = ({
   };
 
   const handleCloseModalMedias = () => {
+    // Tiene que vaciar tambien las medias. El componente decide que pintar con
+    // "if (mediasUpload.length > 0)", y dentro solo pinta el dialogo cuando
+    // showModalMedias es cierto: con medias cargadas y el dialogo cerrado
+    // devolvia un Paper VACIO -sin caja de texto, sin boton de enviar- y no
+    // habia vuelta a la barra de composicion salvo recargando la pagina.
+    //
+    // El Dialog de MUI llama a onClose al hacer clic en el fondo, asi que se
+    // llegaba ahi sin tocar ningun boton.
+    setMediasUpload([]);
     setShowModalMedias(false);
   };
 
