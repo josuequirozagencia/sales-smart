@@ -3,6 +3,7 @@ import AppError from "../../errors/AppError";
 import cacheLayer from "../../libs/cache";
 import logger from "../../utils/logger";
 import { credencialesDe, normalizarDatos, PROVEEDORES } from "./AiAgentService";
+import { cobrarUso, resolverClaveDeAgente } from "../AiCreditServices/AiCreditService";
 import { ConfigMotor, EntradaMotor, generarRespuesta, OpcionesMotor, ResultadoMotor } from "./AiAgentEngine";
 import { Adjunto, TurnoHistorial } from "./Proveedores";
 import { Capacidades, verificarCapacidades } from "./Capacidades";
@@ -99,7 +100,7 @@ export const configDelFormulario = async (
   companyId: number,
   config: Record<string, any>,
   agentId?: number
-): Promise<ConfigMotor> => {
+): Promise<ConfigMotor & { conClaveCompartida: boolean }> => {
   const guardado = agentId ? await AiAgent.findOne({ where: { id: agentId, companyId } }) : null;
   if (agentId && !guardado) throw new AppError("ERR_AI_AGENT_NOT_FOUND", 404);
 
@@ -107,7 +108,23 @@ export const configDelFormulario = async (
   if (!PROVEEDORES.includes(provider as any)) throw new AppError("ERR_AI_AGENT_INVALID_PROVIDER", 400);
 
   const escrita = typeof config?.apiKey === "string" ? config.apiKey.trim() : "";
-  const apiKey = escrita || (guardado ? credencialesDe(guardado).apiKey : "");
+  let apiKey = escrita || (guardado ? credencialesDe(guardado).apiKey : "");
+  let conClaveCompartida = false;
+
+  // El chat de prueba gasta del mismo saldo que produccion: probar cuesta
+  // dinero de verdad y tiene que verse. Solo cuando no hay clave escrita ni
+  // guardada, claro: si el agente trae la suya, esto ni se mira.
+  if (!apiKey && provider === "openai" && guardado) {
+    const clave = await resolverClaveDeAgente(guardado);
+    if (clave.modo === "sin_credito") {
+      throw new AppError("ERR_AI_CREDIT_EXHAUSTED", 402);
+    }
+    if (clave.modo === "compartida") {
+      apiKey = clave.apiKey;
+      conClaveCompartida = true;
+    }
+  }
+
   if (!apiKey) throw new AppError("ERR_AI_AGENT_API_KEY_REQUIRED", 400);
 
   // Valida rangos y tipos igual que al guardar. Se puede probar antes de
@@ -129,7 +146,8 @@ export const configDelFormulario = async (
     dividirRespuestas: !!campos.dividirRespuestas,
     cantidadBloques: campos.cantidadBloques!,
     escuchaAudio: !!campos.escuchaAudio,
-    leeImagenes: !!campos.leeImagenes
+    leeImagenes: !!campos.leeImagenes,
+    conClaveCompartida
   };
 };
 
@@ -149,6 +167,16 @@ export const probarMensaje = async (
   };
 
   const resultado: ResultadoMotor = await generarRespuesta(config, motor, opciones);
+
+  // Probar cuesta lo mismo que atender: sale del mismo saldo. Sin messageId,
+  // porque una prueba no tiene mensaje en la base con el que identificarla.
+  if (config.conClaveCompartida) {
+    await cobrarUso(entrada.companyId, config.provider, config.model, resultado.uso, {
+      aiAgentId: entrada.agentId ?? null,
+      messageId: null,
+      description: "Chat de prueba"
+    });
+  }
 
   const dicho = [entrada.texto, resultado.transcripcion].filter(Boolean).join(" ").trim();
   const etiquetas = [entrada.imagen ? "[una imagen]" : "", entrada.audio ? "[un audio]" : ""].filter(Boolean).join(" ");

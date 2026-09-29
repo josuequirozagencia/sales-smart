@@ -54,6 +54,8 @@ const Annoucements = lazy(() => import("../pages/Annoucements"));
 const Chat = lazy(() => import("../pages/Chat"));
 const Prompts = lazy(() => import("../pages/Prompts"));
 const AiAgents = lazy(() => import("../pages/AiAgents"));
+const ComprarCreditoIa = lazy(() => import("../pages/ComprarCreditoIa"));
+const CreditoIaAdmin = lazy(() => import("../pages/CreditoIaAdmin"));
 const WhatsAppTemplates = lazy(() => import("../pages/WhatsAppTemplates"));
 const AllConnections = lazy(() => import("../pages/AllConnections/"));
 const Reports = lazy(() => import("../pages/Reports"));
@@ -223,6 +225,8 @@ const Routes = () => {
                 />
                 <Route exact path="/prompts" component={Prompts} isPrivate />
                 <Route exact path="/ai-agents" component={AiAgents} isPrivate />
+                <Route exact path="/ai-credits/buy" component={ComprarCreditoIa} isPrivate />
+                <Route exact path="/ai-credits/admin" component={CreditoIaAdmin} isPrivate />
                 <Route exact path="/whatsapp-templates" component={WhatsAppTemplates} isPrivate />
                 <Route
                   exact

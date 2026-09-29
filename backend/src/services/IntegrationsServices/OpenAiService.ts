@@ -806,7 +806,15 @@ const clienteDelAgente = async (
   const { OPENROUTER_BASE } = await import("../AiAgentServices/Proveedores");
   const agente = await AiAgent.findOne({ where: { id: agentId, companyId, isActive: true } });
   if (!agente) return null;
-  const { apiKey } = credencialesDe(agente);
+
+  // La respuesta del nodo la da responderEnFlujo, que ya comprueba el saldo.
+  // Esto es la comprobacion de objetivo, una llamada aparte al proveedor: si
+  // la empresa no tiene credito ni clave propia, tampoco se hace. Devolver
+  // null es lo que ya esperaba quien llama.
+  const { resolverClaveDeAgente } = await import("../AiCreditServices/AiCreditService");
+  const clave = await resolverClaveDeAgente(agente);
+  if (clave.modo === "sin_credito" || clave.modo === "sin_clave") return null;
+  const apiKey = clave.apiKey;
   if (agente.provider === "gemini") {
     return { openai: null, gemini: new GoogleGenerativeAI(apiKey) as SessionGemini, model: agente.model };
   }

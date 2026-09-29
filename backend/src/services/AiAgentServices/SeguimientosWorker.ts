@@ -4,6 +4,7 @@ import AiAgentFollowUpJob from "../../models/AiAgentFollowUpJob";
 import Message from "../../models/Message";
 import logger from "../../utils/logger";
 import { agenteDeConexion, credencialesDe } from "./AiAgentService";
+import { cobrarUso, resolverClaveDeAgente } from "../AiCreditServices/AiCreditService";
 import { generarRespuesta } from "./AiAgentEngine";
 import {
   configMotorDe,
@@ -88,16 +89,41 @@ export const procesarSeguimiento = async (job: AiAgentFollowUpJob): Promise<stri
     }
 
     let bloques: string[];
-    const { apiKey, voiceKey } = credencialesDe(agente);
+    const { voiceKey } = credencialesDe(agente);
     if (paso.mode === "manual") {
+      // Un paso manual es texto escrito a mano: no llama al proveedor y por
+      // tanto no gasta credito. Ni se consulta.
       bloques = [paso.content.trim()];
     } else {
-      const resultado = await generarRespuesta(configMotorDe(agente, apiKey), {
+      // Este camino corre solo, en segundo plano, sin nadie mirando. Es
+      // justo donde mas falta hace comprobar el saldo: sin esto, una empresa
+      // sin credito seguiria gastando por aqui sin que nadie se entere.
+      const clave = await resolverClaveDeAgente(agente);
+
+      if (clave.modo === "sin_credito" || clave.modo === "sin_clave") {
+        logger.info(
+          `[AI AGENT] Seguimiento ${job.id} cancelado: agente ${agente.id} sin ${
+            clave.modo === "sin_credito" ? "saldo" : "clave"
+          }`
+        );
+        await terminar(job, "cancelled", clave.modo);
+        return "cancelado";
+      }
+
+      const resultado = await generarRespuesta(configMotorDe(agente, clave.apiKey), {
         historial: await historialDelTicket(ticket, agente.maxMessages),
         instruccion: `El cliente no ha respondido. Escribe un mensaje de seguimiento breve y natural siguiendo esta indicacion: ${paso.content.trim()}`,
         nombreCliente: ticket.contact?.name || undefined
       }, opcionesMotorActuales());
       bloques = resultado.bloques;
+
+      if (clave.modo === "compartida") {
+        await cobrarUso(agente.companyId, agente.provider, agente.model, resultado.uso, {
+          aiAgentId: agente.id,
+          messageId: null,
+          description: `Seguimiento en ticket ${ticket.id}`
+        });
+      }
     }
     if (!bloques.length) {
       await terminar(job, "failed", "empty_response");

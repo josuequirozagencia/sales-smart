@@ -33,7 +33,7 @@ import { agenteDeConexion } from "./AiAgentService";
  * Baileys estan en memoria y no admiten varias replicas).
  */
 
-export type MotivoEstado = "transfer" | "human_message" | "manual";
+export type MotivoEstado = "transfer" | "human_message" | "manual" | "no_credit" | "no_key";
 
 export interface EstadoIa {
   ticketId: number;

@@ -54,6 +54,7 @@ import { FaGlobe } from "react-icons/fa";
 import LanguageSelector from "../components/LanguageSelector";
 import AvisoInactividad from "../components/AvisoInactividad";
 import BannerPrueba from "../components/BannerPrueba";
+import BannerCreditoIa from "../components/BannerCreditoIa";
 import logo from "../assets/logo.png";
 import logoBlack from "../assets/logo-black.png";
 
@@ -1040,6 +1041,7 @@ useEffect(() => {
             barra superior, para no alterar el alto del cromo ni el calculo
             de la bandeja. Se pinta solo si la empresa esta en prueba. */}
         <BannerPrueba />
+        <BannerCreditoIa />
         {children ? children : null}
       </main>
 

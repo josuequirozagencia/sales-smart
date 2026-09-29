@@ -42,11 +42,26 @@ export interface PeticionProveedor {
   baseURL?: string;
 }
 
+/**
+ * Lo que costo la llamada, en unidades del proveedor.
+ *
+ * Viene gratis en la respuesta de las dos librerias: OpenAI lo manda en
+ * `usage` y Gemini en `usageMetadata`. Hasta ahora se tiraba a la basura, y
+ * sin esto no hay forma de cobrar lo que de verdad se gasto.
+ */
+export interface UsoProveedor {
+  tokensEntrada: number;
+  tokensSalida: number;
+  /** Solo cuando se transcribio audio con Whisper, que se cobra por minuto. */
+  audioSegundos?: number;
+}
+
 export interface RespuestaProveedor {
   texto: string;
   transferir: boolean;
   /** Texto del audio del cliente, si se transcribio antes de responder. */
   transcripcion?: string;
+  uso?: UsoProveedor;
 }
 
 export const HERRAMIENTA_TRANSFERIR = "transferir_a_humano";
@@ -106,6 +121,7 @@ const generarCompatibleOpenAi = async (p: PeticionProveedor): Promise<RespuestaP
   });
 
   let transcripcion: string | undefined;
+  let audioSegundos: number | undefined;
   const contenido: any[] = [];
 
   if (p.audio) {
@@ -114,9 +130,19 @@ const generarCompatibleOpenAi = async (p: PeticionProveedor): Promise<RespuestaP
       contenido.push({ type: "input_audio", input_audio: { data: mp3.toString("base64"), format: "mp3" } });
     } else {
       // OpenAI: Whisper con la misma clave, como ya hacia el pipeline antiguo.
+      //
+      // verbose_json es lo unico que devuelve la duracion, y Whisper se cobra
+      // por minuto: con el formato por defecto no hay forma de saber cuanto
+      // costo. Lo unico que cambia para el resto del codigo es que ahora se
+      // lee tambien `duration`.
       const archivo = await toFile(p.audio.buffer, p.audio.fileName || "audio.ogg", { type: p.audio.mimetype });
-      const resultado = await cliente.audio.transcriptions.create({ model: "whisper-1", file: archivo });
+      const resultado: any = await cliente.audio.transcriptions.create({
+        model: "whisper-1",
+        file: archivo,
+        response_format: "verbose_json"
+      } as any);
       transcripcion = (resultado.text || "").trim();
+      if (typeof resultado.duration === "number") audioSegundos = resultado.duration;
     }
   }
 
@@ -159,7 +185,16 @@ const generarCompatibleOpenAi = async (p: PeticionProveedor): Promise<RespuestaP
       const respuesta: any = await cliente.chat.completions.create(parametros as any);
       const mensaje = respuesta.choices?.[0]?.message || {};
       const transferir = (mensaje.tool_calls || []).some((t: any) => t?.function?.name === HERRAMIENTA_TRANSFERIR);
-      return { texto: String(mensaje.content || ""), transferir, transcripcion };
+      return {
+        texto: String(mensaje.content || ""),
+        transferir,
+        transcripcion,
+        uso: {
+          tokensEntrada: respuesta.usage?.prompt_tokens || 0,
+          tokensSalida: respuesta.usage?.completion_tokens || 0,
+          audioSegundos
+        }
+      };
     } catch (err) {
       if (!reintentarSinParametro(err, parametros)) throw err;
     }
@@ -245,7 +280,15 @@ const generarGemini = async (p: PeticionProveedor): Promise<RespuestaProveedor> 
     .map(parte => (parte as any).text || "")
     .join("")
     .trim();
-  return { texto, transferir };
+  const metadatos = (respuesta as any).usageMetadata || {};
+  return {
+    texto,
+    transferir,
+    uso: {
+      tokensEntrada: metadatos.promptTokenCount || 0,
+      tokensSalida: metadatos.candidatesTokenCount || 0
+    }
+  };
 };
 
 export const llamarProveedor = (p: PeticionProveedor): Promise<RespuestaProveedor> =>

@@ -1,7 +1,7 @@
 import { ProveedorIa } from "../../models/AiAgent";
 import logger from "../../utils/logger";
 import { Capacidades, verificarCapacidades } from "./Capacidades";
-import { Adjunto, llamarProveedor, TurnoHistorial } from "./Proveedores";
+import { Adjunto, llamarProveedor, TurnoHistorial, UsoProveedor } from "./Proveedores";
 import {
   dividirEnBloques,
   extraerMarcadorTransferencia,
@@ -49,6 +49,8 @@ export interface ResultadoMotor {
   bloques: string[];
   transferir: boolean;
   transcripcion?: string;
+  /** Lo que costo la llamada al proveedor. Ausente si no se llego a llamar. */
+  uso?: UsoProveedor;
   /**
    * Codigos de lo que no se ha podido usar (AUDIO_DISABLED, IMAGE_UNSUPPORTED,
    * MEDIA_REJECTED...). Nunca se descarta nada sin dejarlo aqui y en el log.
@@ -190,6 +192,7 @@ export const generarRespuesta = async (
     bloques,
     transferir: respuesta.transferir || marcador.transferir,
     transcripcion: respuesta.transcripcion,
+    uso: respuesta.uso,
     avisos
   };
 };

@@ -55,6 +55,7 @@ import ghlRoutes from "./ghlRoutes";
 import configSnapshotRoutes from "./configSnapshotRoutes";
 import metaRoutes from "./metaRoutes";
 import aiAgentRoutes from "./aiAgentRoutes";
+import aiCreditRoutes from "./aiCreditRoutes";
 import sessionSettingsRoutes from "./sessionSettingsRoutes";
 import kanbanPipelineRoutes from "./kanbanPipelineRoutes";
 
@@ -75,6 +76,7 @@ routes.use("/auth", authRoutes);
 routes.use(ghlRoutes);
 routes.use(metaRoutes);
 routes.use(aiAgentRoutes);
+routes.use(aiCreditRoutes);
 routes.use(sessionSettingsRoutes);
 routes.use(kanbanPipelineRoutes);
 routes.use("/api/messages", apiRoutes);
