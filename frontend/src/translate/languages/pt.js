@@ -2,7 +2,7 @@ const messages = {
   pt: {
     translations: {
       metaConversions: {
-        "tab": "Integrações",
+        "tab": "Meta · Conversions API",
         "title": "Meta · Conversions API",
         "help": "Envia para a Meta os leads, agendamentos e vendas do CRM para que suas campanhas do Meta Ads otimizem com resultados reais, sem depender de cookies nem do seu site.",
         "status": {
@@ -463,6 +463,8 @@ const messages = {
         },
         filter: "FILTRAR ",
         tabs: {
+          api: "API",
+          billing: "Faturamento",
           indicators: "Indicadores",
           assessments: "NPS",
           attendants: "Atendentes",
@@ -1722,7 +1724,7 @@ const messages = {
           tickets: "Atendimentos",
           quickMessages: "Respostas rápidas",
           contacts: "Contatos",
-          wallets: "Carteiras",
+          wallets: "Carteira de Clientes",
           queues: "Departamentos",
           tags: "Tags",
           administration: "Administração",
@@ -1748,13 +1750,15 @@ const messages = {
           reports: "Relatórios",
           management: "Gerência",
         },
+        expandAll: "Expandir tudo",
+        collapseAll: "Recolher tudo",
         groups: {
           conversations: "Conversas",
           clients: "Clientes",
           sales: "Vendas",
-          automation: "Automação",
+          automation: "IA & Automação",
           analytics: "Analítica",
-          connections: "Conexões",
+          connections: "Canais",
           administration: "Administração",
         },
         submenuLabels: {
@@ -2052,6 +2056,21 @@ const messages = {
           settings: "Configurações",
         },
         settings: {
+      billing: {
+        summary: "Resumo do plano",
+        plan: "Plano atual",
+        status: "Estado",
+        active: "Ativo",
+        inactive: "Inativo",
+        dueDate: "Próximo vencimento",
+        invoices: "Faturas",
+        noInvoices: "Ainda não há faturas.",
+        detail: "Descrição",
+        amount: "Valor",
+        state: "Estado",
+        open: "Em aberto",
+        paid: "Paga",
+      },
           randomInterval: "Intervalo Randômico de Disparo",
           noBreak: "Sem Intervalo",
           intervalGapAfter: "Intervalo maior após",
