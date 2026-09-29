@@ -239,19 +239,35 @@ const useStyles = makeStyles(theme => ({
     ...theme.scrollbarStyles
   },
   // Floating Action Button
+  // La columna de arriba a la derecha: el boton de guardar y los accesos
+  // rapidos, juntos.
+  //
+  // Antes eran dos elementos position:fixed independientes, cada uno con su
+  // coordenada a mano —top 20 y top 80— y entre el borde del boton y el
+  // primer acceso rapido quedaban unos 4px: se veian pegados y se pisaban.
+  // Ahora el hueco lo calcula el gap de este contenedor, y si manana cambia
+  // el tamano del boton no hay que recalcular nada.
+  toolbarDock: {
+    position: "fixed",
+    top: theme.spacing(2.5),
+    right: theme.spacing(2),
+    zIndex: 1400,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: theme.spacing(2)
+  },
+  // Solo mobile: ahi el guardar se queda abajo, al alcance del pulgar. En
+  // desktop vive dentro de toolbarDock y no se posiciona por su cuenta.
   fab: {
     position: "fixed",
-    top: 20, // Posicionar no topo, acima dos quickActions
+    bottom: theme.spacing(9),
     right: theme.spacing(2),
     zIndex: 1400,
     backgroundColor: theme.palette.primary.main,
     color: theme.palette.primary.contrastText,
     '&:hover': {
       backgroundColor: theme.palette.primary.dark,
-    },
-    [theme.breakpoints.down('md')]: {
-      bottom: theme.spacing(9), // Em mobile mantém na parte inferior
-      top: 'auto' // Remove o top em mobile
     }
   },
   addFab: {
@@ -314,17 +330,12 @@ const useStyles = makeStyles(theme => ({
       backgroundColor: theme.palette.action.selected,
     }
   },
+  // Ya no se posiciona sola: vive dentro de toolbarDock, que es quien la
+  // ancla y quien pone la separacion respecto al boton de guardar.
   quickActions: {
-    position: "fixed",
-    top: 80, // Manter um pouco mais abaixo para dar espaço ao botão salvar
-    right: theme.spacing(2),
     display: "flex",
     flexDirection: "column",
-    gap: theme.spacing(1),
-    zIndex: 1200,
-    [theme.breakpoints.down('md')]: {
-      display: "none"
-    }
+    gap: theme.spacing(1)
   },
   quickActionButton: {
     backgroundColor: theme.palette.background.paper,
@@ -402,6 +413,7 @@ const useStyles = makeStyles(theme => ({
 // Definição das categorias de nós
 const nodeCategories = [
   {
+    id: "basics",
     name: i18n.t("flows.basics"),
     color: theme => theme.palette.primary.main,
     icon: <RocketLaunch />,
@@ -415,6 +427,7 @@ const nodeCategories = [
     ]
   },
   {
+    id: "content",
     name: i18n.t("flows.content"),
     color: theme => theme.palette.success.main,
     icon: <LibraryBooks />,
@@ -423,119 +436,123 @@ const nodeCategories = [
         icon: <LibraryBooks />,
         name: i18n.t("flows.content"),
         type: "content",
-        description: "Enviar texto, imagem, áudio ou vídeo"
+        description: i18n.t("flows.nodeContentDesc")
       },
       {
         icon: <Message />,
-        name: "Texto",
+        name: i18n.t("flows.nodeText"),
         type: "text",
-        description: "Mensagem de texto simples"
+        description: i18n.t("flows.nodeTextDesc")
       }
     ]
   },
   {
+    id: "interaction",
     name: i18n.t("flows.interaction"),
     color: theme => theme.palette.warning.main,
     icon: <DynamicFeed />,
     nodes: [
       {
         icon: <DynamicFeed />,
-        name: "Menu",
+        name: i18n.t("flows.nodeMenu"),
         type: "menu",
-        description: "Menu de opções para o usuário"
+        description: i18n.t("flows.nodeMenuDesc")
       },
       {
         icon: <QuestionAnswerIcon />,
-        name: "Input",
+        name: i18n.t("flows.nodeInput"),
         type: "input",
-        description: "Coletar entrada do usuário"
+        description: i18n.t("flows.nodeInputDesc")
       },
       {
         icon: <AccessTime />,
-        name: "Intervalo",
+        name: i18n.t("flows.nodeInterval"),
         type: "interval",
-        description: "Pausar execução por tempo"
+        description: i18n.t("flows.nodeIntervalDesc")
       }
     ]
   },
   {
+    id: "logic",
     name: i18n.t("flows.logic"),
     color: theme => theme.palette.secondary.main,
     icon: <CallSplit />,
     nodes: [
       {
         icon: <CallSplit />,
-        name: "Randomizador",
+        name: i18n.t("flows.nodeRandom"),
         type: "random",
-        description: "Escolha aleatória de caminhos"
+        description: i18n.t("flows.nodeRandomDesc")
       }
     ]
   },
   {
+    id: "system",
     name: i18n.t("flows.system"),
     color: theme => theme.palette.info.main,
     icon: <Queue />,
     nodes: [
       {
         icon: <Queue />,
-        name: "Filas",
+        name: i18n.t("flows.nodeQueues"),
         type: "ticket",
-        description: "Gerenciar filas de atendimento"
+        description: i18n.t("flows.nodeQueuesDesc")
       },
       {
         icon: <Tag />,
-        name: "Tags",
+        name: i18n.t("flows.nodeTags"),
         type: "tag",
-        description: "Adicionar tags ao contato"
+        description: i18n.t("flows.nodeTagsDesc")
       },
       {
         icon: <Tag />,
-        name: "Remover Tag",
+        name: i18n.t("flows.nodeRemoveTag"),
         type: "removeTag",
-        description: "Remover tags do contato"
+        description: i18n.t("flows.nodeRemoveTagDesc")
       },
       {
         icon: <ArrowForwardIcon />,
-        name: "Trocar Flow",
+        name: i18n.t("flows.nodeSwitchFlow"),
         type: "switchFlow",
-        description: "Direcionar para outro fluxo"
+        description: i18n.t("flows.nodeSwitchFlowDesc")
       },
       {
         icon: <Person />,
-        name: "Atendente",
+        name: i18n.t("flows.nodeAttendant"),
         type: "attendant",
-        description: "Transferir para atendente"
+        description: i18n.t("flows.nodeAttendantDesc")
       }
     ]
   },
   {
+    id: "integrations",
     name: i18n.t("flows.integrations"),
     color: theme => theme.palette.error.main,
     icon: <HttpIcon />,
     nodes: [
       {
         icon: <HttpIcon />,
-        name: "HTTP Request",
+        name: i18n.t("flows.nodeHttp"),
         type: "httpRequest",
-        description: "Requisição HTTP externa"
+        description: i18n.t("flows.nodeHttpDesc")
       },
       {
         icon: <DataObjectIcon />,
-        name: "Variável",
+        name: i18n.t("flows.nodeVariable"),
         type: "variable",
-        description: "Definir variáveis globais"
+        description: i18n.t("flows.nodeVariableDesc")
       },
       {
         icon: <SiOpenai />,
-        name: "Gemini",
+        name: i18n.t("flows.nodeGemini"),
         type: "gemini",
-        description: "Integração com Gemini"
+        description: i18n.t("flows.nodeGeminiDesc")
       },
       {
         icon: <SiOpenai />,
-        name: "OpenAI",
+        name: i18n.t("flows.nodeOpenai"),
         type: "openai",
-        description: "Integração com OpenAI/"
+        description: i18n.t("flows.nodeOpenaiDesc")
       }
     ]
   }
@@ -587,7 +604,7 @@ const initialNodes = [
   {
     id: "1",
     position: { x: 250, y: 100 },
-    data: { label: "Inicio do fluxo" },
+    data: { label: i18n.t("flows.flowStart") },
     type: "start"
   }
 ];
@@ -644,9 +661,9 @@ const QuickActions = ({ onActionClick }) => {
   const classes = useStyles();
   
   const quickActions = [
-    { icon: <Message />, name: "Texto", type: "text" },
-    { icon: <DynamicFeed />, name: "Menu", type: "menu" },
-    { icon: <AccessTime />, name: "Intervalo", type: "interval" },
+    { icon: <Message />, name: i18n.t("flows.nodeText"), type: "text" },
+    { icon: <DynamicFeed />, name: i18n.t("flows.nodeMenu"), type: "menu" },
+    { icon: <AccessTime />, name: i18n.t("flows.nodeInterval"), type: "interval" },
     { icon: <LibraryBooks />, name: i18n.t("flows.content"), type: "content" }
   ];
   
@@ -675,7 +692,7 @@ export const FlowBuilderConfig = () => {
   // Estados para interface
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [bottomSheetOpen, setBottomSheetOpen] = useState(false);
-  const [expandedCategories, setExpandedCategories] = useState(['Básicos']);
+  const [expandedCategories, setExpandedCategories] = useState(["basics"]);
   
   const classes = useStyles({ sidebarOpen });
   
@@ -743,7 +760,7 @@ export const FlowBuilderConfig = () => {
           {
             id: "1",
             position: { x: posX, y: posY },
-            data: { label: "Inicio do fluxo" },
+            data: { label: i18n.t("flows.flowStart") },
             type: "start"
           }
         ];
@@ -1197,11 +1214,11 @@ export const FlowBuilderConfig = () => {
           connections: edges,
         })
         .then((res) => {
-          toast.success("Fluxo salvo com sucesso");
+          toast.success(i18n.t("flows.savedOk"));
           setNodes(processedNodes);
         });
     } catch (error) {
-      toast.error("Erro ao salvar o fluxo");
+      toast.error(i18n.t("flows.saveError"));
       console.error("Erro ao salvar o fluxo:", error);
     }
   };
@@ -1323,11 +1340,16 @@ export const FlowBuilderConfig = () => {
   };
 
   // Handler para categoria expand/collapse
-  const handleCategoryToggle = (categoryName) => {
+  //
+  // Se guarda el id estable de la categoria, no su nombre visible: antes el
+  // estado inicial era ['Básicos'], que coincidia con la traduccion al
+  // espanol por casualidad. Cambiar esa traduccion —o mirar la pantalla en
+  // otro idioma— dejaba la categoria sin abrirse, sin que nada fallara.
+  const handleCategoryToggle = (categoryId) => {
     setExpandedCategories(prev =>
-      prev.includes(categoryName)
-        ? prev.filter(name => name !== categoryName)
-        : [...prev, categoryName]
+      prev.includes(categoryId)
+        ? prev.filter(id => id !== categoryId)
+        : [...prev, categoryId]
     );
   };
 
@@ -1401,7 +1423,7 @@ export const FlowBuilderConfig = () => {
   const SidebarContent = () => (
     <div className={classes.sidebarContent}>
       {nodeCategories.map((category) => (
-        <div key={category.name}>
+        <div key={category.id}>
           {sidebarOpen ? (
             // Modo expandido
             <>
@@ -1410,7 +1432,7 @@ export const FlowBuilderConfig = () => {
                   display="flex" 
                   alignItems="center" 
                   justifyContent="space-between"
-                  onClick={() => handleCategoryToggle(category.name)}
+                  onClick={() => handleCategoryToggle(category.id)}
                   style={{ cursor: "pointer" }}
                 >
                   <Box display="flex" alignItems="center" gap={1}>
@@ -1421,11 +1443,11 @@ export const FlowBuilderConfig = () => {
                       {category.name}
                     </Typography>
                   </Box>
-                  {expandedCategories.includes(category.name) ? <ExpandLess /> : <ExpandMore />}
+                  {expandedCategories.includes(category.id) ? <ExpandLess /> : <ExpandMore />}
                 </Box>
               </div>
               
-              <Collapse in={expandedCategories.includes(category.name)}>
+              <Collapse in={expandedCategories.includes(category.id)}>
                 <List dense>
                   {category.nodes.map((node) => (
                     <ListItem key={node.type} disablePadding>
@@ -1494,7 +1516,7 @@ export const FlowBuilderConfig = () => {
         <div className={classes.bottomSheetContent}>
           <Grid container spacing={2}>
             {nodeCategories.map((category) => (
-              <Grid item xs={6} key={category.name}>
+              <Grid item xs={6} key={category.id}>
                 <Paper elevation={1} className={classes.categoryCard} style={{ padding: 8 }}>
                   <Typography 
                     variant="subtitle2" 
@@ -1534,7 +1556,7 @@ export const FlowBuilderConfig = () => {
       <div className={classes.root}>
         <div className={classes.header}>
           <MainHeader>
-            <Title>Editor de Fluxos</Title>
+            <Title>{i18n.t("flows.title")}</Title>
           </MainHeader>
         </div>
         <div className={classes.loadingContainer}>
@@ -1549,7 +1571,7 @@ export const FlowBuilderConfig = () => {
     {/* Header */}
     <div className={classes.header}>
       <MainHeader>
-        <Title>Editor de Fluxos</Title>
+        <Title>{i18n.t("flows.title")}</Title>
       </MainHeader>
     </div>
 
@@ -1599,16 +1621,28 @@ export const FlowBuilderConfig = () => {
             animated: false
           }}
           // Configurações otimizadas para mobile
+          //
+          // La rueda hace zoom directamente, sin Ctrl. Antes panOnScroll
+          // estaba activo, y con el la rueda desplazaba el lienzo: la
+          // libreria reservaba entonces el zoom para cuando se mantiene
+          // pulsada la tecla modificadora. El desplazamiento no se pierde,
+          // pasa a hacerse arrastrando el fondo (panOnDrag, activo por
+          // defecto), que es como funcionan Figma o Miro.
           zoomOnScroll={true}
           zoomOnPinch={true}
-          panOnScroll={true}
-          panOnScrollMode="free"
+          panOnScroll={false}
           zoomOnDoubleClick={true}
           selectNodesOnDrag={false}
           snapToGrid={true}
           snapGrid={[20, 20]}
-          minZoom={0.1}
-          maxZoom={3}
+          // El rango se recorta por los extremos, que eran inutilizables: al
+          // 10% los nodos no se leen y al 300% no cabe nada. Ojo, esto NO
+          // cambia cuanto salta cada muesca de la rueda —esta version de
+          // react-flow-renderer no expone ningun prop de paso de zoom, se
+          // comprobo en sus definiciones de tipos—, solo limita hasta donde
+          // se puede llegar.
+          minZoom={0.2}
+          maxZoom={2}
           defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
         >
           {/* Controles sempre visíveis em desktop */}
@@ -1629,18 +1663,33 @@ export const FlowBuilderConfig = () => {
     {/* Mobile Controls */}
     {isMobile && <MobileControls />}
 
-    {/* Botão Salvar - agora posicionado acima dos quickActions */}
-    <Fab
-      color="primary"
-      className={classes.fab}
-      onClick={saveFlow}
-      title="Salvar Fluxo"
-    >
-      <SaveIcon />
-    </Fab>
+    {/* Desktop: guardar y accesos rapidos, en una sola columna que calcula
+        ella misma su separacion. */}
+    {!isMobile && (
+      <div className={classes.toolbarDock}>
+        <Fab
+          color="primary"
+          onClick={saveFlow}
+          title={i18n.t("flows.saveFlow")}
+        >
+          <SaveIcon />
+        </Fab>
 
-    {/* Quick Actions Desktop - agora abaixo do botão salvar */}
-    {!isMobile && <QuickActions onActionClick={clickActions} />}
+        <QuickActions onActionClick={clickActions} />
+      </div>
+    )}
+
+    {/* Mobile: el guardar se queda abajo, donde llega el pulgar. */}
+    {isMobile && (
+      <Fab
+        color="primary"
+        className={classes.fab}
+        onClick={saveFlow}
+        title={i18n.t("flows.saveFlow")}
+      >
+        <SaveIcon />
+      </Fab>
+    )}
 
     {/* Bottom Sheet Mobile */}
     {isMobile && <BottomSheetContent />}
