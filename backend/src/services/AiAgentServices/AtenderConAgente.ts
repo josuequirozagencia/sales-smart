@@ -13,6 +13,7 @@ import AppError from "../../errors/AppError";
 import logger from "../../utils/logger";
 import { businessTimezone } from "../../helpers/RotationPolicy";
 import { agenteDeConexion, CANALES_AGENTE, credencialesDe } from "./AiAgentService";
+import { cobrarUso, resolverClaveDeAgente } from "../AiCreditServices/AiCreditService";
 import { ConfigMotor, EntradaMotor, generarRespuesta, OpcionesMotor, ResultadoMotor } from "./AiAgentEngine";
 import { Adjunto, TurnoHistorial } from "./Proveedores";
 import { pausaParaBloque } from "./PostProceso";
@@ -24,6 +25,7 @@ import {
   EstadoIa,
   agenteDeFlujoId,
   fijarEstadoSinBloqueo,
+  MotivoEstado,
   leerEstado
 } from "./EstadoIaTicket";
 import { enviadorCanal, MARCA_AUTOMATICO, ticketCompleto } from "./EnvioCanal";
@@ -328,7 +330,10 @@ const encolar = (ticketId: number, wid: string, tarea: () => Promise<unknown>): 
   return siguiente;
 };
 
-export type ResultadoAtencion = "respondido" | "transferido" | "descartado" | "sin_respuesta" | "no_aplica";
+// sin_credito y sin_clave: el agente usa la clave compartida de la agencia y
+// no hay saldo, o no hay clave que usar. En los dos casos la IA se pausa en
+// ese ticket y queda esperando a una persona.
+export type ResultadoAtencion = "respondido" | "transferido" | "descartado" | "sin_respuesta" | "no_aplica" | "sin_credito" | "sin_clave";
 
 interface OpcionesRespuesta {
   /** Responde el agente de un nodo IA del Flow Builder, no el de la conexion. */
@@ -372,7 +377,24 @@ const responderMensaje = async (
     entrada.texto = `(El cliente envio ${DESCRIPCION_MEDIA[tipo]} que no puedes abrir.)`;
   }
 
-  const { apiKey, voiceKey } = credencialesDe(agente);
+  const { voiceKey } = credencialesDe(agente);
+
+  // Con que clave corre este agente. Si trae la suya, todo sigue igual que
+  // siempre y el credito ni se consulta. Si usa la compartida de la agencia,
+  // hace falta saldo antes de gastar.
+  const clave = await resolverClaveDeAgente(agente);
+
+  if (clave.modo === "sin_credito" || clave.modo === "sin_clave") {
+    // La IA deja de responder en este ticket y queda esperando a una persona,
+    // igual que cuando contesta un asesor. Sin mensaje automatico de relleno:
+    // al cliente no se le cuenta que a la agencia se le acabo el saldo.
+    const motivo: MotivoEstado = clave.modo === "sin_credito" ? "no_credit" : "no_key";
+    logger.info(`[AI AGENT] Ticket ${ticket.id}: agente ${agente.id} pausado (${motivo})`);
+    await conBloqueo(ticket.id, () => fijarEstadoSinBloqueo(ticket, false, motivo, null));
+    return clave.modo === "sin_credito" ? "sin_credito" : "sin_clave";
+  }
+
+  const apiKey = clave.apiKey;
   let resultado: ResultadoMotor;
   try {
     resultado = await generarRespuesta(configMotorDe(agente, apiKey), entrada, opcionesMotor);
@@ -383,6 +405,16 @@ const responderMensaje = async (
     return "sin_respuesta";
   }
   if (resultado.avisos.length) logger.info(`[AI AGENT] Ticket ${ticket.id}: ${resultado.avisos.join(", ")}`);
+
+  // Solo se cobra lo que corrio con la clave compartida. Un agente con la
+  // suya no toca el saldo.
+  if (clave.modo === "compartida") {
+    await cobrarUso(companyId, agente.provider, agente.model, resultado.uso, {
+      aiAgentId: agente.id,
+      messageId: (mensaje as any)?.id ?? null,
+      description: `Respuesta en ticket ${ticket.id}`
+    });
+  }
 
   const voz =
     agente.voice && agente.voice !== "texto" && voiceKey

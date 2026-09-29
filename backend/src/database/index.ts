@@ -77,6 +77,10 @@ import AiAgent from "../models/AiAgent";
 import AiAgentChannel from "../models/AiAgentChannel";
 import AiAgentFollowUpJob from "../models/AiAgentFollowUpJob";
 import AiAgentTicketState from "../models/AiAgentTicketState";
+import AiCreditAccount from "../models/AiCreditAccount";
+import AiCreditLedger from "../models/AiCreditLedger";
+import AiModelPricing from "../models/AiModelPricing";
+import AiCreditSettings from "../models/AiCreditSettings";
 
 // eslint-disable-next-line
 const dbConfig = require("../config/database");
@@ -130,6 +134,10 @@ const models = [
   AiAgentChannel,
   AiAgentFollowUpJob,
   AiAgentTicketState,
+  AiCreditAccount,
+  AiCreditLedger,
+  AiModelPricing,
+  AiCreditSettings,
   Invoices,
   Subscriptions,
   ApiUsages,
