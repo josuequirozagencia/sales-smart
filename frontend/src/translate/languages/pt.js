@@ -3042,7 +3042,7 @@ const messages = {
           },
           apiKey: "Chave de API",
           apiKeySaved: "Chave salva, termina em",
-          apiKeyHelp: "A chave é salva criptografada e não é exibida de novo. Deixe vazio para manter a atual.",
+          apiKeyHelp: "A chave é salva criptografada e não é exibida de novo. Se deixar vazio, o agente usará o crédito da agência; se colocar a sua, o consumo corre pela sua conta da OpenAI.",
           systemPrompt: "Instruções do agente",
           transferQueue: "Fila de transferência",
           transferQueueHelp: "Quando o agente passa a conversa para uma pessoa e ninguém está atribuído, ela entra nesta fila.",

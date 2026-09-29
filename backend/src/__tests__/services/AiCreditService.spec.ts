@@ -302,6 +302,42 @@ describe("resolverClaveDeAgente", () => {
   });
 });
 
+describe("crear un agente sin clave propia", () => {
+  // Sin esto el sistema entero era inutilizable desde la aplicacion:
+  // normalizarDatos exigia una clave propia siempre, asi que no habia forma
+  // de crear un agente que usara el credito de la agencia.
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { normalizarDatos } = require("../../services/AiAgentServices/AiAgentService");
+
+  const datos = {
+    name: "sin clave",
+    provider: "openai",
+    model: "gpt-4o-mini",
+    systemPrompt: "hola"
+  };
+
+  it("se rechaza si la agencia no tiene clave compartida que prestar", () => {
+    expect(() => normalizarDatos(datos, undefined, { permitirSinClave: false })).toThrow;
+
+    let error: any = null;
+    try {
+      normalizarDatos(datos, undefined, { permitirSinClave: false });
+    } catch (e) {
+      error = e;
+    }
+
+    expect(error).toMatchObject({ message: "ERR_AI_AGENT_API_KEY_REQUIRED" });
+  });
+
+  it("se permite si la agencia si la tiene", () => {
+    const campos = normalizarDatos(datos, undefined, { permitirSinClave: true });
+
+    expect(campos.name).toBe("sin clave");
+    // Y sobre todo: no se le inventa ninguna clave.
+    expect(campos.apiKey).toBeUndefined();
+  });
+});
+
 describe("preciosDe", () => {
   it("los precios de referencia estan cargados", async () => {
     // Esto se escapo la primera vez: la precarga estaba en un seed, y el

@@ -3030,7 +3030,7 @@ const messages = {
           },
           apiKey: "Clave de API",
           apiKeySaved: "Clave guardada, termina en",
-          apiKeyHelp: "La clave se guarda cifrada y no se vuelve a mostrar. Déjalo vacío para conservar la actual.",
+          apiKeyHelp: "La clave se guarda cifrada y no se vuelve a mostrar. Si la dejas vacía, el agente usará el crédito de la agencia; si pones la tuya, el consumo corre por tu cuenta de OpenAI.",
           systemPrompt: "Instrucciones del agente",
           transferQueue: "Fila de transferencia",
           transferQueueHelp: "Cuando el agente pasa la conversación a una persona y nadie la tiene asignada, entra en esta fila.",

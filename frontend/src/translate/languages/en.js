@@ -3032,7 +3032,7 @@ const messages = {
           },
           apiKey: "API key",
           apiKeySaved: "Key saved, ends in",
-          apiKeyHelp: "The key is stored encrypted and never shown again. Leave it empty to keep the current one.",
+          apiKeyHelp: "The key is stored encrypted and never shown again. Leave it empty and the agent uses the agency credit; set your own and the usage goes to your OpenAI account.",
           systemPrompt: "Agent instructions",
           transferQueue: "Transfer queue",
           transferQueueHelp: "When the agent hands the conversation to a person and nobody is assigned, it goes to this queue.",

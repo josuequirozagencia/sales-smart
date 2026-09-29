@@ -150,7 +150,11 @@ export const validarSeguimientos = (pasos: unknown): PasoSeguimiento[] => {
  * para guardar, con las claves ya cifradas si se enviaron. `base` es el agente
  * guardado cuando se edita: lo que no se envia se conserva.
  */
-export const normalizarDatos = (datos: DatosAgente, base?: Partial<AiAgent>): Partial<AiAgent> => {
+export const normalizarDatos = (
+  datos: DatosAgente,
+  base?: Partial<AiAgent>,
+  opciones?: { permitirSinClave?: boolean }
+): Partial<AiAgent> => {
   const valor = <K extends keyof DatosAgente>(k: K, porDefecto: unknown) =>
     datos[k] !== undefined ? datos[k] : base && (base as any)[k] !== undefined ? (base as any)[k] : porDefecto;
 
@@ -203,7 +207,10 @@ export const normalizarDatos = (datos: DatosAgente, base?: Partial<AiAgent>): Pa
   if (apiKeyNueva) {
     campos.apiKey = encrypt(apiKeyNueva);
     campos.apiKeyLast4 = ultimos4(apiKeyNueva);
-  } else if (!base?.apiKey) {
+  } else if (!base?.apiKey && !opciones?.permitirSinClave) {
+    // Un agente sin clave propia solo vale si la agencia tiene una
+    // compartida que prestarle. Quien llama es quien lo sabe, porque
+    // averiguarlo exige ir a la base y esto no es asincrono.
     throw new AppError("ERR_AI_AGENT_API_KEY_REQUIRED", 400);
   }
 
@@ -282,8 +289,22 @@ export const verAgente = async (companyId: number, id: number): Promise<AgenteSe
   return serializar(agente, agente.channels);
 };
 
+/**
+ * Si la agencia tiene una clave compartida que prestar.
+ *
+ * De eso depende que se pueda crear un agente sin clave propia: sin ella un
+ * agente sin clave no podria responder, con ella corre contra el saldo.
+ */
+const hayClaveCompartida = async (): Promise<boolean> => {
+  const { ajustes } = await import("../AiCreditServices/AiCreditService");
+  const config = await ajustes();
+  return !!config.sharedOpenAiApiKey;
+};
+
 export const crearAgente = async (companyId: number, datos: DatosAgente): Promise<AgenteSerializado> => {
-  const campos = normalizarDatos(datos);
+  const campos = normalizarDatos(datos, undefined, {
+    permitirSinClave: await hayClaveCompartida()
+  });
   await comprobarFila(companyId, campos.transferQueueId ?? null);
   const agente = await AiAgent.create({ ...campos, companyId } as AiAgent);
   return verAgente(companyId, agente.id);
@@ -295,7 +316,9 @@ export const actualizarAgente = async (
   datos: DatosAgente
 ): Promise<AgenteSerializado> => {
   const agente = await buscarDeEmpresa(companyId, id);
-  const campos = normalizarDatos(datos, agente);
+  const campos = normalizarDatos(datos, agente, {
+    permitirSinClave: await hayClaveCompartida()
+  });
   await comprobarFila(companyId, campos.transferQueueId ?? null);
   await agente.update(campos);
   return verAgente(companyId, id);
