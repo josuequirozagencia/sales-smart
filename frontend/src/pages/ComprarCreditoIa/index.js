@@ -7,6 +7,11 @@ import CardContent from "@material-ui/core/CardContent";
 import Paper from "@material-ui/core/Paper";
 import TextField from "@material-ui/core/TextField";
 import Typography from "@material-ui/core/Typography";
+import Table from "@material-ui/core/Table";
+import TableBody from "@material-ui/core/TableBody";
+import TableCell from "@material-ui/core/TableCell";
+import TableHead from "@material-ui/core/TableHead";
+import TableRow from "@material-ui/core/TableRow";
 
 import MainContainer from "../../components/MainContainer";
 import MainHeader from "../../components/MainHeader";
@@ -71,11 +76,16 @@ const ComprarCreditoIa = () => {
   const [libre, setLibre] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [resultado, setResultado] = useState(null);
+  const [movimientos, setMovimientos] = useState([]);
 
   const consultar = useCallback(async () => {
     try {
-      const { data } = await api.get("/ai-credits/balance");
-      setSaldo(data);
+      const [s, h] = await Promise.all([
+        api.get("/ai-credits/balance"),
+        api.get("/ai-credits/my-ledger")
+      ]);
+      setSaldo(s.data);
+      setMovimientos(h.data?.movimientos || []);
     } catch (err) {
       toastError(err);
     }
@@ -174,6 +184,42 @@ const ComprarCreditoIa = () => {
               {i18n.t("aiCredit.notAvailableYet")}
             </Typography>
           </div>
+        )}
+      </Paper>
+
+      {/* En que se fue el saldo. Es su dinero: tiene derecho a ver el detalle
+          sin pedirselo a nadie. */}
+      <Paper className={classes.contenedor} variant="outlined">
+        <Typography variant="subtitle2">{i18n.t("aiCredit.myUsage")}</Typography>
+
+        {movimientos.length === 0 ? (
+          <Typography variant="body2" color="textSecondary">
+            {i18n.t("aiCredit.noMovements")}
+          </Typography>
+        ) : (
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>{i18n.t("aiCredit.date")}</TableCell>
+                <TableCell>{i18n.t("aiCredit.detail")}</TableCell>
+                <TableCell align="right">{i18n.t("aiCredit.amount")}</TableCell>
+                <TableCell align="right">{i18n.t("aiCredit.balanceAfter")}</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {movimientos.map(m => (
+                <TableRow key={m.id}>
+                  <TableCell>{new Date(m.createdAt).toLocaleString()}</TableCell>
+                  <TableCell>{m.description}</TableCell>
+                  <TableCell align="right">
+                    {m.amountCents >= 0 ? "+" : ""}
+                    ${enDolares(m.amountCents)}
+                  </TableCell>
+                  <TableCell align="right">${enDolares(m.balanceAfterCents)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
       </Paper>
     </MainContainer>

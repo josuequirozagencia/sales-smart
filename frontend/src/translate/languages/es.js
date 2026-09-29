@@ -1267,6 +1267,8 @@ const messages = {
           "La compra en línea todavía no está disponible. Registramos tu solicitud: contacta con soporte para completar la recarga.",
         adminTitle: "Crédito de Agentes IA",
         onlySuper: "Esta pantalla es solo para superadministración.",
+        myUsage: "Movimientos de tu saldo",
+        noMovements: "Todavía no hay movimientos.",
         sharedKey: "Clave compartida de OpenAI",
         noKeyYet: "Sin clave configurada",
         keyHelp: "Déjalo vacío para no cambiarla. Solo se guardan los últimos 4 caracteres a la vista.",

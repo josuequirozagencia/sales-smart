@@ -19,6 +19,7 @@ aiCreditRoutes.get("/ai-credits/companies/:companyId/ledger", isAuth, AiCreditCo
 
 // La propia empresa: su saldo y su intencion de recargar.
 aiCreditRoutes.get("/ai-credits/balance", isAuth, AiCreditController.miSaldo);
+aiCreditRoutes.get("/ai-credits/my-ledger", isAuth, AiCreditController.miHistorial);
 aiCreditRoutes.post("/ai-credits/purchase-intent", isAuth, AiCreditController.intencionDeCompra);
 
 export default aiCreditRoutes;

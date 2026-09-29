@@ -210,8 +210,35 @@ export const miSaldo = async (req: Request, res: Response): Promise<Response> =>
   return res.json({
     balanceCents: saldo,
     dependeDeClaveCompartida: agentesSinClave > 0 && !!config.sharedOpenAiApiKey,
+    // Si la agencia tiene una clave que prestar. El formulario del agente lo
+    // necesita para saber si puede dejar el campo de la clave vacio; no
+    // filtra nada, solo dice si existe.
+    hayClaveCompartida: !!config.sharedOpenAiApiKey,
     totalAgentes: conClavePropia,
     minPurchaseCents: config.minPurchaseCents
+  });
+};
+
+/**
+ * Los movimientos de la propia empresa. Sin superadmin: es su dinero y tiene
+ * derecho a ver en que se le fue.
+ */
+export const miHistorial = async (req: Request, res: Response): Promise<Response> => {
+  const { companyId } = req.user;
+  const pagina = Math.max(1, Number(req.query.pageNumber) || 1);
+  const porPagina = 50;
+
+  const { count, rows } = await AiCreditLedger.findAndCountAll({
+    where: { companyId: Number(companyId) },
+    order: [["id", "DESC"]],
+    limit: porPagina,
+    offset: porPagina * (pagina - 1)
+  });
+
+  return res.json({
+    movimientos: rows,
+    count,
+    hasMore: count > porPagina * pagina
   });
 };
 

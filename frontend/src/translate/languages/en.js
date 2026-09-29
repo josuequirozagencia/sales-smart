@@ -1150,6 +1150,8 @@ const messages = {
           "Online purchase is not available yet. We recorded your request: contact support to complete the top-up.",
         adminTitle: "AI Agents credit",
         onlySuper: "This screen is for super administrators only.",
+        myUsage: "Your balance movements",
+        noMovements: "No movements yet.",
         sharedKey: "Shared OpenAI key",
         noKeyYet: "No key configured",
         keyHelp: "Leave empty to keep it. Only the last 4 characters are ever shown.",
