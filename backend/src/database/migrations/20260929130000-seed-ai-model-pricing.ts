@@ -3,26 +3,30 @@ import { QueryInterface } from "sequelize";
 /**
  * Precios de referencia de los modelos de OpenAI.
  *
- * ATENCION: estos numeros son una referencia de partida, no una verdad.
- * OpenAI cambia sus precios, y cuando lo haga esta tabla se queda vieja sin
- * avisar: hay que revisarla desde el panel. Se precargan para que el sistema
- * no arranque con la tabla vacia —con precio cero no se cobraria nada— pero
- * el numero bueno es el que confirme quien administra.
+ * Esto nacio como un seed y estaba mal: el predeploy de este proyecto solo
+ * ejecuta seeds en una base recien creada —porque sequelize no registra
+ * cuales ya corrieron y alguno duplicaria filas al repetirse—, asi que en
+ * produccion no se habria ejecutado nunca y la tabla se habria quedado
+ * vacia. Con la tabla vacia no se cobra nada: preciosDe no encuentra la
+ * unidad y el costo sale cero.
+ *
+ * Como migracion si corre, y queda anotada en SequelizeMeta.
+ *
+ * ATENCION: estos numeros son un punto de partida, no una verdad. OpenAI
+ * cambia sus precios y cuando lo haga esta tabla se queda vieja sin avisar:
+ * hay que revisarla desde el panel de credito.
  *
  * La unidad es CENTAVOS POR TOKEN, no por millon. La conversion desde la
- * tabla publica de OpenAI, que va en dolares por millon de tokens:
+ * tabla publica de OpenAI, que va en dolares por millon:
  *
  *     centavos por token = (dolares por millon) / 10.000
  *
- * Asi, gpt-4o a 2,50 dolares el millon de tokens de entrada sale a 0,00025
+ * gpt-4o a 2,50 dolares el millon de tokens de entrada sale a 0,00025
  * centavos por token. De ahi los ocho decimales de la columna: redondeado a
  * centavo entero seria cero.
  *
- * El audio va por minuto: whisper-1 a 0,006 dolares el minuto son 0,6
- * centavos por minuto.
- *
  * Aqui va el costo REAL del proveedor, sin margen. El margen se aplica al
- * cobrar, y se configura aparte.
+ * cobrar y se configura aparte.
  */
 
 interface Precio {
@@ -41,17 +45,14 @@ const PRECIOS_POR_MILLON: Precio[] = [
   { model: "o3-mini", entrada: 1.1, salida: 4.4 }
 ];
 
+// 0,006 dolares por minuto de audio = 0,6 centavos por minuto.
+const WHISPER_POR_MINUTO = "0.60000000";
+
 const aCentavosPorToken = (dolaresPorMillon: number): string =>
   (dolaresPorMillon / 10000).toFixed(8);
 
 module.exports = {
   up: async (queryInterface: QueryInterface) => {
-    const [existentes]: any = await queryInterface.sequelize.query(
-      `select count(*)::int as n from "AiModelPricing"`
-    );
-    // Si ya hay precios, alguien los reviso: no se pisan.
-    if (existentes?.[0]?.n > 0) return;
-
     const ahora = new Date();
     const filas: any[] = [];
 
@@ -74,27 +75,35 @@ module.exports = {
         createdAt: ahora,
         updatedAt: ahora
       });
-    }
-
-    // Whisper: 0,006 dolares por minuto = 0,6 centavos por minuto.
-    //
-    // Se da de alta con el nombre de cada modelo de texto, no con
-    // "whisper-1", porque el cobro se busca por el modelo del agente: el
-    // audio lo transcribe Whisper pero la respuesta la da el modelo del
-    // agente, y las dos cosas se cobran juntas en el mismo movimiento.
-    for (const p of PRECIOS_POR_MILLON) {
+      // El audio se da de alta con el nombre de cada modelo de texto y no
+      // con "whisper-1": el cobro se busca por el modelo del agente, y una
+      // respuesta a un audio gasta las dos cosas —la transcripcion y la
+      // respuesta— en el mismo movimiento.
       filas.push({
         provider: "openai",
         model: p.model,
         unit: "audio_minute",
-        pricePerUnitCents: "0.60000000",
+        pricePerUnitCents: WHISPER_POR_MINUTO,
         marginPercentOverride: null,
         createdAt: ahora,
         updatedAt: ahora
       });
     }
 
-    await queryInterface.bulkInsert("AiModelPricing", filas);
+    // Fila a fila, saltando las que ya existan: si alguien ya reviso un
+    // precio desde el panel, esta migracion no se lo pisa.
+    for (const fila of filas) {
+      const [existente]: any = await queryInterface.sequelize.query(
+        `select id from "AiModelPricing"
+         where provider = :provider and model = :model and unit = :unit
+         limit 1`,
+        { replacements: { provider: fila.provider, model: fila.model, unit: fila.unit } }
+      );
+
+      if (existente && existente.length > 0) continue;
+
+      await queryInterface.bulkInsert("AiModelPricing", [fila]);
+    }
   },
 
   down: async (queryInterface: QueryInterface) => {
