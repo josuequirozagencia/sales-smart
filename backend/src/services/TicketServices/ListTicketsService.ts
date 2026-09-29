@@ -76,7 +76,18 @@ const ListTicketsService = async ({
   const user = await ShowUserService(userId, companyId);
 
   const showTicketAllQueues = user.allHistoric === "enabled";
-  const showTicketWithoutQueue = user.allTicket === "enable";
+  // Un ticket sin cola no es de nadie. Si quien administra la empresa no lo
+  // ve, no lo ve nadie: se queda ahi, con el cliente esperando al otro lado.
+  // Le paso a la Empresa 1 —una conexion sin cola creo seis tickets con
+  // mensajes reales y el Inbox mostraba cero—, y dejar que no vuelva a pasar
+  // en manos de una casilla por usuario es dejarlo en manos de que alguien se
+  // acuerde de marcarla al crear cada empresa.
+  //
+  // Para el perfil "user" la casilla sigue mandando, porque ahi limitar a sus
+  // colas es justo lo que se quiere. Lo que ya no puede hacer es esconderle
+  // trabajo a un administrador.
+  const showTicketWithoutQueue =
+    user.allTicket === "enable" || user.profile === "admin";
   const showGroups = user.allowGroup === true;
   const showPendingNotification = await FindCompanySettingOneService({ companyId, column: "showNotificationPending" });
   const showNotificationPendingValue = showPendingNotification[0].showNotificationPending;
