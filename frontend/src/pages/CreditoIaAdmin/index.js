@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 
 import { makeStyles } from "@material-ui/core/styles";
 import Button from "@material-ui/core/Button";
@@ -18,6 +18,7 @@ import Typography from "@material-ui/core/Typography";
 import MainContainer from "../../components/MainContainer";
 import MainHeader from "../../components/MainHeader";
 import Title from "../../components/Title";
+import { AuthContext } from "../../context/Auth/AuthContext";
 import api from "../../services/api";
 import toast from "../../errors/toastError";
 import { i18n } from "../../translate/i18n";
@@ -61,6 +62,8 @@ const enDolares = centavos => (Number(centavos || 0) / 100).toFixed(2);
 
 const CreditoIaAdmin = () => {
   const classes = useStyles();
+  const { user } = useContext(AuthContext);
+  const esSuper = user?.super === true;
 
   const [ajustes, setAjustes] = useState(null);
   const [claveNueva, setClaveNueva] = useState("");
@@ -87,8 +90,10 @@ const CreditoIaAdmin = () => {
   }, []);
 
   useEffect(() => {
-    cargar();
-  }, [cargar]);
+    // Sin ser superadmin no se pide nada: los endpoints devolverian 403 y lo
+    // unico que veria el usuario es una pantalla de errores.
+    if (esSuper) cargar();
+  }, [cargar, esSuper]);
 
   const guardarAjustes = async () => {
     try {
@@ -143,6 +148,25 @@ const CreditoIaAdmin = () => {
       toast(err);
     }
   };
+
+  // La ruta es privada, no de superadmin: cualquiera con sesion puede pedir
+  // esta direccion. El backend rechaza sus llamadas, pero sin esto veria el
+  // formulario vacio y una lluvia de errores, que no es forma de decir que
+  // no le corresponde.
+  if (!esSuper) {
+    return (
+      <MainContainer>
+        <MainHeader>
+          <Title>{i18n.t("aiCredit.adminTitle")}</Title>
+        </MainHeader>
+        <Paper className={classes.seccion} variant="outlined">
+          <Typography variant="body2" color="textSecondary">
+            {i18n.t("aiCredit.onlySuper")}
+          </Typography>
+        </Paper>
+      </MainContainer>
+    );
+  }
 
   return (
     <MainContainer>

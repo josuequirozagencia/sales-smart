@@ -43,6 +43,7 @@ import AnnouncementIcon from "@mui/icons-material/Announcement";
 import ForumIcon from "@mui/icons-material/Forum";
 import LocalAtmIcon from "@mui/icons-material/LocalAtm";
 import BusinessIcon from "@mui/icons-material/Business";
+import MemoryIcon from "@mui/icons-material/Memory";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import {
   AllInclusive,
@@ -1448,6 +1449,15 @@ useEffect(() => {
                     to="/companies"
                     primary={i18n.t("mainDrawer.listItems.companies")}
                     icon={<BusinessIcon />}
+                    tooltip={collapsed}
+                  />
+                )}
+
+                {user.super && (
+                  <ListItemLink
+                    to="/ai-credits/admin"
+                    primary={i18n.t("mainDrawer.listItems.aiCredits")}
+                    icon={<MemoryIcon />}
                     tooltip={collapsed}
                   />
                 )}
