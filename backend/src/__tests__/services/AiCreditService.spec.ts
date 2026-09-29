@@ -303,6 +303,21 @@ describe("resolverClaveDeAgente", () => {
 });
 
 describe("preciosDe", () => {
+  it("los precios de referencia estan cargados", async () => {
+    // Esto se escapo la primera vez: la precarga estaba en un seed, y el
+    // predeploy de este proyecto solo ejecuta seeds en una base recien
+    // creada. En produccion la tabla se quedo vacia, y con la tabla vacia no
+    // se cobra nada: preciosDe no encuentra la unidad y el costo sale cero.
+    const precios = await preciosDe("openai", "gpt-4o-mini");
+
+    expect(precios.porUnidad.tokens_input).toBeDefined();
+    expect(precios.porUnidad.tokens_output).toBeDefined();
+    expect(precios.porUnidad.audio_minute).toBeDefined();
+
+    // Y que el precio no sea cero, que es lo que de verdad rompe el cobro.
+    expect(precios.porUnidad.tokens_input!.precio).toBeGreaterThan(0);
+  });
+
   it("lee el precio y el override de cada unidad", async () => {
     const modelo = `modelo-prueba-${sufijo}`;
 
