@@ -26,6 +26,7 @@ import ListAllWhatsAppsService from "../services/WhatsappService/ListAllWhatsApp
 import ListFilterWhatsAppsService from "../services/WhatsappService/ListFilterWhatsAppsService";
 import User from "../models/User";
 import logger from "../utils/logger";
+import { puedeGestionarConexiones } from "../middleware/canManageConnections";
 import {
   CreateCompanyConnectionOficial,
   DeleteConnectionWhatsAppOficial,
@@ -416,11 +417,20 @@ export const storeFacebook = async (
 
 export const show = async (req: Request, res: Response): Promise<Response> => {
   const { whatsappId } = req.params;
-  const { companyId } = req.user;
+  const { companyId, id: userId } = req.user;
   const { session } = req.query;
 
   // console.log("SHOWING WHATSAPP", whatsappId)
   const whatsapp = await ShowWhatsAppService(whatsappId, companyId, session);
+
+  // La ficha la lee cualquier usuario (la pantalla del ticket la consulta),
+  // pero sin credenciales: el modelo las quita al serializar. `token` es la
+  // clave de la API externa y el modal de la conexion la muestra para
+  // copiarla, asi que se anade solo para quien gestiona conexiones.
+  // send_token no se devuelve a nadie.
+  if (await puedeGestionarConexiones(userId)) {
+    return res.status(200).json({ ...whatsapp.toJSON(), token: whatsapp.token });
+  }
 
   return res.status(200).json(whatsapp);
 };
@@ -669,7 +679,8 @@ export const showAdmin = async (
   // console.log("SHOWING WHATSAPP ADMIN", whatsappId)
   const whatsapp = await ShowWhatsAppServiceAdmin(whatsappId);
 
-  return res.status(200).json(whatsapp);
+  // Ruta solo para super (whatsappRoutes): WhatsAppModalAdmin muestra el token.
+  return res.status(200).json({ ...whatsapp.toJSON(), token: whatsapp.token });
 };
 
 export const syncTemplatesOficial = async (

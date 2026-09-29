@@ -722,6 +722,7 @@ const messages = {
           phone_number_id: "Phone Number ID",
           waba_id: "WABA ID",
           send_token: "Sending token",
+          sendTokenSaved: "Saved, ends in {{final}}. Leave empty to keep it.",
           business_id: "Business ID",
           phone_number: "Phone number",
           triggerIntegrationOnClose: "Trigger Integration on Ticket Close",

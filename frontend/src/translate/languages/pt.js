@@ -727,6 +727,7 @@ const messages = {
           phone_number_id: "ID Número de telefone",
           waba_id: "Waba ID",
           send_token: "Token de envio",
+          sendTokenSaved: "Salvo, termina em {{final}}. Deixe vazio para mantê-lo.",
           business_id: "ID do negócio",
           phone_number: "Número de telefone",
           triggerIntegrationOnClose: "Disparar Integração ao Encerrar Ticket",

@@ -380,7 +380,10 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
           setTimeAwaitActiveFlowId(selectedTimeAwaitActiveFlowId);
         }
 
-        setWhatsApp(data);
+        // El backend no devuelve el token de Meta (send_token), solo si hay
+        // uno guardado y su final. El campo empieza vacio: dejarlo asi al
+        // guardar conserva el que habia.
+        setWhatsApp({ ...data, send_token: "" });
         setAttachmentName(data.greetingMediaAttachment);
         setAutoToken(data.token);
         data.promptId
@@ -505,6 +508,10 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
     };
     delete whatsappData["queues"];
     delete whatsappData["session"];
+    delete whatsappData["tieneSendToken"];
+    delete whatsappData["sendTokenFinal"];
+    // Vacio = no cambiar el token de Meta guardado.
+    if (!whatsappData.send_token) delete whatsappData["send_token"];
 
     try {
       if (whatsAppId) {
@@ -957,10 +964,15 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
                                 touched.send_token && Boolean(errors.send_token)
                               }
                               helperText={
-                                touched.send_token && errors.send_token
+                                (touched.send_token && errors.send_token) ||
+                                (whatsApp?.tieneSendToken
+                                  ? i18n.t("whatsappModal.form.sendTokenSaved", {
+                                      final: whatsApp.sendTokenFinal,
+                                    })
+                                  : "")
                               }
                               variant="outlined"
-                              required={isOficial}
+                              required={isOficial && !whatsApp?.tieneSendToken}
                             />
                           </Grid>
                         </Grid>

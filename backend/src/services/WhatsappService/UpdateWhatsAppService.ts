@@ -174,7 +174,9 @@ const UpdateWhatsAppService = async ({
     outOfHoursMessage,
     isDefault,
     companyId,
-    token,
+    // Si no llega token se conserva el que habia: la API ya no lo devuelve a
+    // todos, y un cliente que reenvie la ficha sin el no debe borrarlo.
+    ...(token !== undefined ? { token } : {}),
     maxUseBotQueues: maxUseBotQueues || 0,
     timeUseBotQueues: timeUseBotQueues || 0,
     expiresTicket: expiresTicket || 0,
@@ -210,7 +212,9 @@ const UpdateWhatsAppService = async ({
     color,
     phone_number_id,
     waba_id,
-    send_token,
+    // El token de Meta no se devuelve nunca, asi que la ficha llega sin el.
+    // Vacio o ausente significa "no cambiarlo"; solo se guarda uno nuevo.
+    ...(send_token ? { send_token } : {}),
     business_id,
     phone_number,
     timeToReturnQueue,
