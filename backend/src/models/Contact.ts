@@ -28,6 +28,7 @@ import ContactWallet from "./ContactWallet";
 import User from "./User";
 import Whatsapp from "./Whatsapp";
 import WhatsappLidMap from "./WhatsapplidMap";
+import { businessTimezone } from "../helpers/RotationPolicy";
 
 @Table
 class Contact extends Model<Contact> {
@@ -172,8 +173,8 @@ get isBirthdayToday(): boolean {
   if (!this.birthDate) return false;
 
   const moment = require('moment-timezone');
-  const today = moment().tz("America/Sao_Paulo");
-  const birthDate = moment(this.birthDate).tz("America/Sao_Paulo");
+  const today = moment().tz(businessTimezone());
+  const birthDate = moment(this.birthDate).tz(businessTimezone());
 
   return (
     today.month() === birthDate.month() &&
@@ -188,8 +189,8 @@ get currentAge(): number | null {
   if (!this.birthDate) return null;
 
   const moment = require('moment-timezone');
-  const today = moment().tz("America/Sao_Paulo");
-  const birthDate = moment(this.birthDate).tz("America/Sao_Paulo");
+  const today = moment().tz(businessTimezone());
+  const birthDate = moment(this.birthDate).tz(businessTimezone());
   
   let age = today.year() - birthDate.year();
   
@@ -207,7 +208,7 @@ get currentAge(): number | null {
  */
 static async getTodayBirthdays(companyId: number): Promise<Contact[]> {
   const moment = require('moment-timezone');
-  const today = moment().tz("America/Sao_Paulo");
+  const today = moment().tz(businessTimezone());
   const month = today.month() + 1;
   const day = today.date();
 
@@ -243,7 +244,7 @@ static async getTodayBirthdays(companyId: number): Promise<Contact[]> {
   const birthdayContacts = contacts.filter(contact => {
     if (!contact.birthDate) return false;
     
-    const birthDate = moment(contact.birthDate).tz("America/Sao_Paulo");
+    const birthDate = moment(contact.birthDate).tz(businessTimezone());
     const birthMonth = birthDate.month() + 1;
     const birthDay = birthDate.date();
     

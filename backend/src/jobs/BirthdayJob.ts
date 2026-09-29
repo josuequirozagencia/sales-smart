@@ -3,7 +3,27 @@ import { emitBirthdayEvents } from "../libs/socket"; // 🎂 NOVO IMPORT
 import logger from "../utils/logger";
 import Company from "../models/Company";
 import BirthdaySettings from "../models/BirthdaySettings";
+import moment, { Moment } from "moment-timezone";
+import { businessTimezone } from "../helpers/RotationPolicy";
 const CronJob = require("cron").CronJob;
+
+/**
+ * La hora de ahora en el huso del negocio, con los segundos a cero, tal y
+ * como se guarda sendBirthdayTime.
+ *
+ * Antes esto se calculaba con new Date().getHours(), que da la hora del
+ * contenedor. En Railway no hay TZ definida, asi que era UTC mientras el
+ * cron declaraba Sao Paulo: un envio configurado a las 09:00 solo habria
+ * coincidido cuando en Sao Paulo eran las 06:00. No se notaba porque la
+ * consulta fallaba antes de llegar a comparar.
+ *
+ * El huso se pasa aparte para que los tests no dependan de como este
+ * configurado el entorno donde corren.
+ */
+export const horaDeEnvioAhora = (
+  ahora: Moment = moment(),
+  huso: string = businessTimezone()
+): string => ahora.clone().tz(huso).format("HH:mm:00");
 
 /**
  * Job para processar aniversários diariamente
@@ -23,12 +43,12 @@ export const startBirthdayJob = () => {
         
         logger.info("🎉 Daily birthday processing job completed successfully");
       } catch (error) {
-        logger.error("❌ Error in daily birthday processing job:", error);
+        logger.error(`❌ Error in daily birthday processing job: ${(error as Error).message}`);
       }
     },
     null, // onComplete
     true, // start immediately
-    "America/Sao_Paulo" // timezone
+    businessTimezone() // timezone
   );
 
   logger.info("🎂 Birthday cron job initialized - will run daily at 09:00");
@@ -50,12 +70,12 @@ export const startBirthdayNotificationJob = () => {
         await emitBirthdayEventsToAllCompanies();
         logger.info("🎂 Birthday notification check completed");
       } catch (error) {
-        logger.error("❌ Error in birthday notification check:", error);
+        logger.error(`❌ Error in birthday notification check: ${(error as Error).message}`);
       }
     },
     null, // onComplete
     true, // start immediately
-    "America/Sao_Paulo" // timezone
+    businessTimezone() // timezone
   );
 
   logger.info("🎂 Birthday notification job initialized - will run every 30 minutes during business hours");
@@ -85,11 +105,11 @@ const emitBirthdayEventsToAllCompanies = async () => {
           logger.info(`🎂 Events emitted for company ${company.id}: ${birthdayData.users.length} users, ${birthdayData.contacts.length} contacts`);
         }
       } catch (error) {
-        logger.error(`🎂 Error emitting events for company ${company.id}:`, error);
+        logger.error(`🎂 Error emitting events for company ${company.id}: ${(error as Error).message}`);
       }
     }
   } catch (error) {
-    logger.error("🎂 Error in emitBirthdayEventsToAllCompanies:", error);
+    logger.error(`🎂 Error in emitBirthdayEventsToAllCompanies: ${(error as Error).message}`);
   }
 };
 
@@ -113,12 +133,12 @@ export const startCleanupJob = () => {
           logger.info("✨ No expired announcements to clean");
         }
       } catch (error) {
-        logger.error("❌ Error in cleanup job:", error);
+        logger.error(`❌ Error in cleanup job: ${(error as Error).message}`);
       }
     },
     null, // onComplete
     true, // start immediately
-    "America/Sao_Paulo" // timezone
+    businessTimezone() // timezone
   );
 
   logger.info("🧹 Cleanup cron job initialized - will run daily at midnight");
@@ -135,9 +155,8 @@ export const startDynamicBirthdayJob = () => {
     "0 */15 * * * *", // A cada 15 minutos - verifica se é hora de enviar mensagens
     async () => {
       try {
-        const now = new Date();
-        const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:00`;
-        
+        const currentTime = horaDeEnvioAhora();
+
         // Buscar empresas que têm horário de envio configurado para agora
         const companies = await Company.findAll({
           where: { status: true },
@@ -168,17 +187,17 @@ export const startDynamicBirthdayJob = () => {
                 await emitBirthdayEvents(company.id);
               }
             } catch (error) {
-              logger.error(`🎂 Error processing birthday for company ${company.id}:`, error);
+              logger.error(`🎂 Error processing birthday for company ${company.id}: ${(error as Error).message}`);
             }
           }
         }
       } catch (error) {
-        logger.error("🎂 Error in dynamic birthday job:", error);
+        logger.error(`🎂 Error in dynamic birthday job: ${(error as Error).message}`);
       }
     },
     null, // onComplete
     true, // start immediately
-    "America/Sao_Paulo" // timezone
+    businessTimezone() // timezone
   );
 
   logger.info("🎂 Dynamic birthday job initialized - will check every 15 minutes for scheduled sends");
@@ -230,7 +249,7 @@ export const triggerBirthdayCheck = async (companyId?: number) => {
       logger.info("🎂 Manual birthday check triggered for all companies");
     }
   } catch (error) {
-    logger.error("🎂 Error in manual birthday check:", error);
+    logger.error(`🎂 Error in manual birthday check: ${(error as Error).message}`);
     throw error;
   }
 };
