@@ -35,7 +35,7 @@ import { getBackendUrl } from "../../config";
 
 import { AuthContext } from "../../context/Auth/AuthContext";
 import { i18n } from "../../translate/i18n";
-import { toast } from "react-hot-toast";
+import { toast } from "react-toastify";
 import ArrowBackIcon from "@material-ui/icons/ArrowBack";
 
 // FIXME checkout https://mui.com/components/use-media-query/#migrating-from-withwidth

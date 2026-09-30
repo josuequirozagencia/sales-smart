@@ -20,6 +20,7 @@ import defaultLogoFavicon from "./assets/favicon.ico";
 import useSettings from "./hooks/useSettings";
 import { applyInstallationCurrency } from "./utils/currencyUtils";
 import tokens, { onColor } from "./theme/tokens";
+import { applyCssVariables } from "./theme/cssVariables";
 
 import "./styles/animations.css";
 
@@ -280,6 +281,11 @@ const App = () => {
               space: tokens.space,
               radius: tokens.radius,
               shadow: tokens.shadow,
+              // Fase 2: estructura del App Shell (aditivo).
+              typography: tokens.typography,
+              layout: tokens.layout,
+              motion: tokens.motion,
+              zIndex: tokens.zIndex,
               onColor,
             },
 
@@ -735,6 +741,12 @@ const App = () => {
   useEffect(() => {
     window.localStorage.setItem("preferredTheme", mode);
   }, [mode]);
+
+  // Fase 2: publica los mismos tokens del tema como variables CSS --ss-*
+  // para piezas que no usan makeStyles. Solo presentacion.
+  useEffect(() => {
+    applyCssVariables(themeOptions.palette.tokens);
+  }, [themeOptions]);
 
   useEffect(() => {
     getPublicSetting("primaryColorLight")

@@ -1,6 +1,7 @@
 const messages = {
   tr: {
     translations: {
+      bottomNav: { more: "Daha fazla", menu: "Menü" },
       signup: {
         title: "Kayıt Ol",
         toasts: {
@@ -65,6 +66,9 @@ const messages = {
         }
       },
       dashboard: {
+        buttons: {
+          filter: "Filtrele",
+        },
         filters: {
           show: "Filtreleri Göster",
           hide: "Filtreleri Gizle",

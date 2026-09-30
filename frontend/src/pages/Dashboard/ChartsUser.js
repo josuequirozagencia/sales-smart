@@ -1,15 +1,14 @@
 import React, { useEffect, useState, useContext, useCallback, useMemo, memo } from 'react';
 import {
-    Chart as ChartJS,
-    CategoryScale,
-    LinearScale,
-    BarElement,
-    Title,
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
     Tooltip,
-    Legend,
-} from 'chart.js';
-import { Bar } from 'react-chartjs-2';
-import ChartDataLabels from 'chartjs-plugin-datalabels';
+    LabelList,
+    ResponsiveContainer,
+} from 'recharts';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import brLocale from 'date-fns/locale/pt-BR';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
@@ -31,45 +30,6 @@ const useStyles = makeStyles((theme) => ({
         paddingRight: theme.spacing(2),
     }
 }));
-
-ChartJS.register(
-    CategoryScale,
-    LinearScale,
-    BarElement,
-    Title,
-    Tooltip,
-    Legend,
-    ChartDataLabels
-);
-
-// Options movidas para fora e memoizadas
-const chartOptions = {
-    responsive: true,
-    plugins: {
-        legend: {
-            position: 'top',
-            display: false,
-        },
-        title: {
-            display: true,
-            text: 'Tickets',
-            position: 'left',
-        },
-        datalabels: {
-            display: true,
-            anchor: 'start',
-            offset: -30,
-            align: "start",
-            color: "#fff",
-            textStrokeColor: "#000",
-            textStrokeWidth: 2,
-            font: {
-                size: 20,
-                weight: "bold"
-            },
-        }
-    },
-};
 
 export const ChatsUser = memo(() => {
     const classes = useStyles();
@@ -109,19 +69,15 @@ export const ChatsUser = memo(() => {
     }, [companyId, hasInitialLoad, handleGetTicketsInformation]);
 
     // Dados do gráfico memoizados
-    const dataCharts = useMemo(() => {
+    const chartData = useMemo(() => {
         const hasData = ticketsData?.data?.length > 0;
-        
-        return {
-            labels: hasData ? ticketsData.data.map((item) => item.nome) : [],
-            datasets: [
-                {
-                    data: hasData ? ticketsData.data.map((item) => item.quantidade) : [],
-                    backgroundColor: theme.palette.primary.main,
-                },
-            ],
-        };
-    }, [ticketsData, theme.palette.primary.main]);
+        return hasData
+            ? ticketsData.data.map((item) => ({
+                  nome: item.nome,
+                  quantidade: item.quantidade,
+              }))
+            : [];
+    }, [ticketsData]);
 
     // Callbacks memoizados para os date pickers
     const handleInitialDateChange = useCallback((newValue) => {
@@ -134,7 +90,7 @@ export const ChatsUser = memo(() => {
 
     return (
         <>
-            <Typography component="h2" variant="h6" color="primary" gutterBottom>
+            <Typography component="h2" gutterBottom style={{ fontSize: 16, fontWeight: 700, color: theme.palette.text.primary }}>
                 {i18n.t("dashboard.users.totalCallsUser")}
             </Typography>
 
@@ -176,11 +132,54 @@ export const ChatsUser = memo(() => {
                         onClick={handleGetTicketsInformation} 
                         variant='contained'
                     >
-                        Filtrar
+                        {i18n.t("dashboard.buttons.filter")}
                     </Button>
                 </Grid>
             </Grid>
-            <Bar options={chartOptions} data={dataCharts} style={{ maxWidth: '100%', maxHeight: '280px' }} />
+            <div style={{ width: '100%', height: 280 }}>
+                <ResponsiveContainer>
+                    <BarChart data={chartData} margin={{ top: 24, right: 16, left: 0, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} vertical={false} />
+                        <XAxis
+                            dataKey="nome"
+                            stroke={theme.palette.text.secondary}
+                            tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
+                        />
+                        <YAxis
+                            allowDecimals={false}
+                            stroke={theme.palette.text.secondary}
+                            tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
+                        />
+                        <Tooltip
+                            contentStyle={{
+                                backgroundColor: theme.palette.background.paper,
+                                border: `1px solid ${theme.palette.divider}`,
+                                borderRadius: 8,
+                                color: theme.palette.text.primary,
+                            }}
+                            labelStyle={{ color: theme.palette.text.primary }}
+                            cursor={{ fill: theme.palette.action.hover }}
+                        />
+                        <Bar
+                            dataKey="quantidade"
+                            name="Tickets"
+                            fill={theme.palette.primary.main}
+                            radius={[6, 6, 0, 0]}
+                            maxBarSize={48}
+                        >
+                            <LabelList
+                                dataKey="quantidade"
+                                position="top"
+                                style={{
+                                    fill: theme.palette.text.primary,
+                                    fontSize: 13,
+                                    fontWeight: 700,
+                                }}
+                            />
+                        </Bar>
+                    </BarChart>
+                </ResponsiveContainer>
+            </div>
         </>
     );
 });

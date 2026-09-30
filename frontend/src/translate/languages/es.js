@@ -1,6 +1,7 @@
 const messages = {
   es: {
     translations: {
+      bottomNav: { more: "Más", menu: "Menú" },
       banner: {
         prueba: {
           quedan: "Tu prueba gratuita termina en {{dias}} días",
@@ -491,6 +492,9 @@ const messages = {
         },
       },
       dashboard: {
+        buttons: {
+          filter: "Filtrar",
+        },
         filters: {
           show: "Mostrar Filtros",
           hide: "Ocultar Filtros",
