@@ -33,6 +33,7 @@ import NotificationsIcon from "@material-ui/icons/Notifications";
 import CachedIcon from "@material-ui/icons/Cached";
 import api from "../services/api";
 import MainListItems from "./MainListItems";
+import BottomNav, { ocultarBottomNav } from "./BottomNav";
 import NotificationsPopOver from "../components/NotificationsPopOver";
 import NotificationsVolume from "../components/NotificationsVolume";
 import UserModal from "../components/UserModal";
@@ -333,6 +334,15 @@ const useStyles = makeStyles((theme) => ({
 
   appBarSpacer: {
     minHeight: "48px",
+  },
+
+  // Fase 2: en movil la barra inferior es fija; se reserva su alto para que
+  // no tape el final de ninguna pagina y no exista scroll horizontal.
+  contentConBarraInferior: {
+    [theme.breakpoints.down("xs")]: {
+      paddingBottom: `calc(${theme.palette.tokens.layout.bottomNav}px + env(safe-area-inset-bottom) + ${theme.palette.tokens.space.sm}px)`,
+      overflowX: "hidden",
+    },
   },
 
   content: {
@@ -1035,7 +1045,7 @@ useEffect(() => {
           </div>
         </Toolbar>
       </AppBar>
-      <main className={clsx(classes.content, esBandeja && classes.contentBandeja)}>
+      <main className={clsx(classes.content, esBandeja && classes.contentBandeja, !ocultarBottomNav(location.pathname) && classes.contentConBarraInferior)}>
         <div className={classes.appBarSpacer} />
         {/* Aviso de prueba gratuita. Va dentro del contenido, no en la
             barra superior, para no alterar el alto del cromo ni el calculo
@@ -1125,6 +1135,7 @@ useEffect(() => {
         </DialogActions>
       </Dialog>
 
+      <BottomNav />
     </div>
   );
 };

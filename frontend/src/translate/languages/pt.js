@@ -1,6 +1,7 @@
 const messages = {
   pt: {
     translations: {
+      bottomNav: { more: "Mais", menu: "Menu" },
       metaConversions: {
         "tab": "Meta · Conversions API",
         "title": "Meta · Conversions API",
@@ -457,6 +458,9 @@ const messages = {
         },
       },
       dashboard: {
+        buttons: {
+          filter: "Filtrar",
+        },
         filters: {
           show: "Mostrar Filtros",
           hide: "Ocultar Filtros",

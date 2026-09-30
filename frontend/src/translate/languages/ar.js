@@ -1,6 +1,7 @@
 const messages = {
   ar: {
     translations: {
+      bottomNav: { more: "المزيد", menu: "القائمة" },
       signup: {
         title: "إنشاء حساب",
         toasts: {
@@ -77,6 +78,9 @@ const messages = {
         token: "الرمز المميز",
       },
       dashboard: {
+        buttons: {
+          filter: "تصفية",
+        },
         filters: {
           show: "إظهار المرشحات",
           hide: "إخفاء المرشحات",

@@ -1,14 +1,14 @@
 import React, { useEffect, useState, useContext, useCallback, useMemo, memo } from 'react';
 import {
-    Chart as ChartJS,
-    CategoryScale,
-    LinearScale,
-    BarElement,
-    Title,
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
     Tooltip,
-    Legend,
-} from 'chart.js';
-import { Bar } from 'react-chartjs-2';
+    LabelList,
+    ResponsiveContainer,
+} from 'recharts';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import brLocale from 'date-fns/locale/pt-BR';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
@@ -21,44 +21,6 @@ import './button.css';
 import { i18n } from '../../translate/i18n';
 import { AuthContext } from "../../context/Auth/AuthContext";
 import { useTheme } from '@material-ui/core';
-
-ChartJS.register(
-    CategoryScale,
-    LinearScale,
-    BarElement,
-    Title,
-    Tooltip,
-    Legend
-);
-
-// Options movidas para fora e memoizadas
-const chartOptions = {
-    responsive: true,
-    plugins: {
-        legend: {
-            position: 'top',
-            display: false,
-        },
-        title: {
-            display: true,
-            text: 'Tickets',
-            position: 'left',
-        },
-        datalabels: {
-            display: true,
-            anchor: 'start',
-            offset: -30,
-            align: "start",
-            color: "#fff",
-            textStrokeColor: "#000",
-            textStrokeWidth: 2,
-            font: {
-                size: 20,
-                weight: "bold"
-            },
-        }
-    },
-};
 
 export const ChartsDate = memo(() => {
     const theme = useTheme();
@@ -97,30 +59,17 @@ export const ChartsDate = memo(() => {
     }, [companyId, hasInitialLoad, handleGetTicketsInformation]);
 
     // Dados do gráfico memoizados
-    const dataCharts = useMemo(() => {
+    const chartData = useMemo(() => {
         const hasData = ticketsData?.data?.length > 0;
-        
-        if (!hasData) {
-            return {
-                labels: [],
-                datasets: [{ data: [], backgroundColor: theme.palette.primary.main }]
-            };
-        }
+        if (!hasData) return [];
 
-        return {
-            labels: ticketsData.data.map((item) => 
-                item.hasOwnProperty('horario') 
-                    ? `Das ${item.horario}:00 as ${item.horario}:59` 
-                    : item.data
-            ),
-            datasets: [
-                {
-                    data: ticketsData.data.map((item) => item.total),
-                    backgroundColor: theme.palette.primary.main,
-                },
-            ],
-        };
-    }, [ticketsData, theme.palette.primary.main]);
+        return ticketsData.data.map((item) => ({
+            label: item.hasOwnProperty('horario')
+                ? `Das ${item.horario}:00 as ${item.horario}:59`
+                : item.data,
+            total: item.total,
+        }));
+    }, [ticketsData]);
 
     // Callbacks memoizados para os date pickers
     const handleInitialDateChange = useCallback((newValue) => {
@@ -133,7 +82,7 @@ export const ChartsDate = memo(() => {
 
     return (
         <>
-            <Typography component="h2" variant="h6" color="primary" gutterBottom>
+            <Typography component="h2" gutterBottom style={{ fontSize: 16, fontWeight: 700, color: theme.palette.text.primary }}>
                 {i18n.t("dashboard.users.totalAttendances")} ({ticketsData?.count})
             </Typography>
 
@@ -175,11 +124,54 @@ export const ChartsDate = memo(() => {
                         onClick={handleGetTicketsInformation} 
                         variant='contained'
                     >
-                        Filtrar
+                        {i18n.t("dashboard.buttons.filter")}
                     </Button>
                 </Grid>
             </Grid>
-            <Bar options={chartOptions} data={dataCharts} style={{ maxWidth: '100%', maxHeight: '280px' }} />
+            <div style={{ width: '100%', height: 280 }}>
+                <ResponsiveContainer>
+                    <BarChart data={chartData} margin={{ top: 24, right: 16, left: 0, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} vertical={false} />
+                        <XAxis
+                            dataKey="label"
+                            stroke={theme.palette.text.secondary}
+                            tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
+                        />
+                        <YAxis
+                            allowDecimals={false}
+                            stroke={theme.palette.text.secondary}
+                            tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
+                        />
+                        <Tooltip
+                            contentStyle={{
+                                backgroundColor: theme.palette.background.paper,
+                                border: `1px solid ${theme.palette.divider}`,
+                                borderRadius: 8,
+                                color: theme.palette.text.primary,
+                            }}
+                            labelStyle={{ color: theme.palette.text.primary }}
+                            cursor={{ fill: theme.palette.action.hover }}
+                        />
+                        <Bar
+                            dataKey="total"
+                            name="Tickets"
+                            fill={theme.palette.primary.main}
+                            radius={[6, 6, 0, 0]}
+                            maxBarSize={48}
+                        >
+                            <LabelList
+                                dataKey="total"
+                                position="top"
+                                style={{
+                                    fill: theme.palette.text.primary,
+                                    fontSize: 13,
+                                    fontWeight: 700,
+                                }}
+                            />
+                        </Bar>
+                    </BarChart>
+                </ResponsiveContainer>
+            </div>
         </>
     );
 });

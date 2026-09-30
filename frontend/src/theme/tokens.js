@@ -484,6 +484,34 @@ export function avatarInitials(nombre) {
   return (palabras[0][0] + palabras[palabras.length - 1][0]).toUpperCase();
 }
 
+// ---------------------------------------------------------------------------
+// FASE 2 — ESTRUCTURA (extension aditiva, no cambia ningun valor anterior)
+// ---------------------------------------------------------------------------
+// Medidas del App Shell, movimiento, capas y umbrales responsive. Los colores
+// siguen saliendo exclusivamente de las claves de arriba (azul existente).
+export const layout = {
+  sidebar: 264,
+  sidebarCollapsed: 72,
+  header: 48,
+  bottomNav: 60,
+  touchTarget: 44,
+  contentMax: 1440,
+};
+
+export const motion = {
+  fast: "150ms",
+  base: "200ms",
+  slow: "250ms",
+  easing: "cubic-bezier(0.2, 0, 0, 1)",
+};
+
+// Por encima del AppBar de MUI (1100) y por debajo de modales (1300).
+export const zIndex = { bottomNav: 1150, sheet: 1300 };
+
+// Coinciden con los breakpoints por defecto de MUI v4/v5 (sm 600, md 960,
+// lg 1280), que es lo que ya usa useMediaQuery en todo el proyecto.
+export const breakpoints = { sm: 600, md: 960, lg: 1280, xl: 1920 };
+
 export default {
   neutral,
   primaryDefault,
@@ -506,4 +534,8 @@ export default {
   space,
   radius,
   shadow,
+  layout,
+  motion,
+  zIndex,
+  breakpoints,
 };
