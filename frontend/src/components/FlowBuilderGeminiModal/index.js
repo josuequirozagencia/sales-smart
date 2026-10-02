@@ -1,4 +1,5 @@
 // frontend/geminiModal.jsx
+import { i18n } from "../../translate/i18n";
 import React, { useState, useEffect, useRef } from "react";
 import * as Yup from "yup";
 import FlowAgentPicker, { datosNodoAgente, esquemaNodoAgente, useAgentesDeFlujo } from "../FlowAgentPicker";
@@ -180,7 +181,7 @@ const GeminiSchema = Yup.object().shape({
   }),
   objective: Yup.string().when(["flowMode", "autoCompleteOnObjective"], {
     is: (flowMode, autoComplete) => flowMode === "temporary" && autoComplete,
-    then: Yup.string().required("Objetivo é obrigatório quando auto completar está ativo"),
+    then: Yup.string().required(i18n.t("flows.ai.objectiveRequired")),
     otherwise: Yup.string()
   })
 });
@@ -213,8 +214,8 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
   const [showApiKey, setShowApiKey] = useState(false);
   const [integration, setIntegration] = useState(initialState);
   const [labels, setLabels] = useState({
-    title: "Adicionar Gemini ao fluxo",
-    btn: "Adicionar",
+    title: i18n.t("flows.dialogs.addGemini"),
+    btn: i18n.t("contactModal.buttons.okAdd"),
   });
   const [newKeyword, setNewKeyword] = useState("");
   const agentes = useAgentesDeFlujo(open === "create" || open === "edit");
@@ -222,8 +223,8 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
   useEffect(() => {
     if (open === "edit") {
       setLabels({
-        title: "Editar Gemini do fluxo",
-        btn: "Salvar",
+        title: i18n.t("flows.dialogs.editGemini"),
+        btn: i18n.t("contactModal.buttons.okEdit"),
       });
       const typebotIntegration = data?.data?.typebotIntegration || {};
       setIntegration({
@@ -243,8 +244,8 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
       });
     } else if (open === "create") {
       setLabels({
-        title: "Adicionar Gemini ao fluxo",
-        btn: "Adicionar",
+        title: i18n.t("flows.dialogs.addGemini"),
+        btn: i18n.t("contactModal.buttons.okAdd"),
       });
       setIntegration(initialState);
     }
@@ -339,14 +340,14 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
                   >
                     <Typography className={classes.sectionTitle}>
                       <Settings />
-                      Configurações Básicas - Google Gemini
+                      {i18n.t("flows.ai.basicsGemini")}
                     </Typography>
                   </AccordionSummary>
                   <AccordionDetails className={classes.accordionDetails}>
                     
                     <Field
                       as={TextField}
-                      label="Nome do Assistente"
+                      label={i18n.t("flows.ai.assistantName")}
                       name="name"
                       error={touched.name && Boolean(errors.name)}
                       helperText={touched.name && errors.name}
@@ -359,7 +360,7 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
                     <FormControl fullWidth margin="dense" variant="outlined">
                       <Field
                         as={TextField}
-                        label="API Key Google AI"
+                        label={i18n.t("flows.ai.apiKeyGoogle")}
                         name="apiKey"
                         type={showApiKey ? "text" : "password"}
                         error={touched.apiKey && Boolean(errors.apiKey)}
@@ -386,10 +387,10 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
                       variant="outlined"
                       error={touched.model && Boolean(errors.model)}
                     >
-                      <InputLabel>Modelo Gemini</InputLabel>
+                      <InputLabel>{i18n.t("flows.ai.geminiModel")}</InputLabel>
                       <Field
                         as={Select}
-                        label="Modelo Gemini"
+                        label={i18n.t("flows.ai.geminiModel")}
                         name="model"
                       >
                         {modelOptionsFor(GEMINI_MODELS, values.model).map((model) => (
@@ -408,7 +409,7 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
 
                     <Field
                       as={TextField}
-                      label="Prompt do Sistema"
+                      label={i18n.t("flows.ai.systemPrompt")}
                       name="prompt"
                       error={touched.prompt && Boolean(errors.prompt)}
                       helperText={touched.prompt && errors.prompt}
@@ -418,13 +419,13 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
                       required
                       rows={6}
                       multiline
-                      placeholder="Descreva como a IA deve se comportar, que informações deve coletar, como deve responder..."
+                      placeholder={i18n.t("flows.ai.promptPlaceholder")}
                     />
 
                     <div className={classes.multFieldLine}>
                       <Field
                         as={TextField}
-                        label="Temperatura"
+                        label={i18n.t("flows.ai.temperature")}
                         name="temperature"
                         error={touched.temperature && Boolean(errors.temperature)}
                         helperText={touched.temperature && errors.temperature || "0 = conservador, 2 = criativo"}
@@ -440,7 +441,7 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
                       />
                       <Field
                         as={TextField}
-                        label="Max Tokens"
+                        label={i18n.t("flows.ai.maxTokens")}
                         name="maxTokens"
                         error={touched.maxTokens && Boolean(errors.maxTokens)}
                         helperText={touched.maxTokens && errors.maxTokens || "Tamanho máximo da resposta"}
@@ -451,7 +452,7 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
                       />
                       <Field
                         as={TextField}
-                        label="Max Mensagens"
+                        label={i18n.t("flows.ai.maxMessages")}
                         name="maxMessages"
                         error={touched.maxMessages && Boolean(errors.maxMessages)}
                         helperText={touched.maxMessages && errors.maxMessages || "Histórico de contexto"}
@@ -473,8 +474,8 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
                   >
                     <Typography className={classes.sectionTitle}>
                       <Timer />
-                      Comportamento do Fluxo
-                      <Tooltip title="Configure como o Gemini deve se comportar no fluxo">
+                      {i18n.t("flows.ai.flowBehavior")}
+                      <Tooltip title={i18n.t("flows.ai.behaviorTooltip")}>
                         <Info fontSize="small" color="action" />
                       </Tooltip>
                     </Typography>
@@ -482,7 +483,7 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
                   <AccordionDetails className={classes.accordionDetails}>
                     
                     <FormControl component="fieldset" margin="normal">
-                      <FormLabel component="legend">Modo de Funcionamento</FormLabel>
+                      <FormLabel component="legend">{i18n.t("flows.ai.mode")}</FormLabel>
                       <RadioGroup
                         name="flowMode"
                         value={values.flowMode}
@@ -494,10 +495,10 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
                           label={
                             <Box>
                               <Typography variant="body1">
-                                <strong>Permanente</strong> - Encerrar fluxo aqui
+                                <strong>{i18n.t("flows.ai.permanent")}</strong> {i18n.t("flows.ai.permanentDesc")}
                               </Typography>
                               <Typography variant="caption" color="textSecondary">
-                                O usuário fica conversando com a IA até pedir transferência ou encerrar
+                                {i18n.t("flows.ai.permanentHelp")}
                               </Typography>
                             </Box>
                           }
@@ -508,10 +509,10 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
                           label={
                             <Box>
                               <Typography variant="body1">
-                                <strong>Temporário</strong> - Volta ao fluxo depois
+                                <strong>{i18n.t("flows.ai.temporary")}</strong> {i18n.t("flows.ai.temporaryDesc")}
                               </Typography>
                               <Typography variant="caption" color="textSecondary">
-                                A IA executa uma tarefa específica e depois retorna ao fluxo normal
+                                {i18n.t("flows.ai.temporaryHelp")}
                               </Typography>
                             </Box>
                           }
@@ -523,16 +524,16 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
                     {values.flowMode === "temporary" && (
                       <div className={classes.temporarySettings}>
                         <Typography variant="h6" gutterBottom>
-                          ⏱️ Configurações do Modo Temporário
+                          {i18n.t("flows.ai.temporaryConfig")}
                         </Typography>
                         <Typography variant="body2" color="textSecondary" gutterBottom>
-                          Configure quando a IA deve parar e retornar ao fluxo
+                          {i18n.t("flows.ai.temporaryConfigHelp")}
                         </Typography>
 
                         {/* Limite de Interações */}
                         <Field
                           as={TextField}
-                          label="Máximo de Interações"
+                          label={i18n.t("flows.ai.maxInteractions")}
                           name="maxInteractions"
                           error={touched.maxInteractions && Boolean(errors.maxInteractions)}
                           helperText={touched.maxInteractions && errors.maxInteractions || "Número máximo de mensagens antes de voltar ao fluxo (0 = ilimitado)"}
@@ -546,7 +547,7 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
                         {/* Timeout */}
                         <Field
                           as={TextField}
-                          label="Timeout (minutos)"
+                          label={i18n.t("flows.ai.timeoutMinutes")}
                           name="completionTimeout"
                           error={touched.completionTimeout && Boolean(errors.completionTimeout)}
                           helperText={touched.completionTimeout && errors.completionTimeout || "Tempo limite antes de voltar ao fluxo (0 = sem limite)"}
@@ -560,7 +561,7 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
                         {/* Palavras-chave de Continuação */}
                         <FormControl fullWidth margin="dense">
                           <Typography variant="subtitle2" gutterBottom>
-                            Palavras-chave para Continuar Fluxo
+                            {i18n.t("flows.ai.keywords")}
                           </Typography>
                           <FieldArray name="continueKeywords">
                             {(arrayHelpers) => (
@@ -569,7 +570,7 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
                                   <TextField
                                     variant="outlined"
                                     size="small"
-                                    placeholder="Digite uma palavra-chave"
+                                    placeholder={i18n.t("flows.ai.keywordPlaceholder")}
                                     value={newKeyword}
                                     onChange={(e) => setNewKeyword(e.target.value)}
                                     onKeyPress={(e) => {
@@ -585,7 +586,7 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
                                     onClick={() => addKeyword(arrayHelpers, newKeyword)}
                                     disabled={!newKeyword.trim()}
                                   >
-                                    Adicionar
+                                    {i18n.t("flows.ai.add")}
                                   </Button>
                                 </Box>
                                 <Box display="flex" flexWrap="wrap" gap={0.5}>
@@ -602,7 +603,7 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
                                   ))}
                                 </Box>
                                 <Typography variant="caption" color="textSecondary">
-                                  Quando o usuário enviar uma dessas palavras, o fluxo continuará automaticamente
+                                  {i18n.t("flows.ai.keywordsHelp")}
                                 </Typography>
                                 {touched.continueKeywords && errors.continueKeywords && (
                                   <Typography variant="caption" color="error">
@@ -617,7 +618,7 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
                         {/* Objetivo */}
                         <Field
                           as={TextField}
-                          label="Objetivo da IA"
+                          label={i18n.t("flows.ai.aiGoal")}
                           name="objective"
                           error={touched.objective && Boolean(errors.objective)}
                           helperText={touched.objective && errors.objective || "Descreva o que a IA deve completar (ex: 'Coletar nome, email e telefone')"}
@@ -626,7 +627,7 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
                           fullWidth
                           multiline
                           rows={2}
-                          placeholder="Ex: Coletar dados do cliente, Qualificar interesse, Diagnosticar problema..."
+                          placeholder={i18n.t("flows.ai.aiGoalPlaceholder")}
                         />
 
                         {/* Auto Completar */}
@@ -641,10 +642,10 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
                           label={
                             <Box>
                               <Typography variant="body2">
-                                Auto completar quando atingir objetivo
+                                {i18n.t("flows.ai.autoComplete")}
                               </Typography>
                               <Typography variant="caption" color="textSecondary">
-                                A IA analisará automaticamente se completou o objetivo e voltará ao fluxo
+                                {i18n.t("flows.ai.autoCompleteHelp")}
                               </Typography>
                             </Box>
                           }
@@ -653,10 +654,10 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
                         {/* Fila de Transferência */}
                         <Field
                           as={TextField}
-                          label="ID da Fila (para transferência)"
+                          label={i18n.t("flows.ai.queueId")}
                           name="queueId"
                           error={touched.queueId && Boolean(errors.queueId)}
-                          helperText="ID da fila para onde transferir se usuário pedir atendente (0 = não transferir)"
+                          helperText={i18n.t("flows.ai.queueIdHelp")}
                           variant="outlined"
                           margin="dense"
                           fullWidth
@@ -678,7 +679,7 @@ const FlowBuilderGeminiModal = ({ open, onSave, data, onUpdate, close }) => {
                   variant="outlined"
                   disabled={isSubmitting}
                 >
-                  Cancelar
+                  {i18n.t("contactModal.buttons.cancel")}
                 </Button>
                 <Button
                   type="submit"

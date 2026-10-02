@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { i18n } from "../../translate/i18n";
 import {
   Button,
   Dialog,
@@ -62,17 +63,17 @@ const FlowBuilderConditionCompareModal = ({ open, onSave, data, onUpdate, close 
   }, {});
 
   const comparisonOperators = [
-    { value: "equals", label: "Igual a", icon: "=" },
-    { value: "notEquals", label: "Diferente de", icon: "≠" },
-    { value: "contains", label: "Contém", icon: "∈" },
-    { value: "startsWith", label: "Começa com", icon: "⊰" },
-    { value: "endsWith", label: "Termina com", icon: "⊱" },
-    { value: "greaterThan", label: "Maior que", icon: ">" },
-    { value: "lessThan", label: "Menor que", icon: "<" },
-    { value: "greaterOrEqual", label: "Maior ou igual a", icon: "≥" },
-    { value: "lessOrEqual", label: "Menor ou igual a", icon: "≤" },
-    { value: "isEmpty", label: "Está vazio", icon: "∅" },
-    { value: "isNotEmpty", label: "Não está vazio", icon: "¬∅" },
+    { value: "equals", label: i18n.t("flows.compare.operators.equals"), icon: "=" },
+    { value: "notEquals", label: i18n.t("flows.compare.operators.notEquals"), icon: "≠" },
+    { value: "contains", label: i18n.t("flows.compare.operators.contains"), icon: "∈" },
+    { value: "startsWith", label: i18n.t("flows.compare.operators.startsWith"), icon: "⊰" },
+    { value: "endsWith", label: i18n.t("flows.compare.operators.endsWith"), icon: "⊱" },
+    { value: "greaterThan", label: i18n.t("flows.compare.operators.greaterThan"), icon: ">" },
+    { value: "lessThan", label: i18n.t("flows.compare.operators.lessThan"), icon: "<" },
+    { value: "greaterOrEqual", label: i18n.t("flows.compare.operators.greaterOrEqual"), icon: "≥" },
+    { value: "lessOrEqual", label: i18n.t("flows.compare.operators.lessOrEqual"), icon: "≤" },
+    { value: "isEmpty", label: i18n.t("flows.compare.operators.isEmpty"), icon: "∅" },
+    { value: "isNotEmpty", label: i18n.t("flows.compare.operators.isNotEmpty"), icon: "¬∅" },
   ];
 
   const isUnaryOperator = operator === "isEmpty" || operator === "isNotEmpty";
@@ -214,7 +215,7 @@ const FlowBuilderConditionCompareModal = ({ open, onSave, data, onUpdate, close 
               <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
                 Valor 1
               </Typography>
-              <Tooltip title="Este é o valor que será comparado. Pode ser texto fixo ou uma variável.">
+              <Tooltip title={i18n.t("flows.compareModal.value1Tooltip")}>
                 <HelpIcon fontSize="small" sx={{ color: "text.secondary" }} />
               </Tooltip>
             </Stack>
@@ -222,7 +223,7 @@ const FlowBuilderConditionCompareModal = ({ open, onSave, data, onUpdate, close 
               fullWidth
               value={leftValue}
               onChange={(e) => setLeftValue(e.target.value)}
-              placeholder="Digite um valor ou selecione uma variável"
+              placeholder={i18n.t("flows.compareModal.valuePlaceholder")}
               variant="outlined"
               size="small"
               InputProps={{
@@ -240,7 +241,7 @@ const FlowBuilderConditionCompareModal = ({ open, onSave, data, onUpdate, close 
                         },
                       }}
                     >
-                      Variável
+                      {i18n.t("flows.compareModal.variable")}
                     </Button>
                   </InputAdornment>
                 ),
@@ -249,13 +250,13 @@ const FlowBuilderConditionCompareModal = ({ open, onSave, data, onUpdate, close 
           </Stack>
           <FormControl fullWidth>
             <InputLabel id="operador-comparacao-label">
-              Operador de Comparação
+              {i18n.t("flows.compareModal.compareOperator")}
             </InputLabel>
             <Select
               labelId="operador-comparacao-label"
               value={operator}
               onChange={(e) => setOperator(e.target.value)}
-              label="Operador de Comparação"
+              label={i18n.t("flows.compareModal.compareOperator")}
               sx={{
                 "& .MuiSelect-select": {
                   display: "flex",
@@ -296,7 +297,7 @@ const FlowBuilderConditionCompareModal = ({ open, onSave, data, onUpdate, close 
                 <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
                   Valor 2
                 </Typography>
-                <Tooltip title="Este é o valor com o qual o primeiro valor será comparado. Pode ser texto fixo ou uma variável.">
+                <Tooltip title={i18n.t("flows.compareModal.value2Tooltip")}>
                   <HelpIcon fontSize="small" sx={{ color: "text.secondary" }} />
                 </Tooltip>
               </Stack>
@@ -304,7 +305,7 @@ const FlowBuilderConditionCompareModal = ({ open, onSave, data, onUpdate, close 
                 fullWidth
                 value={rightValue}
                 onChange={(e) => setRightValue(e.target.value)}
-                placeholder="Digite um valor ou selecione uma variável"
+                placeholder={i18n.t("flows.compareModal.valuePlaceholder")}
                 variant="outlined"
                 size="small"
                 InputProps={{
@@ -322,7 +323,7 @@ const FlowBuilderConditionCompareModal = ({ open, onSave, data, onUpdate, close 
                           },
                         }}
                       >
-                        Variável
+                        {i18n.t("flows.compareModal.variable")}
                       </Button>
                     </InputAdornment>
                   ),
@@ -417,17 +418,17 @@ const FlowBuilderConditionCompareModal = ({ open, onSave, data, onUpdate, close 
           <Stack spacing={2}>
             <Stack spacing={0.5}>
               <Typography variant="subtitle1" sx={{ fontWeight: 600, color: "#1a1a1a" }}>
-                Selecionar Variável
+                {i18n.t("flows.compareModal.selectVariable")}
               </Typography>
               <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                Estas são variáveis de exemplo. Configure as variáveis reais no nó de Variável Global ou em outros nós do fluxo.
+                {i18n.t("flows.compareModal.exampleVarsHelp")}
               </Typography>
             </Stack>
 
             <TextField
               fullWidth
               size="small"
-              placeholder="Buscar variável..."
+              placeholder={i18n.t("flows.compareModal.searchVar")}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               InputProps={{
@@ -516,7 +517,7 @@ const FlowBuilderConditionCompareModal = ({ open, onSave, data, onUpdate, close 
                   color: "text.secondary" 
                 }}
               >
-                Nenhuma variável encontrada
+                {i18n.t("flows.compareModal.noVarsFound")}
               </Typography>
             )}
           </Stack>

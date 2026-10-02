@@ -139,8 +139,8 @@ const FlowBuilderSingleBlockModal = ({
   const [numberDocs, setNumberDocs] = useState(0);
 
   const [labels, setLabels] = useState({
-    title: "Adicionar conteúdo ao fluxo",
-    btn: "Adicionar",
+    title: i18n.t("flows.dialogs.addContent"),
+    btn: i18n.t("contactModal.buttons.okAdd"),
   });
 
   const { user } = useContext(AuthContext);
@@ -600,7 +600,7 @@ const FlowBuilderSingleBlockModal = ({
       `.audio${number}`
     ).innerHTML = `<audio controls="controls">
     <source src="${audioBlob}" type="audio/mp3" />
-    seu navegador não suporta HTML5
+    {i18n.t("flows.noHtml5")}
   </audio>`;
     document.querySelector(`.btnAudio${number}`).remove();
   };
@@ -631,7 +631,7 @@ const FlowBuilderSingleBlockModal = ({
 
     divConteudo.innerHTML = `<video controls="controls" style="width: 200px;">
     <source src="${videoBlob}" type="video/mp4" />
-    seu navegador não suporta HTML5
+    {i18n.t("flows.noHtml5")}
   </video>`;
 
     document.querySelector(`.video${number}`).appendChild(divConteudo);
@@ -730,7 +730,7 @@ const FlowBuilderSingleBlockModal = ({
                 src={`${process.env.REACT_APP_BACKEND_URL}/public/company${companyId}/flow/${valueDefault}`}
                 type="audio/mp3"
               />
-              seu navegador não suporta HTML5
+              {i18n.t("flows.noHtml5")}
             </audio>
           )}
         </div>
@@ -792,7 +792,7 @@ const FlowBuilderSingleBlockModal = ({
                 src={`${process.env.REACT_APP_BACKEND_URL}/public/company${companyId}/flow/${valueDefault}`}
                 type="video/mp4"
               />
-              seu navegador não suporta HTML5
+              {i18n.t("flows.noHtml5")}
             </video>
           )}
         </div>
@@ -976,8 +976,8 @@ const FlowBuilderSingleBlockModal = ({
 
     if (open === "edit") {
       setLabels({
-        title: "Editar conteúdo",
-        btn: "Salvar",
+        title: i18n.t("flows.dialogs.editContent"),
+        btn: i18n.t("contactModal.buttons.okEdit"),
       });
 
       setElementsSeq(data.data.seq);
@@ -1098,8 +1098,8 @@ const FlowBuilderSingleBlockModal = ({
     }
     if (open === "create") {
       setLabels({
-        title: "Adicionar menu ao fluxo",
-        btn: "Adicionar",
+        title: i18n.t("flows.dialogs.addMenu"),
+        btn: i18n.t("contactModal.buttons.okAdd"),
       });
       setTextDig();
       setArrayOption([]);
@@ -1378,7 +1378,7 @@ const FlowBuilderSingleBlockModal = ({
       <Dialog open={activeModal} fullWidth="lg" scroll="paper">
         {!loading && (
           <DialogTitle id="form-dialog-title">
-            Adicionar conteúdo ao fluxo
+            {i18n.t("flows.singleBlock.addContent")}
           </DialogTitle>
         )}
         <Stack>
@@ -1574,7 +1574,7 @@ const FlowBuilderSingleBlockModal = ({
             </Stack>
             <Box style={{ width: "100%", textAlign: "center" }}>
               <div className="shadow- py-2 font-bold bg-blue-900 rounded text-white">
-                Variáveis
+                {i18n.t("flows.singleBlock.variables")}
               </div>
               {variables && (
                 <div className="w-full  max-h-full overflow-y-auto space-y-2 py-2">
@@ -1620,7 +1620,7 @@ const FlowBuilderSingleBlockModal = ({
           >
             <Stack>
               <Typography>
-                Subindo os arquivos e criando o conteúdo...
+                {i18n.t("flows.singleBlock.uploading")}
               </Typography>
               <Stack style={{ alignSelf: "center", marginTop: "12px" }}>
                 <CircularProgress />

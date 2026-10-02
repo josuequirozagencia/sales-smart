@@ -67,8 +67,8 @@ const FlowBuilderAddAudioModal = ({ open, onSave, onUpdate, data, close }) => {
   const [preview, setPreview] = useState();
 
   const [labels, setLabels] = useState({
-    title: "Adicionar audio ao fluxo",
-    btn: "Adicionar"
+    title: i18n.t("flows.dialogs.addAudio"),
+    btn: i18n.t("contactModal.buttons.okAdd")
   });
 
   const [textDig, setTextDig] = useState();
@@ -78,16 +78,16 @@ const FlowBuilderAddAudioModal = ({ open, onSave, onUpdate, data, close }) => {
   useEffect(() => {
     if (open === "edit") {
       setLabels({
-        title: "Editar audio",
-        btn: "Salvar"
+        title: i18n.t("flows.dialogs.editAudio"),
+        btn: i18n.t("contactModal.buttons.okEdit")
       });
       setPreview(process.env.REACT_APP_BACKEND_URL + '/public/' + data.data.url)
       setRecord(data.data.record)
       setActiveModal(true);
     } else if (open === "create") {
       setLabels({
-        title: "Adicionar audio ao fluxo",
-        btn: "Adicionar"
+        title: i18n.t("flows.dialogs.addAudio"),
+        btn: i18n.t("contactModal.buttons.okAdd")
       });
       setTextDig("");
       setActiveModal(true);
@@ -170,7 +170,7 @@ const FlowBuilderAddAudioModal = ({ open, onSave, onUpdate, data, close }) => {
     }
 
     if(e.target.files[0].size > 5000000){
-      toast.error("Arquivo é muito grande! 5MB máximo")
+      toast.error(i18n.t("flows.fileTooBig", { limite: "5MB" }))
       return
     }
 
@@ -195,7 +195,7 @@ const FlowBuilderAddAudioModal = ({ open, onSave, onUpdate, data, close }) => {
                 <Stack direction={'row'} justifyContent={'center'}>
                 <audio controls="controls">
                   <source src={preview} type="audio/mp3" />
-                  seu navegador não suporta HTML5
+                  {i18n.t("flows.noHtml5")}
                 </audio>
                 </Stack>
               )}

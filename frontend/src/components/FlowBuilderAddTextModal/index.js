@@ -71,8 +71,8 @@ const FlowBuilderAddTextModal = ({ open, onSave, onUpdate, data, close }) => {
   const [activeModal, setActiveModal] = useState(false);
 
   const [labels, setLabels] = useState({
-    title: "Adicionar mensagem ao fluxo",
-    btn: "Adicionar"
+    title: i18n.t("flows.dialogs.addMessage"),
+    btn: i18n.t("contactModal.buttons.okAdd")
   });
 
   const [textDig, setTextDig] = useState();
@@ -80,15 +80,15 @@ const FlowBuilderAddTextModal = ({ open, onSave, onUpdate, data, close }) => {
   useEffect(() => {
     if (open === "edit") {
       setLabels({
-        title: "Editar mensagem ao fluxo",
-        btn: "Salvar"
+        title: i18n.t("flows.dialogs.editMessage"),
+        btn: i18n.t("contactModal.buttons.okEdit")
       });
       setTextDig(data.data.label);
       setActiveModal(true);
     } else if (open === "create") {
       setLabels({
-        title: "Adicionar mensagem ao fluxo",
-        btn: "Adicionar"
+        title: i18n.t("flows.dialogs.addMessage"),
+        btn: i18n.t("contactModal.buttons.okAdd")
       });
       setTextDig("");
       setActiveModal(true);

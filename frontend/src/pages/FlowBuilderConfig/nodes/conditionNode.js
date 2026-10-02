@@ -1,4 +1,5 @@
 import { ImportExport, Message } from "@mui/icons-material";
+import { i18n } from "../../../translate/i18n";
 import React, { memo } from "react";
 
 import { Handle } from "react-flow-renderer";
@@ -33,7 +34,7 @@ export default memo(({ data, isConnectable }) => {
       <div style={{color: '#ededed', fontSize: '16px', flexDirection: 'row', display: 'flex'}}>
         <ImportExport sx={{width: '16px', height: '16px', marginRight: '4px', marginTop: '4px'}}/>
         <div style={{color: '#ededed', fontSize: '16px'}}>
-        Condição
+        {i18n.t("flows.nodeCondition")}
         </div>
       </div>
       <div style={{color: '#ededed', fontSize: '12px'}}>{data.key}</div>

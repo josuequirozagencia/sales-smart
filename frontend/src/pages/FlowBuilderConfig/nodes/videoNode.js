@@ -81,7 +81,7 @@ export default memo(({ data, isConnectable, id }) => {
       <div style={{ color: "#ededed", fontSize: "12px", width: 180 }}>
         <video controls="controls" width="180px">
           <source src={`${link}/public/${data.url}`} type="video/mp4" />
-          seu navegador não suporta HTML5
+          {i18n.t("flows.noHtml5")}
         </video>
       </div>
       <Handle

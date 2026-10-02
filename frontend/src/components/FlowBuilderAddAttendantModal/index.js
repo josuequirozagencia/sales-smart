@@ -177,7 +177,7 @@ const FlowBuilderAttendantModal = ({ open, onSave, data, onUpdate, close }) => {
               >
                 {/* Adiciona a opção vazia */}
                 <MenuItem value="">
-                  <em>Selecione um usuário</em>
+                  <em>{i18n.t("flows.attendant.selectUser")}</em>
                 </MenuItem>
 
                 {/* Exibe a lista de usuários */}

@@ -105,16 +105,16 @@ const FlowBuilderMenuModal = ({ open, onSave, onUpdate, data, close }) => {
   const [valueRadioButton, setValueRadionButton] = useState("number");
 
   const [labels, setLabels] = useState({
-    title: "Adicionar menu ao fluxo",
-    btn: "Adicionar",
+    title: i18n.t("flows.dialogs.addMenu"),
+    btn: i18n.t("contactModal.buttons.okAdd"),
   });
 
   useEffect(() => {
     console.log(data);
     if (open === "edit") {
       setLabels({
-        title: "Editar menu",
-        btn: "Salvar",
+        title: i18n.t("flows.dialogs.editMenu"),
+        btn: i18n.t("contactModal.buttons.okEdit"),
       });
       setTextDig(data.data.message);
       setArrayOption(data.data.arrayOption);
@@ -123,8 +123,8 @@ const FlowBuilderMenuModal = ({ open, onSave, onUpdate, data, close }) => {
       setActiveModal(true);
     } else if (open === "create") {
       setLabels({
-        title: "Adicionar menu ao fluxo",
-        btn: "Adicionar",
+        title: i18n.t("flows.dialogs.addMenu"),
+        btn: i18n.t("contactModal.buttons.okAdd"),
       });
       setTextDig();
       setArrayOption([]);
@@ -203,7 +203,7 @@ const FlowBuilderMenuModal = ({ open, onSave, onUpdate, data, close }) => {
                 <FormControlLabel
                   value="number"
                   control={<Radio />}
-                  label="Número"
+                  label={i18n.t("flows.menu.number")}
                 />
                 <FormControlLabel
                   value="list"
@@ -213,7 +213,7 @@ const FlowBuilderMenuModal = ({ open, onSave, onUpdate, data, close }) => {
                 <FormControlLabel
                   value="button"
                   control={<Radio />}
-                  label="Botão"
+                  label={i18n.t("flows.menu.button")}
                 />
               </RadioGroup>
             </Stack>
@@ -229,7 +229,7 @@ const FlowBuilderMenuModal = ({ open, onSave, onUpdate, data, close }) => {
               style={{ width: "100%" }}
             />
             <Stack direction={"row"} justifyContent={"space-between"}>
-              <Typography>Adicionar Opção</Typography>
+              <Typography>{i18n.t("flows.menu.addOption")}</Typography>
               <Button
                 onClick={() =>
                   setArrayOption((old) => [

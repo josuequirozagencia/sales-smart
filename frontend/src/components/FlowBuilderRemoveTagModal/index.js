@@ -125,7 +125,7 @@ const FlowBuilderRemoveTagModal = ({ open, onSave, data, onUpdate, close }) => {
                   fontStyle: "italic"
                 }}
               >
-                Esta ação removerá a tag selecionada do contato quando o fluxo for executado
+                {i18n.t("flows.removeTagHelp")}
               </Typography>
               <Select
                 labelId="remove-tag-select-label"

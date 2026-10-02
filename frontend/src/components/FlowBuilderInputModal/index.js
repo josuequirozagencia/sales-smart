@@ -105,30 +105,31 @@ const FlowBuilderInputModal = ({ open, onSave, onUpdate, data, close }) => {
   const questionInputRef = useRef(null);
 
   const [labels, setLabels] = useState({
-    title: "Adicionar input ao fluxo",
-    btn: "Adicionar"
+    title: i18n.t("flows.dialogs.addInput"),
+    btn: i18n.t("contactModal.buttons.okAdd")
   });
 
+  // Los nombres son los que se insertan en el flujo: no se traducen.
   const exampleVariables = [
-    { name: "nome", description: "Nome do cliente" },
-    { name: "email", description: "Email do cliente" },
-    { name: "telefone", description: "Telefone do cliente" },
-    { name: "cidade", description: "Cidade do cliente" }
+    { name: "nome", description: i18n.t("flows.input.exampleName") },
+    { name: "email", description: i18n.t("flows.input.exampleEmail") },
+    { name: "telefone", description: i18n.t("flows.input.examplePhone") },
+    { name: "cidade", description: i18n.t("flows.input.exampleCity") }
   ];
 
   useEffect(() => {
     if (open === "edit") {
       setLabels({
-        title: "Editar input do fluxo",
-        btn: "Salvar alterações"
+        title: i18n.t("flows.dialogs.editInput"),
+        btn: i18n.t("contactModal.buttons.okEdit")
       });
       setQuestion(data.data.question || "");
       setVariableName(data.data.variableName || "");
       setActiveModal(true);
     } else if (open === "create") {
       setLabels({
-        title: "Adicionar input ao fluxo",
-        btn: "Adicionar"
+        title: i18n.t("flows.dialogs.addInput"),
+        btn: i18n.t("contactModal.buttons.okAdd")
       });
       setQuestion("");
       setVariableName("");
@@ -235,7 +236,7 @@ const FlowBuilderInputModal = ({ open, onSave, onUpdate, data, close }) => {
             <Box>
               <Stack direction="row" alignItems="center" spacing={1} mb={1}>
                 <Typography variant="subtitle2">Pergunta</Typography>
-                <Tooltip title="A pergunta que será enviada ao usuário. Você pode incluir variáveis usando ${nomeVariavel}">
+                <Tooltip title={i18n.t("flows.input.questionTooltip")}>
                   <IconButton size="small">
                     <HelpIcon fontSize="small" />
                   </IconButton>
@@ -253,12 +254,12 @@ const FlowBuilderInputModal = ({ open, onSave, onUpdate, data, close }) => {
                 className={classes.textField}
                 fullWidth
                 ref={questionInputRef}
-                placeholder="Ex: Olá ${nome}, qual é a sua idade?"
+                placeholder={i18n.t("flows.input.questionPlaceholder")}
               />
               
               <Box mt={1}>
                 <Typography variant="caption" color="textSecondary">
-                  Variáveis disponíveis (clique para inserir):
+                  {i18n.t("flows.input.availableVars")}
                 </Typography>
                 <Box display="flex" flexWrap="wrap" mt={0.5}>
                   {exampleVariables.map((variable) => (
@@ -278,8 +279,8 @@ const FlowBuilderInputModal = ({ open, onSave, onUpdate, data, close }) => {
             
             <Box>
               <Stack direction="row" alignItems="center" spacing={1} mb={1}>
-                <Typography variant="subtitle2">Nome da variável</Typography>
-                <Tooltip title="Nome da variável onde a resposta será armazenada. Não use espaços ou caracteres especiais.">
+                <Typography variant="subtitle2">{i18n.t("flows.input.varName")}</Typography>
+                <Tooltip title={i18n.t("flows.input.varNameTooltip")}>
                   <IconButton size="small">
                     <HelpIcon fontSize="small" />
                   </IconButton>
@@ -287,7 +288,7 @@ const FlowBuilderInputModal = ({ open, onSave, onUpdate, data, close }) => {
               </Stack>
               
               <TextField
-                label="Nome da variável"
+                label={i18n.t("flows.input.varName")}
                 name="variableName"
                 variant="outlined"
                 value={variableName}
@@ -295,7 +296,7 @@ const FlowBuilderInputModal = ({ open, onSave, onUpdate, data, close }) => {
                 className={classes.textField}
                 fullWidth
                 placeholder="Ex: idade_cliente"
-                helperText="A resposta do usuário será armazenada nesta variável"
+                helperText={i18n.t("flows.input.varNameHelp")}
               />
             </Box>
             
@@ -303,11 +304,9 @@ const FlowBuilderInputModal = ({ open, onSave, onUpdate, data, close }) => {
               <Stack direction="row" spacing={1}>
                 <InfoIcon fontSize="small" />
                 <Box>
-                  <Typography variant="subtitle2">Como funciona</Typography>
+                  <Typography variant="subtitle2">{i18n.t("flows.input.howItWorks")}</Typography>
                   <Typography variant="body2">
-                    Este nó enviará a pergunta ao usuário e aguardará uma resposta.
-                    Quando o usuário responder, o valor será armazenado na variável especificada
-                    e o fluxo continuará para o próximo nó.
+                    {i18n.t("flows.input.howItWorksText")}
                   </Typography>
                 </Box>
               </Stack>

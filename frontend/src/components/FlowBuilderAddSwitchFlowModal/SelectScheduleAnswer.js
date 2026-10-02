@@ -1,4 +1,5 @@
 import React from "react";
+import { i18n } from "../../translate/i18n";
 
 export function SelectScheduleAnswer() {
   return (
@@ -8,7 +9,7 @@ export function SelectScheduleAnswer() {
           for="countries"
           class="block mb-2 text-sm font-medium text-gray-600 w-full"
         >
-          Tempo para resposta do usuário:
+          {i18n.t("flows.answerTime")}
         </label>
         <select
           id="countries"

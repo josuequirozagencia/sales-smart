@@ -97,15 +97,15 @@ const FlowBuilderConditionModal = ({ open, onSave, onUpdate, data, close }) => {
   const [valueCondition, setValueCondition] = useState();
 
   const [labels, setLabels] = useState({
-    title: "Adicionar condição ao fluxo",
-    btn: "Adicionar"
+    title: i18n.t("flows.dialogs.addCondition"),
+    btn: i18n.t("contactModal.buttons.okAdd")
   });
 
   useEffect(() => {
     if (open === "edit") {
       setLabels({
-        title: "Editar condição",
-        btn: "Salvar"
+        title: i18n.t("flows.dialogs.editCondition"),
+        btn: i18n.t("contactModal.buttons.okEdit")
       });
       setTextDig(data.data.key);
       setRule(data.data.condition);
@@ -113,8 +113,8 @@ const FlowBuilderConditionModal = ({ open, onSave, onUpdate, data, close }) => {
       setActiveModal(true);
     } else if (open === "create") {
       setLabels({
-        title: "Adicionar condição ao fluxo",
-        btn: "Adicionar"
+        title: i18n.t("flows.dialogs.addCondition"),
+        btn: i18n.t("contactModal.buttons.okAdd")
       });
       setTextDig();
       setRule();
@@ -180,13 +180,13 @@ const FlowBuilderConditionModal = ({ open, onSave, onUpdate, data, close }) => {
             />
             <FormControl sx={{ width: "95%" }} size="medium">
               <InputLabel sx={selectFieldStyles} id="demo-simple-select-label">
-                Regra de validação
+                {i18n.t("flows.condition.validationRule")}
               </InputLabel>
               <Select
                 labelId="demo-simple-select-label"
                 id="demo-simple-select"
                 value={rule}
-                label="Regra de validação"
+                label={i18n.t("flows.condition.validationRule")}
                 onChange={e => setRule(e.target.value)}
                 variant="outlined"
                 color="primary"
