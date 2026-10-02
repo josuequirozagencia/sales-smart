@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useReducer, useContext, useMemo, useCallback, useRef } from "react";
+import React, { useState, useEffect, useReducer, useContext, useCallback, useRef } from "react";
 
 import { makeStyles } from "@material-ui/core/styles";
 import List from "@material-ui/core/List";
@@ -10,7 +10,6 @@ import TicketsListSkeleton from "../TicketsListSkeleton";
 import useTickets from "../../hooks/useTickets";
 import { i18n } from "../../translate/i18n";
 import { AuthContext } from "../../context/Auth/AuthContext";
-import { throttle, debounce } from "../../utils/debounce";
 
 const useStyles = makeStyles((theme) => ({
     ticketsListWrapper: {
@@ -319,16 +318,26 @@ const TicketsListCustom = (props) => {
         ticket.queueId && selectedQueueIds.indexOf(ticket.queueId) === -1,
     [selectedQueueIds]);
 
-    // Handlers com throttle/debounce
-    const throttledDispatch = useMemo(
-        () => throttle((action) => dispatch(action), 100),
-        []
-    );
-
+    // Los eventos de socket se aplican SIEMPRE, sin limitar la frecuencia.
+    //
+    // Antes pasaban por un throttle de 100 ms, y ese throttle no encolaba:
+    // descartaba por completo cualquier llamada que cayera dentro de la
+    // ventana de la anterior. Como el throttle era uno por pestana y lo
+    // compartian todos los tickets de esa lista, un evento cualquiera
+    // (un mensaje nuevo de otro ticket) se comia la ventana y hacia
+    // desaparecer el "delete" del ticket que acababa de aceptarse: el
+    // ticket se quedaba en "Esperando" y aparecia tambien en "Trabajando
+    // en", el mismo ticket en dos columnas.
+    //
+    // Peor aun: UpdateTicketService emite "delete" y "update" seguidos, de
+    // forma sincronica. En la lista que debe GANAR el ticket, el "delete"
+    // (que ahi no hace nada, el ticket no esta) se comia la ventana y el
+    // "update" se perdia siempre, no solo en una carrera.
+    //
     // Socket handlers memoizados
     const onCompanyTicketTicketsList = useCallback((data) => {
         if (data.action === "updateUnread") {
-            throttledDispatch({
+            dispatch({
                 type: "RESET_UNREAD",
                 payload: data.ticketId,
                 status: status,
@@ -338,7 +347,7 @@ const TicketsListCustom = (props) => {
         
         if (data.action === "update" &&
             shouldUpdateTicket(data.ticket) && data.ticket.status === status) {
-            throttledDispatch({
+            dispatch({
                 type: "UPDATE_TICKET",
                 payload: data.ticket,
                 status: status,
@@ -347,7 +356,7 @@ const TicketsListCustom = (props) => {
         }
 
         if (data.action === "update" && notBelongsToUserQueues(data.ticket)) {
-            throttledDispatch({
+            dispatch({
                 type: "DELETE_TICKET", 
                 payload: data.ticket?.id, 
                 status: status,
@@ -356,19 +365,19 @@ const TicketsListCustom = (props) => {
         }
 
         if (data.action === "delete") {
-            throttledDispatch({
+            dispatch({
                 type: "DELETE_TICKET", 
                 payload: data?.ticketId, 
                 status: status,
                 sortDir: sortTickets
             });
         }
-    }, [shouldUpdateTicket, notBelongsToUserQueues, status, sortTickets, throttledDispatch]);
+    }, [shouldUpdateTicket, notBelongsToUserQueues, status, sortTickets]);
 
     const onCompanyAppMessageTicketsList = useCallback((data) => {
         if (data.action === "create" &&
             shouldUpdateTicket(data.ticket) && data.ticket.status === status) {
-            throttledDispatch({
+            dispatch({
                 type: "UPDATE_TICKET_UNREAD_MESSAGES",
                 payload: data.ticket,
                 // El mensaje dice quien acaba de hablar, que es lo unico
@@ -379,18 +388,18 @@ const TicketsListCustom = (props) => {
                 sortDir: sortTickets
             });
         }
-    }, [shouldUpdateTicket, status, sortTickets, throttledDispatch]);
+    }, [shouldUpdateTicket, status, sortTickets]);
 
     const onCompanyContactTicketsList = useCallback((data) => {
         if (data.action === "update" && data.contact) {
-            throttledDispatch({
+            dispatch({
                 type: "UPDATE_TICKET_CONTACT",
                 payload: data.contact,
                 status: status,
                 sortDir: sortTickets
             });
         }
-    }, [status, sortTickets, throttledDispatch]);
+    }, [status, sortTickets]);
 
     // UseEffect apenas para gerenciar join/leave de rooms
     useEffect(() => {
