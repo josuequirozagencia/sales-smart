@@ -139,36 +139,36 @@ const GeminiSchema = Yup.object().shape({
   // Não se valida contra GEMINI_MODELS de propósito: como toda a lista
   // anterior foi aposentada, praticamente todo nó existente tem um modelo
   // fora da lista e travaria o formulário ao salvar.
-  model: Yup.string().required("Informe o modelo"),
+  model: Yup.string().required(() => i18n.t("flows.val.reqModel")),
   maxTokens: Yup.number()
-    .min(10, "Mínimo 10 tokens")
-    .max(8000, "Máximo 8000 tokens")
-    .required("Informe o número máximo de tokens"),
+    .min(10, ({ min }) => i18n.t("flows.val.minTokens", { n: min }))
+    .max(8000, ({ max }) => i18n.t("flows.val.maxTokens", { n: max }))
+    .required(() => i18n.t("flows.val.reqMaxTokens")),
   temperature: Yup.number()
-    .min(0, "Mínimo 0")
-    .max(2, "Máximo 2")
-    .required("Informe a temperatura"),
-  apiKey: Yup.string().required("Informe a API Key"),
+    .min(0, ({ min }) => i18n.t("flows.val.minValue", { n: min }))
+    .max(2, ({ max }) => i18n.t("flows.val.maxValue", { n: max }))
+    .required(() => i18n.t("flows.val.reqTemperature")),
+  apiKey: Yup.string().required(() => i18n.t("flows.val.reqApiKey")),
   maxMessages: Yup.number()
-    .min(1, "Mínimo 1 mensagem")
-    .max(100, "Máximo 100 mensagens")
-    .required("Informe o número máximo de mensagens"),
+    .min(1, ({ min }) => i18n.t("flows.val.minMessages", { n: min }))
+    .max(100, ({ max }) => i18n.t("flows.val.maxMessages", { n: max }))
+    .required(() => i18n.t("flows.val.reqMaxMessages")),
   flowMode: Yup.string()
     .oneOf(["permanent", "temporary"], "Modo de fluxo inválido")
-    .required("Selecione o modo de fluxo"),
+    .required(() => i18n.t("flows.val.reqFlowMode")),
   maxInteractions: Yup.number().when("flowMode", {
     is: "temporary",
     then: Yup.number()
-      .min(1, "Mínimo 1 interação")
-      .max(50, "Máximo 50 interações")
+      .min(1, ({ min }) => i18n.t("flows.val.minInteractions", { n: min }))
+      .max(50, ({ max }) => i18n.t("flows.val.maxInteractions", { n: max }))
       .nullable(),
     otherwise: Yup.number().nullable()
   }),
   completionTimeout: Yup.number().when("flowMode", {
     is: "temporary",
     then: Yup.number()
-      .min(1, "Mínimo 1 minuto")
-      .max(60, "Máximo 60 minutos")
+      .min(1, ({ min }) => i18n.t("flows.val.minMinutes", { n: min }))
+      .max(60, ({ max }) => i18n.t("flows.val.maxMinutes", { n: max }))
       .nullable(),
     otherwise: Yup.number().nullable()
   }),
@@ -176,12 +176,12 @@ const GeminiSchema = Yup.object().shape({
     is: "temporary",
     then: Yup.array()
       .of(Yup.string().required("Palavra-chave não pode estar vazia"))
-      .min(1, "Pelo menos uma palavra-chave é obrigatória no modo temporário"),
+      .min(1, () => i18n.t("flows.val.oneKeyword")),
     otherwise: Yup.array()
   }),
   objective: Yup.string().when(["flowMode", "autoCompleteOnObjective"], {
     is: (flowMode, autoComplete) => flowMode === "temporary" && autoComplete,
-    then: Yup.string().required(i18n.t("flows.ai.objectiveRequired")),
+    then: Yup.string().required(() => i18n.t("flows.ai.objectiveRequired")),
     otherwise: Yup.string()
   })
 });

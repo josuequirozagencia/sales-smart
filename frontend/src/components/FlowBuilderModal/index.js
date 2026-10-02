@@ -52,11 +52,13 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
+// El esquema es de ambito de modulo: los mensajes van como funcion para que
+// Yup los resuelva al validar y sigan al idioma, que se cambia sin recargar.
 const ContactSchema = Yup.object().shape({
   name: Yup.string()
-    .min(2, i18n.t("validation.tooShort"))
-    .max(50, i18n.t("validation.tooLong"))
-    .required(i18n.t("validation.required")),
+    .min(2, () => i18n.t("validation.tooShort"))
+    .max(50, () => i18n.t("validation.tooLong"))
+    .required(() => i18n.t("validation.required")),
 });
 
 const FlowBuilderModal = ({

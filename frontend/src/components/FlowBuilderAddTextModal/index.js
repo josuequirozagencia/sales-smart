@@ -57,11 +57,11 @@ const ContactSchema = Yup.object().shape({
   name: Yup.string()
     .min(2, "Muito curto!")
     .max(50, "Muito longo!")
-    .required("Digite um nome!"),
+    .required(() => i18n.t("flows.val.typeName")),
   text: Yup.string()
     .min(2, "Muito curto!")
     .max(50, "Muito longo!")
-    .required("Digite uma mensagem!")
+    .required(() => i18n.t("flows.val.typeMessage"))
 });
 
 const FlowBuilderAddTextModal = ({ open, onSave, onUpdate, data, close }) => {
