@@ -1960,6 +1960,7 @@ const messages = {
           administration: "Administração",
           companies: "Empresas",
           aiCredits: "Crédito IA",
+          myAiCredit: "Meu crédito IA",
           users: "Usuários",
           settings: "Configurações",
           files: "Lista de arquivos",

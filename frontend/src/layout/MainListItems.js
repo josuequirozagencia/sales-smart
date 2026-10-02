@@ -26,6 +26,7 @@ import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
 import ContactPhoneOutlinedIcon from "@mui/icons-material/ContactPhoneOutlined";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
+import AccountBalanceWalletOutlined from "@mui/icons-material/AccountBalanceWalletOutlined";
 import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
 import FlashOnIcon from "@mui/icons-material/FlashOn";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
@@ -520,9 +521,9 @@ const RUTAS_POR_GRUPO = {
   clientes: ["/contacts", "/tags", "/chats", "/quick-messages"],
   ventas: ["/kanban", "/schedules", "/sales"],
   automatizacion: [
-    "/flowbuilders", "/phrase-lists", "/ai-agents", "/prompts",
-    "/campaigns", "/contact-lists", "/campaigns-config", "/files",
-    "/queue-integration",
+    "/flowbuilders", "/phrase-lists", "/ai-agents", "/ai-credits/buy",
+    "/prompts", "/campaigns", "/contact-lists", "/campaigns-config",
+    "/files", "/queue-integration",
   ],
   analitica: ["/", "/reports", "/response-time", "/moments"],
   // /gohighlevel y /messages-api ya no tienen entrada propia en el menu,
@@ -1151,6 +1152,25 @@ useEffect(() => {
                         to="/ai-agents"
                         primary={i18n.t("mainDrawer.listItems.aiAgents")}
                         icon={<AndroidOutlined />}
+                        tooltip={collapsed}
+                      />
+                    )}
+                  />
+                )}
+
+                {/* El saldo de los Agentes IA. Hasta ahora solo se llegaba
+                    desde el aviso de saldo agotado, que se oculta en cuanto
+                    hay saldo: tras recargar no habia forma de volver a ver
+                    el consumo ni de recargar otra vez. */}
+                {showOpenAi && (
+                  <Can
+                    role={user.profile}
+                    perform="dashboard:view"
+                    yes={() => (
+                      <ListItemLink
+                        to="/ai-credits/buy"
+                        primary={i18n.t("mainDrawer.listItems.myAiCredit")}
+                        icon={<AccountBalanceWalletOutlined />}
                         tooltip={collapsed}
                       />
                     )}
