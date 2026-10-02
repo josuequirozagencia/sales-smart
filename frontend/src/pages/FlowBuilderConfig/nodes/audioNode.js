@@ -78,7 +78,7 @@ export default memo(({ data, isConnectable, id }) => {
         </div>
         <audio controls="controls">
           <source src={`${link}/public/${data.url}`} type="audio/mp3" />
-          seu navegador não suporta HTML5
+          {i18n.t("flows.noHtml5")}
         </audio>
       </div>
       <Handle

@@ -90,7 +90,7 @@ const FlowBuilderIntervalModal = ({
       return toast.error('Adicione o valor de intervalo')
     }
     if(parseInt(timerSec) > 120){
-      return toast.error('Máximo de tempo atingido 120 segundos')
+      return toast.error(i18n.t("flows.maxIntervalReached"))
     }
     if(open === 'edit'){
       onUpdate({

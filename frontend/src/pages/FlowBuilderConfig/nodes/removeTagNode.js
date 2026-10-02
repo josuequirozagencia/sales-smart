@@ -113,7 +113,7 @@ import {
             }}>
               <Tag sx={{ width: "14px", height: "14px" }} />
               <span style={{ fontSize: "11px", fontWeight: "500" }}>
-                {data?.tag?.name || "Tag não selecionada"}
+                {data?.tag?.name || i18n.t("flows.noTagSelected")}
               </span>
             </div>
             {data?.tag?.name && (

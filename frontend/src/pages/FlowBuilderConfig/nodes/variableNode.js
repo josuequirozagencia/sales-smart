@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import { i18n } from "../../../translate/i18n";
 import {
   Box,
   TextField,
@@ -96,7 +97,7 @@ const VariableNode = React.memo(({ data, id }) => {
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <DataObjectIcon fontSize="small" sx={{ color: '#1976d2' }} />
           <Typography variant="subtitle1" fontWeight="bold">
-            Variável Global
+            {i18n.t("flows.variableNode.globalVar")}
           </Typography>
         </Box>
         
@@ -125,7 +126,7 @@ const VariableNode = React.memo(({ data, id }) => {
       </Box>
 
       <TextField
-        label="Nome da variável"
+        label={i18n.t("flows.variable.varName")}
         size="small"
         value={variableName}
         onChange={(e) => setVariableName(e.target.value)}
@@ -142,7 +143,7 @@ const VariableNode = React.memo(({ data, id }) => {
         multiline
         minRows={2}
         maxRows={4}
-        helperText="Você pode usar valores estáticos ou referências como ${outraVariavel}"
+        helperText={i18n.t("flows.variable.varHelp")}
       />
 
       <Box display="flex" justifyContent="space-between" alignItems="center" mt={1}>
@@ -157,7 +158,7 @@ const VariableNode = React.memo(({ data, id }) => {
           startIcon={<CheckCircleOutlineIcon />}
           sx={{ textTransform: 'none', boxShadow: 2 }}
         >
-          Salvar variável
+          {i18n.t("flows.variableNode.save")}
         </Button>
       </Box>
       
@@ -182,7 +183,7 @@ const VariableNode = React.memo(({ data, id }) => {
           }}
         >
           <Typography variant="body2">
-            Variável salva com sucesso!
+            {i18n.t("flows.variableNode.saved")}
           </Typography>
         </Box>
       )}

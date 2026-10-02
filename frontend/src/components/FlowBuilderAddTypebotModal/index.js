@@ -81,15 +81,15 @@ const FlowBuilderTypebotModal = ({ open, onSave, data, onUpdate, close }) => {
   const [activeModal, setActiveModal] = useState(false);
   const [integration, setIntegration] = useState();
   const [labels, setLabels] = useState({
-    title: "Adicionar Typebot ao fluxo",
-    btn: "Adicionar",
+    title: i18n.t("flows.dialogs.addTypebot"),
+    btn: i18n.t("contactModal.buttons.okAdd"),
   });
 
   useEffect(() => {
     if (open === "edit") {
       setLabels({
-        title: "Editar Typebot ao fluxo",
-        btn: "Salvar",
+        title: i18n.t("flows.dialogs.editTypebot"),
+        btn: i18n.t("contactModal.buttons.okEdit"),
       });
       console.log("FlowTybebotEdit", data);
       setIntegration({
@@ -98,8 +98,8 @@ const FlowBuilderTypebotModal = ({ open, onSave, data, onUpdate, close }) => {
       setActiveModal(true);
     } else if (open === "create") {
       setLabels({
-        title: "Editar Typebot do fluxo",
-        btn: "Salvar",
+        title: i18n.t("flows.dialogs.editTypebot"),
+        btn: i18n.t("contactModal.buttons.okEdit"),
       });
       setIntegration(initialState);
       setActiveModal(true);

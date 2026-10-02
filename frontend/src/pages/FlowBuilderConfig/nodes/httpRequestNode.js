@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { i18n } from "../../../translate/i18n";
 import {
   Box,
   Button,
@@ -143,7 +144,7 @@ const HttpRequestNode = React.memo(({ data, id, selected }) => {
       
     } catch (error) {
       console.error('Erro ao aplicar preset:', error);
-      toast.error('Erro ao aplicar configuração do preset');
+      toast.error(i18n.t("flows.http.presetError"));
     }
   };
 
@@ -395,7 +396,7 @@ const HttpRequestNode = React.memo(({ data, id, selected }) => {
         updateNodeData();
       }
     } catch (error) {
-      setResponse(error.response ? error.response.data : "Erro na requisição");
+      setResponse(error.response ? error.response.data : i18n.t("flows.http.requestError"));
 
       if (window.setFlowVariable) {
         window.setFlowVariable('apiError', error.response ? error.response.data : error.message);
@@ -445,7 +446,7 @@ const HttpRequestNode = React.memo(({ data, id, selected }) => {
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <HttpIcon fontSize="small" sx={{ color: '#1976d2' }} />
           <Typography variant="subtitle1" fontWeight="bold">
-            Requisição HTTP
+            {i18n.t("flows.http.title")}
           </Typography>
         </Box>
 
@@ -477,7 +478,7 @@ const HttpRequestNode = React.memo(({ data, id, selected }) => {
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <WebhookIcon fontSize="small" sx={{ color: '#9c27b0' }} />
           <Typography variant="body2" fontWeight="bold">
-            Webhooks Pré-configurados
+            {i18n.t("flows.http.presets")}
           </Typography>
         </Box>
         
@@ -490,9 +491,9 @@ const HttpRequestNode = React.memo(({ data, id, selected }) => {
           renderInput={(params) => (
             <TextField 
               {...params} 
-              label="Selecionar preset" 
+              label={i18n.t("flows.http.presetLabel")} 
               size="small"
-              placeholder="Escolha uma configuração pronta..."
+              placeholder={i18n.t("flows.http.presetPlaceholder")}
             />
           )}
           renderOption={(props, option) => (
@@ -513,7 +514,7 @@ const HttpRequestNode = React.memo(({ data, id, selected }) => {
                   />
                   {option.isSystem && (
                     <Chip 
-                      label="SISTEMA" 
+                      label={i18n.t("flows.http.system")} 
                       size="small" 
                       color="secondary" 
                       variant="outlined"
@@ -532,18 +533,18 @@ const HttpRequestNode = React.memo(({ data, id, selected }) => {
             severity="info" 
             action={
               <Button size="small" onClick={clearPreset}>
-                Remover
+                {i18n.t("flows.http.remove")}
               </Button>
             }
           >
-            Usando preset: <strong>{selectedPreset.name}</strong>
+            {i18n.t("flows.http.usingPreset")} <strong>{selectedPreset.name}</strong>
           </Alert>
         )}
       </Box>
 
       {/* URL Field - sempre visível mas readonly se usando preset */}
       <TextField
-        label={presetMode ? "URL (do preset)" : "URL"}
+        label={presetMode ? i18n.t("flows.http.urlPreset") : i18n.t("flows.http.url")}
         variant="outlined"
         size="small"
         value={url}
@@ -552,8 +553,8 @@ const HttpRequestNode = React.memo(({ data, id, selected }) => {
           data.url = e.target.value;
         }}
         fullWidth
-        placeholder="https://api.exemplo.com/webhook"
-        helperText={presetMode ? "Você pode editar a URL base do preset se necessário" : ""}
+        placeholder={i18n.t("flows.http.urlPlaceholder")}
+        helperText={presetMode ? i18n.t("flows.http.urlPresetHelp") : ""}
         disabled={presetMode && selectedPreset?.isSystem} // Só permite editar se não for preset do sistema
       />
 
@@ -568,7 +569,7 @@ const HttpRequestNode = React.memo(({ data, id, selected }) => {
           }
         }}
         renderInput={(params) => (
-          <TextField {...params} label="Método" size="small" />
+          <TextField {...params} label={i18n.t("flows.http.method")} size="small" />
         )}
         disabled={presetMode && selectedPreset?.isSystem}
         clearOnEscape
@@ -586,14 +587,14 @@ const HttpRequestNode = React.memo(({ data, id, selected }) => {
           textTransform: "none"
         }}
       >
-        Testar Requisição
+        {i18n.t("flows.http.test")}
       </Button>
 
       {/* Response Display */}
       {response && (
         <Box sx={{ mt: 1 }}>
           <Typography variant="body2" fontWeight="bold" mb={1}>
-            Resposta da API:
+            {i18n.t("flows.http.responseLabel")}
           </Typography>
           <Box
             sx={{
@@ -627,7 +628,7 @@ const HttpRequestNode = React.memo(({ data, id, selected }) => {
             onClick={() => setShowFullResponse(true)}
             sx={{ mt: 1, textTransform: "none" }}
           >
-            Ver resposta completa
+            {i18n.t("flows.http.viewFullResponse")}
           </Button>
         </Box>
       )}
@@ -640,7 +641,7 @@ const HttpRequestNode = React.memo(({ data, id, selected }) => {
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
           <SettingsIcon fontSize="small" />
-          {showAdvanced ? "Ocultar avançado" : "Mostrar avançado"}
+          {showAdvanced ? i18n.t("flows.http.hideAdvanced") : i18n.t("flows.http.showAdvanced")}
         </Box>
       </Button>
 
@@ -648,12 +649,12 @@ const HttpRequestNode = React.memo(({ data, id, selected }) => {
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
           {presetMode && (
             <Alert severity="warning" sx={{ mb: 1 }}>
-              Configurações avançadas podem sobrescrever as configurações do preset
+              {i18n.t("flows.http.advancedWarning")}
             </Alert>
           )}
 
           <Typography variant="body2" fontWeight="bold">
-            Timeout (ms)
+            {i18n.t("flows.http.timeout")}
           </Typography>
           <TextField
             type="number"
@@ -665,14 +666,14 @@ const HttpRequestNode = React.memo(({ data, id, selected }) => {
           />
 
           <Typography variant="body2" fontWeight="bold">
-            Parâmetros de Query
+            {i18n.t("flows.http.queryParams")}
           </Typography>
           {queryParams.map((param, index) => (
             <Grid container spacing={1} key={index}>
               <Grid item xs={5}>
                 <TextField
                   size="small"
-                  label="Chave"
+                  label={i18n.t("flows.http.key")}
                   value={param.key}
                   onChange={(e) =>
                     updateQueryParam(index, "key", e.target.value)
@@ -683,7 +684,7 @@ const HttpRequestNode = React.memo(({ data, id, selected }) => {
               <Grid item xs={5}>
                 <TextField
                   size="small"
-                  label="Valor"
+                  label={i18n.t("flows.http.value")}
                   value={param.value}
                   onChange={(e) =>
                     updateQueryParam(index, "value", e.target.value)
@@ -705,11 +706,11 @@ const HttpRequestNode = React.memo(({ data, id, selected }) => {
             onClick={addQueryParam}
             sx={{ textTransform: "none", width: "100%" }}
           >
-            Adicionar Parâmetro
+            {i18n.t("flows.http.addParam")}
           </Button>
 
           <Typography variant="body2" fontWeight="bold" mt={1}>
-            Cabeçalhos (JSON)
+            {i18n.t("flows.http.headers")}
           </Typography>
           <TextField
             variant="outlined"
@@ -725,7 +726,7 @@ const HttpRequestNode = React.memo(({ data, id, selected }) => {
           {hasBody && (
             <>
               <Typography variant="body2" fontWeight="bold" mt={1}>
-                Corpo da requisição (JSON)
+                {i18n.t("flows.http.body")}
               </Typography>
               <Box sx={{ position: 'relative' }}>
                 <AceEditor
@@ -765,7 +766,7 @@ const HttpRequestNode = React.memo(({ data, id, selected }) => {
                 fullWidth
               >
                 <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography variant="h6">Editar corpo da requisição</Typography>
+                  <Typography variant="h6">{i18n.t("flows.http.editBody")}</Typography>
                   <IconButton onClick={() => setShowFullEditor(false)}>
                     <CloseIcon />
                   </IconButton>
@@ -789,7 +790,7 @@ const HttpRequestNode = React.memo(({ data, id, selected }) => {
                 </DialogContent>
                 <DialogActions>
                   <Button onClick={() => setShowFullEditor(false)}>
-                    Fechar
+                    {i18n.t("flows.http.close")}
                   </Button>
                 </DialogActions>
               </Dialog>
@@ -814,13 +815,13 @@ const HttpRequestNode = React.memo(({ data, id, selected }) => {
           },
         }}
       >
-        {showMapping ? "Ocultar" : "Mapear"} Variáveis da Resposta
+        {showMapping ? i18n.t("flows.http.hideResponseVars") : i18n.t("flows.http.mapResponseVars")}
       </Button>
 
       {showMapping && (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
           <Typography variant="body2" fontWeight="bold" color="#673ab7">
-            Mapear dados da resposta para variáveis
+            {i18n.t("flows.http.mapHelp")}
           </Typography>
 
           {saveVariables.map((variable, index) => (
@@ -837,8 +838,8 @@ const HttpRequestNode = React.memo(({ data, id, selected }) => {
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      label="Caminho"
-                      placeholder="ex: data.user.id"
+                      label={i18n.t("flows.http.path")}
+                      placeholder={i18n.t("flows.http.pathPlaceholder")}
                       size="small"
                     />
                   )}
@@ -847,12 +848,12 @@ const HttpRequestNode = React.memo(({ data, id, selected }) => {
               <Grid item xs={5}>
                 <TextField
                   size="small"
-                  label="Nome da variável"
+                  label={i18n.t("flows.http.varName")}
                   value={variable.variable}
                   onChange={(e) =>
                     updateSaveVariable(index, "variable", e.target.value)
                   }
-                  placeholder="ex: userId"
+                  placeholder={i18n.t("flows.http.varPlaceholder")}
                   fullWidth
                 />
               </Grid>
@@ -888,7 +889,7 @@ const HttpRequestNode = React.memo(({ data, id, selected }) => {
               letterSpacing: '0.2px'
             }}
           >
-            Adicionar variável
+            {i18n.t("flows.http.addVar")}
           </Button>
 
           <Box
@@ -919,7 +920,7 @@ const HttpRequestNode = React.memo(({ data, id, selected }) => {
                   mb: 0.5
                 }}
               >
-                Dicas úteis:
+                {i18n.t("flows.http.tips")}
               </Typography>
 
               <Typography
@@ -927,11 +928,11 @@ const HttpRequestNode = React.memo(({ data, id, selected }) => {
                 color="text.secondary"
                 sx={{ display: 'block', mb: 1, lineHeight: 1.4 }}
               >
-                • A resposta completa da API é salva automaticamente na variável global <strong>apiResponse</strong>
+                • {i18n.t("flows.http.tipApiResponse")} <strong>apiResponse</strong>
               </Typography>
 
               <Typography variant="caption" color="text.secondary" display="block" mt={1}>
-                Você pode usar ${"{nomeDaVariavel}"} no URL e corpo da requisição para incluir valores de variáveis.
+                {i18n.t("flows.http.tipVariables")}
               </Typography>
             </Box>
           </Box>
@@ -946,7 +947,7 @@ const HttpRequestNode = React.memo(({ data, id, selected }) => {
         fullWidth
       >
         <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6">Resposta completa da API</Typography>
+          <Typography variant="h6">{i18n.t("flows.http.fullResponse")}</Typography>
           <IconButton onClick={() => setShowFullResponse(false)}>
             <CloseIcon />
           </IconButton>
@@ -984,7 +985,7 @@ const HttpRequestNode = React.memo(({ data, id, selected }) => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowFullResponse(false)}>
-            Fechar
+            {i18n.t("flows.http.close")}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1009,7 +1010,7 @@ const HttpRequestNode = React.memo(({ data, id, selected }) => {
           }}
         >
           <SaveAltIcon fontSize="small" />
-          Configuração salva!
+          {i18n.t("flows.http.saved")}
         </Box>
       )}
 

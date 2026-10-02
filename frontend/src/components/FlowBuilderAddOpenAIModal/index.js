@@ -1,4 +1,5 @@
 // frontend/openaiModal.jsx
+import { i18n } from "../../translate/i18n";
 import React, { useState, useEffect, useRef } from "react";
 import * as Yup from "yup";
 import FlowAgentPicker, { datosNodoAgente, esquemaNodoAgente, useAgentesDeFlujo } from "../FlowAgentPicker";
@@ -159,47 +160,47 @@ const OpenAiSchema = Yup.object().shape({
   // Não se valida contra OPENAI_MODELS de propósito: um nó salvo com um
   // modelo que saiu da lista precisa continuar salvável, senão o formulário
   // trava e o usuário não consegue nem corrigir os outros campos.
-  model: Yup.string().required("Informe o modelo"),
+  model: Yup.string().required(() => i18n.t("flows.val.reqModel")),
   maxTokens: Yup.number()
-    .min(10, "Mínimo 10 tokens")
-    .max(4000, "Máximo 4000 tokens")
-    .required("Informe o número máximo de tokens"),
+    .min(10, ({ min }) => i18n.t("flows.val.minTokens", { n: min }))
+    .max(4000, ({ max }) => i18n.t("flows.val.maxTokens", { n: max }))
+    .required(() => i18n.t("flows.val.reqMaxTokens")),
   temperature: Yup.number()
-    .min(0, "Mínimo 0")
-    .max(2, "Máximo 2")
-    .required("Informe a temperatura"),
-  apiKey: Yup.string().required("Informe a API Key"),
+    .min(0, ({ min }) => i18n.t("flows.val.minValue", { n: min }))
+    .max(2, ({ max }) => i18n.t("flows.val.maxValue", { n: max }))
+    .required(() => i18n.t("flows.val.reqTemperature")),
+  apiKey: Yup.string().required(() => i18n.t("flows.val.reqApiKey")),
   maxMessages: Yup.number()
-    .min(1, "Mínimo 1 mensagem")
-    .max(100, "Máximo 100 mensagens")
-    .required("Informe o número máximo de mensagens"),
-  voice: Yup.string().required("Informe o modo para Voz"),
+    .min(1, ({ min }) => i18n.t("flows.val.minMessages", { n: min }))
+    .max(100, ({ max }) => i18n.t("flows.val.maxMessages", { n: max }))
+    .required(() => i18n.t("flows.val.reqMaxMessages")),
+  voice: Yup.string().required(() => i18n.t("flows.val.reqVoiceMode")),
   voiceKey: Yup.string().when("voice", {
     is: (voice) => voice !== "texto",
-    then: Yup.string().required("Voice Key é obrigatória para síntese de voz"),
+    then: Yup.string().required(() => i18n.t("flows.ai.voiceKeyRequired")),
     otherwise: Yup.string().notRequired()
   }),
   voiceRegion: Yup.string().when("voice", {
     is: (voice) => voice !== "texto",
-    then: Yup.string().required("Voice Region é obrigatória para síntese de voz"),
+    then: Yup.string().required(() => i18n.t("flows.ai.voiceRegionRequired")),
     otherwise: Yup.string().notRequired()
   }),
   flowMode: Yup.string()
     .oneOf(["permanent", "temporary"], "Modo de fluxo inválido")
-    .required("Selecione o modo de fluxo"),
+    .required(() => i18n.t("flows.val.reqFlowMode")),
   maxInteractions: Yup.number().when("flowMode", {
     is: "temporary",
     then: Yup.number()
-      .min(1, "Mínimo 1 interação")
-      .max(50, "Máximo 50 interações")
+      .min(1, ({ min }) => i18n.t("flows.val.minInteractions", { n: min }))
+      .max(50, ({ max }) => i18n.t("flows.val.maxInteractions", { n: max }))
       .nullable(),
     otherwise: Yup.number().nullable()
   }),
   completionTimeout: Yup.number().when("flowMode", {
     is: "temporary",
     then: Yup.number()
-      .min(1, "Mínimo 1 minuto")
-      .max(60, "Máximo 60 minutos")
+      .min(1, ({ min }) => i18n.t("flows.val.minMinutes", { n: min }))
+      .max(60, ({ max }) => i18n.t("flows.val.maxMinutes", { n: max }))
       .nullable(),
     otherwise: Yup.number().nullable()
   }),
@@ -207,12 +208,12 @@ const OpenAiSchema = Yup.object().shape({
     is: "temporary",
     then: Yup.array()
       .of(Yup.string().required("Palavra-chave não pode estar vazia"))
-      .min(1, "Pelo menos uma palavra-chave é obrigatória no modo temporário"),
+      .min(1, () => i18n.t("flows.val.oneKeyword")),
     otherwise: Yup.array()
   }),
   objective: Yup.string().when(["flowMode", "autoCompleteOnObjective"], {
     is: (flowMode, autoComplete) => flowMode === "temporary" && autoComplete,
-    then: Yup.string().required("Objetivo é obrigatório quando auto completar está ativo"),
+    then: Yup.string().required(() => i18n.t("flows.ai.objectiveRequired")),
     otherwise: Yup.string()
   })
 });
@@ -248,8 +249,8 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
   const [showApiKey, setShowApiKey] = useState(false);
   const [integration, setIntegration] = useState(initialState);
   const [labels, setLabels] = useState({
-    title: "Adicionar OpenAI ao fluxo",
-    btn: "Adicionar",
+    title: i18n.t("flows.dialogs.addOpenai"),
+    btn: i18n.t("contactModal.buttons.okAdd"),
   });
   const [newKeyword, setNewKeyword] = useState("");
   const agentes = useAgentesDeFlujo(open === "create" || open === "edit");
@@ -257,8 +258,8 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
   useEffect(() => {
     if (open === "edit") {
       setLabels({
-        title: "Editar OpenAI do fluxo",
-        btn: "Salvar",
+        title: i18n.t("flows.dialogs.editOpenai"),
+        btn: i18n.t("contactModal.buttons.okEdit"),
       });
       const typebotIntegration = data?.data?.typebotIntegration || {};
       setIntegration({
@@ -278,8 +279,8 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
       });
     } else if (open === "create") {
       setLabels({
-        title: "Adicionar OpenAI ao fluxo",
-        btn: "Adicionar",
+        title: i18n.t("flows.dialogs.addOpenai"),
+        btn: i18n.t("contactModal.buttons.okAdd"),
       });
       setIntegration(initialState);
     }
@@ -378,14 +379,14 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
                   >
                     <Typography className={classes.sectionTitle}>
                       <Settings />
-                      Configurações Básicas - OpenAI
+                      {i18n.t("flows.ai.basicsOpenai")}
                     </Typography>
                   </AccordionSummary>
                   <AccordionDetails className={classes.accordionDetails}>
                     
                     <Field
                       as={TextField}
-                      label="Nome do Assistente"
+                      label={i18n.t("flows.ai.assistantName")}
                       name="name"
                       error={touched.name && Boolean(errors.name)}
                       helperText={touched.name && errors.name}
@@ -447,7 +448,7 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
 
                     <Field
                       as={TextField}
-                      label="Prompt do Sistema"
+                      label={i18n.t("flows.ai.systemPrompt")}
                       name="prompt"
                       error={touched.prompt && Boolean(errors.prompt)}
                       helperText={touched.prompt && errors.prompt}
@@ -457,13 +458,13 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
                       required
                       rows={6}
                       multiline
-                      placeholder="Descreva como a IA deve se comportar, que informações deve coletar, como deve responder..."
+                      placeholder={i18n.t("flows.ai.promptPlaceholder")}
                     />
 
                     <div className={classes.multFieldLine}>
                       <Field
                         as={TextField}
-                        label="Temperatura"
+                        label={i18n.t("flows.ai.temperature")}
                         name="temperature"
                         error={touched.temperature && Boolean(errors.temperature)}
                         helperText={touched.temperature && errors.temperature || "0 = conservador, 2 = criativo"}
@@ -479,7 +480,7 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
                       />
                       <Field
                         as={TextField}
-                        label="Max Tokens"
+                        label={i18n.t("flows.ai.maxTokens")}
                         name="maxTokens"
                         error={touched.maxTokens && Boolean(errors.maxTokens)}
                         helperText={touched.maxTokens && errors.maxTokens || "Tamanho máximo da resposta"}
@@ -490,7 +491,7 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
                       />
                       <Field
                         as={TextField}
-                        label="Max Mensagens"
+                        label={i18n.t("flows.ai.maxMessages")}
                         name="maxMessages"
                         error={touched.maxMessages && Boolean(errors.maxMessages)}
                         helperText={touched.maxMessages && errors.maxMessages || "Histórico de contexto"}
@@ -512,7 +513,7 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
                   >
                     <Typography className={classes.sectionTitle}>
                       <Chat />
-                      Configurações de Voz (Opcional)
+                      {i18n.t("flows.ai.voiceSettings")}
                     </Typography>
                   </AccordionSummary>
                   <AccordionDetails className={classes.accordionDetails}>
@@ -526,7 +527,7 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
                       <InputLabel>Tipo de Resposta</InputLabel>
                       <Field
                         as={Select}
-                        label="Tipo de Resposta"
+                        label={i18n.t("flows.ai.responseType")}
                         name="voice"
                       >
                         {availableVoices.map((voice) => (
@@ -553,7 +554,7 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
                           variant="outlined"
                           margin="dense"
                           fullWidth
-                          placeholder="Chave do Azure Speech Service"
+                          placeholder={i18n.t("flows.ai.azureKeyPlaceholder")}
                         />
                         <Field
                           as={TextField}
@@ -580,8 +581,8 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
                   >
                     <Typography className={classes.sectionTitle}>
                       <Timer />
-                      Comportamento do Fluxo
-                      <Tooltip title="Configure como o OpenAI deve se comportar no fluxo">
+                      {i18n.t("flows.ai.flowBehavior")}
+                      <Tooltip title={i18n.t("flows.ai.behaviorTooltip")}>
                         <Info fontSize="small" color="action" />
                       </Tooltip>
                     </Typography>
@@ -589,7 +590,7 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
                   <AccordionDetails className={classes.accordionDetails}>
                     
                     <FormControl component="fieldset" margin="normal">
-                      <FormLabel component="legend">Modo de Funcionamento</FormLabel>
+                      <FormLabel component="legend">{i18n.t("flows.ai.mode")}</FormLabel>
                       <RadioGroup
                         name="flowMode"
                         value={values.flowMode}
@@ -601,10 +602,10 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
                           label={
                             <Box>
                               <Typography variant="body1">
-                                <strong>Permanente</strong> - Encerrar fluxo aqui
+                                <strong>{i18n.t("flows.ai.permanent")}</strong> {i18n.t("flows.ai.permanentDesc")}
                               </Typography>
                               <Typography variant="caption" color="textSecondary">
-                                O usuário fica conversando com a IA até pedir transferência ou encerrar
+                                {i18n.t("flows.ai.permanentHelp")}
                               </Typography>
                             </Box>
                           }
@@ -615,10 +616,10 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
                           label={
                             <Box>
                               <Typography variant="body1">
-                                <strong>Temporário</strong> - Volta ao fluxo depois
+                                <strong>{i18n.t("flows.ai.temporary")}</strong> {i18n.t("flows.ai.temporaryDesc")}
                               </Typography>
                               <Typography variant="caption" color="textSecondary">
-                                A IA executa uma tarefa específica e depois retorna ao fluxo normal
+                                {i18n.t("flows.ai.temporaryHelp")}
                               </Typography>
                             </Box>
                           }
@@ -630,16 +631,16 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
                     {values.flowMode === "temporary" && (
                       <div className={classes.temporarySettings}>
                         <Typography variant="h6" gutterBottom>
-                          ⏱️ Configurações do Modo Temporário
+                          {i18n.t("flows.ai.temporaryConfig")}
                         </Typography>
                         <Typography variant="body2" color="textSecondary" gutterBottom>
-                          Configure quando a IA deve parar e retornar ao fluxo
+                          {i18n.t("flows.ai.temporaryConfigHelp")}
                         </Typography>
 
                         {/* Limite de Interações */}
                         <Field
                           as={TextField}
-                          label="Máximo de Interações"
+                          label={i18n.t("flows.ai.maxInteractions")}
                           name="maxInteractions"
                           error={touched.maxInteractions && Boolean(errors.maxInteractions)}
                           helperText={touched.maxInteractions && errors.maxInteractions || "Número máximo de mensagens antes de voltar ao fluxo (0 = ilimitado)"}
@@ -653,7 +654,7 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
                         {/* Timeout */}
                         <Field
                           as={TextField}
-                          label="Timeout (minutos)"
+                          label={i18n.t("flows.ai.timeoutMinutes")}
                           name="completionTimeout"
                           error={touched.completionTimeout && Boolean(errors.completionTimeout)}
                           helperText={touched.completionTimeout && errors.completionTimeout || "Tempo limite antes de voltar ao fluxo (0 = sem limite)"}
@@ -667,7 +668,7 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
                         {/* Palavras-chave de Continuação */}
                         <FormControl fullWidth margin="dense">
                           <Typography variant="subtitle2" gutterBottom>
-                            Palavras-chave para Continuar Fluxo
+                            {i18n.t("flows.ai.keywords")}
                           </Typography>
                           <FieldArray name="continueKeywords">
                             {(arrayHelpers) => (
@@ -676,7 +677,7 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
                                   <TextField
                                     variant="outlined"
                                     size="small"
-                                    placeholder="Digite uma palavra-chave"
+                                    placeholder={i18n.t("flows.ai.keywordPlaceholder")}
                                     value={newKeyword}
                                     onChange={(e) => setNewKeyword(e.target.value)}
                                     onKeyPress={(e) => {
@@ -692,7 +693,7 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
                                     onClick={() => addKeyword(arrayHelpers, newKeyword)}
                                     disabled={!newKeyword.trim()}
                                   >
-                                    Adicionar
+                                    {i18n.t("flows.ai.add")}
                                   </Button>
                                 </Box>
                                 <Box display="flex" flexWrap="wrap" gap={0.5}>
@@ -709,7 +710,7 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
                                   ))}
                                 </Box>
                                 <Typography variant="caption" color="textSecondary">
-                                  Quando o usuário enviar uma dessas palavras, o fluxo continuará automaticamente
+                                  {i18n.t("flows.ai.keywordsHelp")}
                                 </Typography>
                                 {touched.continueKeywords && errors.continueKeywords && (
                                   <Typography variant="caption" color="error">
@@ -724,7 +725,7 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
                         {/* Objetivo */}
                         <Field
                           as={TextField}
-                          label="Objetivo da IA"
+                          label={i18n.t("flows.ai.aiGoal")}
                           name="objective"
                           error={touched.objective && Boolean(errors.objective)}
                           helperText={touched.objective && errors.objective || "Descreva o que a IA deve completar (ex: 'Coletar nome, email e telefone')"}
@@ -733,7 +734,7 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
                           fullWidth
                           multiline
                           rows={2}
-                          placeholder="Ex: Coletar dados do cliente, Qualificar interesse, Diagnosticar problema..."
+                          placeholder={i18n.t("flows.ai.aiGoalPlaceholder")}
                         />
 
                         {/* Auto Completar */}
@@ -748,10 +749,10 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
                           label={
                             <Box>
                               <Typography variant="body2">
-                                Auto completar quando atingir objetivo
+                                {i18n.t("flows.ai.autoComplete")}
                               </Typography>
                               <Typography variant="caption" color="textSecondary">
-                                A IA analisará automaticamente se completou o objetivo e voltará ao fluxo
+                                {i18n.t("flows.ai.autoCompleteHelp")}
                               </Typography>
                             </Box>
                           }
@@ -760,10 +761,10 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
                         {/* Fila de Transferência */}
                         <Field
                           as={TextField}
-                          label="ID da Fila (para transferência)"
+                          label={i18n.t("flows.ai.queueId")}
                           name="queueId"
                           error={touched.queueId && Boolean(errors.queueId)}
-                          helperText="ID da fila para onde transferir se usuário pedir atendente (0 = não transferir)"
+                          helperText={i18n.t("flows.ai.queueIdHelp")}
                           variant="outlined"
                           margin="dense"
                           fullWidth
@@ -785,7 +786,7 @@ const FlowBuilderOpenAIModal = ({ open, onSave, data, onUpdate, close }) => {
                   variant="outlined"
                   disabled={isSubmitting}
                 >
-                  Cancelar
+                  {i18n.t("contactModal.buttons.cancel")}
                 </Button>
                 <Button
                   type="submit"

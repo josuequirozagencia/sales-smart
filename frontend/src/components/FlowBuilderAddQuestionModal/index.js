@@ -65,16 +65,16 @@ const FlowBuilderAddQuestionModal = ({
   const [activeModal, setActiveModal] = useState(false);
   const [integration, setIntegration] = useState();
   const [labels, setLabels] = useState({
-    title: "Adicionar Perguta ao fluxo",
-    btn: "Adicionar",
+    title: i18n.t("flows.dialogs.addQuestion"),
+    btn: i18n.t("contactModal.buttons.okAdd"),
   });
   const [scheduleAnswer, setScheduleAnswer] = useState();
 
   useEffect(() => {
     if (open === "edit") {
       setLabels({
-        title: "Editar Perguta do fluxo",
-        btn: "Salvar",
+        title: i18n.t("flows.dialogs.editQuestion"),
+        btn: i18n.t("contactModal.buttons.okEdit"),
       });
       console.log("FlowTybebotEdit", data.data.typebotIntegration);
       setMessage(data.data.typebotIntegration.message);
@@ -85,7 +85,7 @@ const FlowBuilderAddQuestionModal = ({
     } else if (open === "create") {
       setLabels({
         title: "Cria Perguta no fluxo",
-        btn: "Salvar",
+        btn: i18n.t("contactModal.buttons.okEdit"),
       });
       setIntegration(initialState);
       setActiveModal(true);

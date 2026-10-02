@@ -66,16 +66,16 @@ const FlowBuilderAddSwitchFlowModal = ({
   const [flowSelected, setFlowSelected] = useState();
 
   const [labels, setLabels] = useState({
-    title: "Adicionar Perguta ao fluxo",
-    btn: "Adicionar",
+    title: i18n.t("flows.dialogs.addSwitchFlow"),
+    btn: i18n.t("contactModal.buttons.okAdd"),
   });
 
   useEffect(() => {
     getFlows();
     if (open === "edit") {
       setLabels({
-        title: "Editar Perguta do fluxo",
-        btn: "Salvar",
+        title: i18n.t("flows.dialogs.editSwitchFlow"),
+        btn: i18n.t("contactModal.buttons.okEdit"),
       });
 
       console.log(data.data.flowSelected.name);
@@ -84,7 +84,7 @@ const FlowBuilderAddSwitchFlowModal = ({
     } else if (open === "create") {
       setLabels({
         title: "Cria Perguta no fluxo",
-        btn: "Salvar",
+        btn: i18n.t("contactModal.buttons.okEdit"),
       });
 
       setFlowSelected("");

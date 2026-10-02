@@ -1,4 +1,5 @@
 import React, { memo, useEffect, useState, useCallback } from "react";
+import { i18n } from "../../../translate/i18n";
 import {
   Box,
   Typography,
@@ -199,7 +200,7 @@ export default memo(({ data, isConnectable, id }) => {
           </Box>
         ) : (
           <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-            Pergunta não definida
+            {i18n.t("flows.inputNode.noQuestion")}
           </Typography>
         )}
       </Paper>
@@ -214,7 +215,7 @@ export default memo(({ data, isConnectable, id }) => {
         border: '1px solid rgba(156, 39, 176, 0.1)'
       }}>
         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-          Variável para armazenar resposta:
+          {i18n.t("flows.inputNode.varFor")}
         </Typography>
         
         {data.variableName ? (
@@ -254,7 +255,7 @@ export default memo(({ data, isConnectable, id }) => {
           </Box>
         ) : (
           <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-            Variável não definida
+            {i18n.t("flows.inputNode.noVar")}
           </Typography>
         )}
       </Paper>

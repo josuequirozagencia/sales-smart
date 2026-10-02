@@ -67,8 +67,8 @@ const FlowBuilderAddVideoModal = ({ open, onSave, onUpdate, data, close }) => {
   const [preview, setPreview] = useState();
 
   const [labels, setLabels] = useState({
-    title: "Adicionar video ao fluxo",
-    btn: "Adicionar"
+    title: i18n.t("flows.dialogs.addVideo"),
+    btn: i18n.t("contactModal.buttons.okAdd")
   });
 
   const [medias, setMedias] = useState([]);
@@ -76,16 +76,16 @@ const FlowBuilderAddVideoModal = ({ open, onSave, onUpdate, data, close }) => {
   useEffect(() => {
     if (open === "edit") {
       setLabels({
-        title: "Editar video",
-        btn: "Salvar"
+        title: i18n.t("flows.dialogs.editVideo"),
+        btn: i18n.t("contactModal.buttons.okEdit")
       });
       setPreview(process.env.REACT_APP_BACKEND_URL + '/public/' + data.data.url)
       setRecord(data.data.record)
       setActiveModal(true);
     } else if (open === "create") {
       setLabels({
-        title: "Adicionar video ao fluxo",
-        btn: "Adicionar"
+        title: i18n.t("flows.dialogs.addVideo"),
+        btn: i18n.t("contactModal.buttons.okAdd")
       });
       setActiveModal(true);
     } else {
@@ -165,7 +165,7 @@ const FlowBuilderAddVideoModal = ({ open, onSave, onUpdate, data, close }) => {
     }
 
     if(e.target.files[0].size > 20000000){
-      toast.error("Arquivo é muito grande! 20MB máximo")
+      toast.error(i18n.t("flows.fileTooBig", { limite: "20MB" }))
       return
     }
 
@@ -190,7 +190,7 @@ const FlowBuilderAddVideoModal = ({ open, onSave, onUpdate, data, close }) => {
                 <Stack direction={'row'} justifyContent={'center'}>
                 <video controls="controls" width="552px">
                   <source src={preview} type="video/mp4" />
-                  seu navegador não suporta HTML5
+                  {i18n.t("flows.noHtml5")}
                 </video>
                 </Stack>
               )}
@@ -206,7 +206,7 @@ const FlowBuilderAddVideoModal = ({ open, onSave, onUpdate, data, close }) => {
                     onChange={handleChangeMedias}
                   />
                 </Button>
-                <Typography>ATENÇÃO! Apenas videos em MP4!</Typography>
+                <Typography>{i18n.t("flows.video.onlyMp4")}</Typography>
                 </>
               )}
               {loading && (

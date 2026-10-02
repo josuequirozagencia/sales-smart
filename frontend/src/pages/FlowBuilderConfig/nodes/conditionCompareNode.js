@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { i18n } from "../../../translate/i18n";
 import {
   Dialog,
   DialogTitle,
@@ -16,17 +17,17 @@ import {
 import { CompareArrows } from "@mui/icons-material";
 
 const operators = [
-  { value: "equals", label: "Igual a" },
-  { value: "notEquals", label: "Diferente de" },
-  { value: "contains", label: "Contém" },
-  { value: "greaterThan", label: "Maior que" },
-  { value: "lessThan", label: "Menor que" },
-  { value: "greaterOrEqual", label: "Maior ou igual a" },
-  { value: "lessOrEqual", label: "Menor ou igual a" },
-  { value: "startsWith", label: "Começa com" },
-  { value: "endsWith", label: "Termina com" },
-  { value: "isEmpty", label: "Está vazio" },
-  { value: "isNotEmpty", label: "Não está vazio" },
+  "equals",
+  "notEquals",
+  "contains",
+  "greaterThan",
+  "lessThan",
+  "greaterOrEqual",
+  "lessOrEqual",
+  "startsWith",
+  "endsWith",
+  "isEmpty",
+  "isNotEmpty",
 ];
 
 const FlowBuilderConditionCompareModal = ({
@@ -110,7 +111,7 @@ const FlowBuilderConditionCompareModal = ({
         <Box display="flex" alignItems="center" gap={1}>
           <CompareArrows />
           <Typography variant="h6">
-            {data ? "Editar Comparação" : "Nova Comparação"}
+            {data ? i18n.t("flows.compare.edit") : i18n.t("flows.compare.new")}
           </Typography>
         </Box>
       </DialogTitle>
@@ -120,12 +121,12 @@ const FlowBuilderConditionCompareModal = ({
           <Grid item xs={12}>
             <TextField
               fullWidth
-              label="Valor 1"
+              label={i18n.t("flows.compare.value1")}
               name="leftValue"
               value={formData.leftValue}
               onChange={handleChange}
               variant="outlined"
-              helperText="Pode ser texto fixo ou variável (ex: ${variavel})"
+              helperText={i18n.t("flows.compare.valueHelp")}
             />
           </Grid>
           
@@ -133,15 +134,15 @@ const FlowBuilderConditionCompareModal = ({
             <TextField
               select
               fullWidth
-              label="Operador"
+              label={i18n.t("flows.compare.operator")}
               name="operator"
               value={formData.operator}
               onChange={handleChange}
               variant="outlined"
             >
               {operators.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
+                <MenuItem key={option} value={option}>
+                  {i18n.t("flows.compare.operators." + option)}
                 </MenuItem>
               ))}
             </TextField>
@@ -151,12 +152,12 @@ const FlowBuilderConditionCompareModal = ({
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Valor 2"
+                label={i18n.t("flows.compare.value2")}
                 name="rightValue"
                 value={formData.rightValue}
                 onChange={handleChange}
                 variant="outlined"
-                helperText="Pode ser texto fixo ou variável (ex: ${variavel})"
+                helperText={i18n.t("flows.compare.valueHelp")}
               />
             </Grid>
           )}
@@ -165,7 +166,7 @@ const FlowBuilderConditionCompareModal = ({
       
       <DialogActions>
         <Button onClick={close} color="secondary">
-          Cancelar
+          {i18n.t("contactModal.buttons.cancel")}
         </Button>
         <Button
           onClick={handleSubmit}
@@ -173,7 +174,7 @@ const FlowBuilderConditionCompareModal = ({
           variant="contained"
           disabled={loading}
         >
-          {loading ? <CircularProgress size={24} /> : "Salvar"}
+          {loading ? <CircularProgress size={24} /> : i18n.t("contactModal.buttons.okEdit")}
         </Button>
       </DialogActions>
     </Dialog>
