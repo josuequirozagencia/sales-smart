@@ -762,6 +762,11 @@ const MainListItems = ({ collapsed, drawerClose }) => {
     check(rolAdministracion, "dashboard:view") &&
     (showOpenAi || showIntegrations) &&
     check(user.profile, "dashboard:view");
+  // El saldo de los Agentes IA lo ve cualquier usuario de la empresa, no solo
+  // administracion, asi que por si solo ya justifica pintar la cabecera del
+  // grupo: sin esto, un asesor sin flujos ni campanas no veria la categoria y
+  // la entrada quedaria invisible aunque este fuera de la puerta de admin.
+  const haySaldoIa = showOpenAi;
 
   // Permisos ya calculados, en forma de booleano, para saber si una categoria
   // tiene algo que mostrar. Son las MISMAS expresiones que envuelven a cada
@@ -1065,7 +1070,7 @@ useEffect(() => {
       )}
 
       {/* AUTOMATIZACION */}
-      {(hayFlujos || hayIaIntegraciones || hayCampanas) && (
+      {(hayFlujos || hayIaIntegraciones || hayCampanas || haySaldoIa) && (
         <GrupoMenu
           titulo={i18n.t("mainDrawer.groups.automation")}
           icono={<SmartToyOutlined />}
@@ -1138,6 +1143,25 @@ useEffect(() => {
             </>
           )}
 
+          {/* El saldo de los Agentes IA: su consumo y su recarga.
+              Va FUERA de la puerta de administracion a proposito. El aviso
+              BannerCreditoIa se monta para cualquier usuario de la empresa
+              cuando el saldo llega a cero, y su boton lleva justo aqui: si
+              la entrada fuera solo de admin, ese aviso mandaria a los
+              asesores a una pagina que no tienen en el menu. Y al recargar,
+              el aviso desaparece, asi que esta es la unica forma de volver
+              a ver el consumo.
+              miSaldo y miHistorial toman companyId de la sesion, no de la
+              peticion, asi que nadie puede ver el saldo de otra empresa. */}
+          {showOpenAi && (
+            <ListItemLink
+              to="/ai-credits/buy"
+              primary={i18n.t("mainDrawer.listItems.myAiCredit")}
+              icon={<AccountBalanceWalletOutlined />}
+              tooltip={collapsed}
+            />
+          )}
+
           <Can
             role={rolAdministracion}
             perform="dashboard:view"
@@ -1152,25 +1176,6 @@ useEffect(() => {
                         to="/ai-agents"
                         primary={i18n.t("mainDrawer.listItems.aiAgents")}
                         icon={<AndroidOutlined />}
-                        tooltip={collapsed}
-                      />
-                    )}
-                  />
-                )}
-
-                {/* El saldo de los Agentes IA. Hasta ahora solo se llegaba
-                    desde el aviso de saldo agotado, que se oculta en cuanto
-                    hay saldo: tras recargar no habia forma de volver a ver
-                    el consumo ni de recargar otra vez. */}
-                {showOpenAi && (
-                  <Can
-                    role={user.profile}
-                    perform="dashboard:view"
-                    yes={() => (
-                      <ListItemLink
-                        to="/ai-credits/buy"
-                        primary={i18n.t("mainDrawer.listItems.myAiCredit")}
-                        icon={<AccountBalanceWalletOutlined />}
                         tooltip={collapsed}
                       />
                     )}
