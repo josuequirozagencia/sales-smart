@@ -26,6 +26,7 @@ import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
 import ContactPhoneOutlinedIcon from "@mui/icons-material/ContactPhoneOutlined";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
+import AccountBalanceWalletOutlined from "@mui/icons-material/AccountBalanceWalletOutlined";
 import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
 import FlashOnIcon from "@mui/icons-material/FlashOn";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
@@ -520,9 +521,9 @@ const RUTAS_POR_GRUPO = {
   clientes: ["/contacts", "/tags", "/chats", "/quick-messages"],
   ventas: ["/kanban", "/schedules", "/sales"],
   automatizacion: [
-    "/flowbuilders", "/phrase-lists", "/ai-agents", "/prompts",
-    "/campaigns", "/contact-lists", "/campaigns-config", "/files",
-    "/queue-integration",
+    "/flowbuilders", "/phrase-lists", "/ai-agents", "/ai-credits/buy",
+    "/prompts", "/campaigns", "/contact-lists", "/campaigns-config",
+    "/files", "/queue-integration",
   ],
   analitica: ["/", "/reports", "/response-time", "/moments"],
   // /gohighlevel y /messages-api ya no tienen entrada propia en el menu,
@@ -761,6 +762,11 @@ const MainListItems = ({ collapsed, drawerClose }) => {
     check(rolAdministracion, "dashboard:view") &&
     (showOpenAi || showIntegrations) &&
     check(user.profile, "dashboard:view");
+  // El saldo de los Agentes IA lo ve cualquier usuario de la empresa, no solo
+  // administracion, asi que por si solo ya justifica pintar la cabecera del
+  // grupo: sin esto, un asesor sin flujos ni campanas no veria la categoria y
+  // la entrada quedaria invisible aunque este fuera de la puerta de admin.
+  const haySaldoIa = showOpenAi;
 
   // Permisos ya calculados, en forma de booleano, para saber si una categoria
   // tiene algo que mostrar. Son las MISMAS expresiones que envuelven a cada
@@ -1064,7 +1070,7 @@ useEffect(() => {
       )}
 
       {/* AUTOMATIZACION */}
-      {(hayFlujos || hayIaIntegraciones || hayCampanas) && (
+      {(hayFlujos || hayIaIntegraciones || hayCampanas || haySaldoIa) && (
         <GrupoMenu
           titulo={i18n.t("mainDrawer.groups.automation")}
           icono={<SmartToyOutlined />}
@@ -1135,6 +1141,25 @@ useEffect(() => {
                 </List>
               </Collapse>
             </>
+          )}
+
+          {/* El saldo de los Agentes IA: su consumo y su recarga.
+              Va FUERA de la puerta de administracion a proposito. El aviso
+              BannerCreditoIa se monta para cualquier usuario de la empresa
+              cuando el saldo llega a cero, y su boton lleva justo aqui: si
+              la entrada fuera solo de admin, ese aviso mandaria a los
+              asesores a una pagina que no tienen en el menu. Y al recargar,
+              el aviso desaparece, asi que esta es la unica forma de volver
+              a ver el consumo.
+              miSaldo y miHistorial toman companyId de la sesion, no de la
+              peticion, asi que nadie puede ver el saldo de otra empresa. */}
+          {showOpenAi && (
+            <ListItemLink
+              to="/ai-credits/buy"
+              primary={i18n.t("mainDrawer.listItems.myAiCredit")}
+              icon={<AccountBalanceWalletOutlined />}
+              tooltip={collapsed}
+            />
           )}
 
           <Can

@@ -2100,6 +2100,7 @@ const messages = {
           administration: "Administración",
           companies: "Empresas",
           aiCredits: "Crédito IA",
+          myAiCredit: "Mi crédito IA",
           users: "Usuarios",
           settings: "Configuración",
           files: "Lista de archivos",

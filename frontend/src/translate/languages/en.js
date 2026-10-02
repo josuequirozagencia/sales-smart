@@ -1981,6 +1981,7 @@ const messages = {
           administration: "Administration",
           companies: "Companies",
           aiCredits: "AI Credit",
+          myAiCredit: "My AI credit",
           users: "Users",
           settings: "Settings",
           files: "File Lists",
